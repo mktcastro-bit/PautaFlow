@@ -1,9 +1,18 @@
 import Stripe from 'stripe'
 import { Plan } from '@/types'
 
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-02-24.acacia',
-  typescript: true,
+function getStripe() {
+  const key = process.env.STRIPE_SECRET_KEY
+  if (!key || key.startsWith('sk_test_placeholder')) {
+    throw new Error('Stripe not configured')
+  }
+  return new Stripe(key, { apiVersion: '2025-02-24.acacia', typescript: true })
+}
+
+export const stripe = new Proxy({} as Stripe, {
+  get(_, prop) {
+    return (getStripe() as any)[prop]
+  },
 })
 
 export const PRICE_IDS: Record<Plan, string> = {
