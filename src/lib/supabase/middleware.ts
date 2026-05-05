@@ -6,12 +6,17 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.next({ request })
   }
 
-  let supabaseResponse = NextResponse.next({ request })
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
+  if (!url || !key) {
+    return NextResponse.next({ request })
+  }
+
+  try {
+    let supabaseResponse = NextResponse.next({ request })
+
+    const supabase = createServerClient(url, key, {
       cookies: {
         getAll() {
           return request.cookies.getAll()
@@ -26,27 +31,28 @@ export async function updateSession(request: NextRequest) {
           )
         },
       },
+    })
+
+    const { data: { user } } = await supabase.auth.getUser()
+
+    const pathname = request.nextUrl.pathname
+    const isAuthRoute = pathname.startsWith('/login') || pathname.startsWith('/register')
+    const isDashboardRoute = pathname.startsWith('/workspaces') || pathname.startsWith('/billing')
+
+    if (!user && isDashboardRoute) {
+      const redirectUrl = request.nextUrl.clone()
+      redirectUrl.pathname = '/login'
+      return NextResponse.redirect(redirectUrl)
     }
-  )
 
-  const { data: { user } } = await supabase.auth.getUser()
+    if (user && isAuthRoute) {
+      const redirectUrl = request.nextUrl.clone()
+      redirectUrl.pathname = '/workspaces'
+      return NextResponse.redirect(redirectUrl)
+    }
 
-  const isAuthRoute = request.nextUrl.pathname.startsWith('/login') ||
-    request.nextUrl.pathname.startsWith('/register')
-  const isDashboardRoute = request.nextUrl.pathname.startsWith('/workspaces') ||
-    request.nextUrl.pathname.startsWith('/billing')
-
-  if (!user && isDashboardRoute) {
-    const url = request.nextUrl.clone()
-    url.pathname = '/login'
-    return NextResponse.redirect(url)
+    return supabaseResponse
+  } catch {
+    return NextResponse.next({ request })
   }
-
-  if (user && isAuthRoute) {
-    const url = request.nextUrl.clone()
-    url.pathname = '/workspaces'
-    return NextResponse.redirect(url)
-  }
-
-  return supabaseResponse
 }
