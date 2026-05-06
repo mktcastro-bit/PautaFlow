@@ -1,5 +1,5 @@
 import { notFound, redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { PautasClient } from '@/components/pautas/pautas-client'
 import { DEMO_MODE, demoWorkspaces, demoPautas } from '@/lib/demo-data'
 
@@ -26,11 +26,13 @@ export default async function PautasPage({ params, searchParams }: Props) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const { data: workspace } = await supabase
+  const admin = await createAdminClient()
+
+  const { data: workspace } = await admin
     .from('workspaces').select('*').eq('slug', params.slug).single()
   if (!workspace) notFound()
 
-  let query = supabase.from('pautas').select('*').eq('workspace_id', workspace.id).order('created_at', { ascending: false })
+  let query = admin.from('pautas').select('*').eq('workspace_id', workspace.id).order('created_at', { ascending: false })
   if (searchParams.status) query = query.eq('status', searchParams.status)
   if (searchParams.category) query = query.eq('category', searchParams.category)
   if (searchParams.format) query = query.eq('format', searchParams.format)
@@ -39,7 +41,7 @@ export default async function PautasPage({ params, searchParams }: Props) {
   if (searchParams.platform) query = query.contains('platform', [searchParams.platform])
 
   const { data: pautas } = await query
-  const { data: categories } = await supabase.from('pautas').select('category').eq('workspace_id', workspace.id)
+  const { data: categories } = await admin.from('pautas').select('category').eq('workspace_id', workspace.id)
   const uniqueCategories = [...new Set(categories?.map(p => p.category) || [])]
 
   return <PautasClient pautas={pautas || []} workspace={workspace} categories={uniqueCategories} filters={searchParams} />
