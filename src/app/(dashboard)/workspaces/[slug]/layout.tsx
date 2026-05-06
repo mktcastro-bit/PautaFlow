@@ -1,5 +1,5 @@
 import { redirect, notFound } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { Sidebar } from '@/components/shared/sidebar'
 import { DEMO_MODE, demoOrg, demoWorkspaces } from '@/lib/demo-data'
 
@@ -34,17 +34,19 @@ export default async function WorkspaceLayout({ children, params }: Props) {
     .eq('user_id', user.id)
     .single()
 
-  if (!member) redirect('/login')
+  if (!member) redirect('/workspaces')
 
-  const { data: organization } = await supabase
+  const admin = await createAdminClient()
+
+  const { data: organization } = await admin
     .from('organizations')
     .select('*')
     .eq('id', member.organization_id)
     .single()
 
-  if (!organization) redirect('/login')
+  if (!organization) redirect('/workspaces')
 
-  const { data: workspaces } = await supabase
+  const { data: workspaces } = await admin
     .from('workspaces')
     .select('*')
     .eq('organization_id', organization.id)
