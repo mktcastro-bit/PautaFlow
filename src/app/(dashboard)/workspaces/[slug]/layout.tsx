@@ -30,13 +30,19 @@ export default async function WorkspaceLayout({ children, params }: Props) {
 
   const { data: member } = await supabase
     .from('organization_members')
-    .select('organization_id, role, organizations(*)')
+    .select('organization_id, role')
     .eq('user_id', user.id)
     .single()
 
   if (!member) redirect('/login')
 
-  const organization = member.organizations as any
+  const { data: organization } = await supabase
+    .from('organizations')
+    .select('*')
+    .eq('id', member.organization_id)
+    .single()
+
+  if (!organization) redirect('/login')
 
   const { data: workspaces } = await supabase
     .from('workspaces')
