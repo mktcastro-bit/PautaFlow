@@ -47,10 +47,16 @@ export interface BrandDNA {
   step1_mission: string | null
   step1_vision: string | null
   step1_values: string[] | null
+  step2_profile: string | null
+  step2_maturity: string | null
+  step2_roles: string[] | null
+  step2_pain_points: string[] | null
+  step2_consumption_context: string | null
+  step2_attention_triggers: string | null
+  // legacy fields kept for DB compatibility
   step2_target_audience: string | null
   step2_age_range: string | null
   step2_interests: string[] | null
-  step2_pain_points: string[] | null
   step2_persona_name: string | null
   step3_tone: string[] | null
   step3_personality_traits: string[] | null
