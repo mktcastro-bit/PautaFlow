@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { Plus, Layers } from 'lucide-react'
 
@@ -9,11 +9,39 @@ export default async function WorkspacesPage() {
 
   if (!user) redirect('/login')
 
-  const { data: member } = await supabase
+  let { data: member } = await supabase
     .from('organization_members')
     .select('organization_id')
     .eq('user_id', user.id)
     .single()
+
+  // Trigger não criou a org — cria agora via service role
+  if (!member) {
+    const admin = await createAdminClient()
+    const orgName = user.email?.split('@')[0] || 'minha-marca'
+    const orgSlug = orgName.toLowerCase().replace(/[^a-z0-9]/g, '-') + '-' + user.id.slice(0, 8)
+
+    const { data: org } = await admin
+      .from('organizations')
+      .insert({ name: orgName, slug: orgSlug })
+      .select()
+      .single()
+
+    if (org) {
+      await admin.from('organization_members').insert({
+        organization_id: org.id,
+        user_id: user.id,
+        role: 'owner',
+      })
+      await admin.from('workspaces').insert({
+        organization_id: org.id,
+        name: 'Principal',
+        slug: 'principal',
+        created_by: user.id,
+      })
+      member = { organization_id: org.id }
+    }
+  }
 
   if (!member) redirect('/login')
 
