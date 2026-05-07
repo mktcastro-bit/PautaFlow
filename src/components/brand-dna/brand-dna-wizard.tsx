@@ -542,8 +542,71 @@ function Step3({ data, setData, toggleTone }: any) {
 
 function Step4({ data, setData }: any) {
   const set = (key: string) => (v: string) => setData((p: any) => ({ ...p, [key]: v }))
+  const [siteUrl, setSiteUrl] = useState('')
+  const [extracting, setExtracting] = useState(false)
+  const [extractMsg, setExtractMsg] = useState<{ type: 'ok' | 'error'; text: string } | null>(null)
+
+  async function handleExtract() {
+    if (!siteUrl.trim()) return
+    setExtracting(true)
+    setExtractMsg(null)
+    try {
+      const res = await fetch('/api/brand/extract', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: siteUrl.trim() }),
+      })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error || 'Erro ao analisar')
+
+      setData((p: any) => ({
+        ...p,
+        ...(json.colors?.length && { step4_primary_colors: json.colors.join(', ') }),
+        ...(json.fonts?.length && { step4_visual_references: p.step4_visual_references || json.fonts.join(', ') }),
+        ...(json.typographyStyle && { step4_typography_style: json.typographyStyle }),
+      }))
+      setExtractMsg({ type: 'ok', text: `${json.colors?.length || 0} cores e ${json.fonts?.length || 0} fontes detectadas. Revise e ajuste abaixo.` })
+    } catch (e: any) {
+      setExtractMsg({ type: 'error', text: e.message || 'Não foi possível acessar o site.' })
+    } finally {
+      setExtracting(false)
+    }
+  }
+
   return (
     <>
+      {/* Extração automática */}
+      <div className="rounded-xl border border-border bg-muted/30 p-4 space-y-3">
+        <div>
+          <p className="text-sm font-medium">Importar identidade do site</p>
+          <p className="text-xs text-muted-foreground mt-0.5">Cole a URL e o sistema detecta cores e tipografia automaticamente.</p>
+        </div>
+        <div className="flex gap-2">
+          <input
+            type="url"
+            value={siteUrl}
+            onChange={e => setSiteUrl(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && handleExtract()}
+            placeholder="https://suaempresa.com.br"
+            className="flex-1 px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring bg-background"
+          />
+          <button
+            type="button"
+            onClick={handleExtract}
+            disabled={extracting || !siteUrl.trim()}
+            className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-50 transition-colors whitespace-nowrap"
+          >
+            {extracting ? 'Analisando...' : 'Analisar site'}
+          </button>
+        </div>
+        {extractMsg && (
+          <p className={cn('text-xs', extractMsg.type === 'ok' ? 'text-green-600' : 'text-red-500')}>
+            {extractMsg.type === 'ok' ? '✓ ' : '✗ '}{extractMsg.text}
+          </p>
+        )}
+      </div>
+
+      {/* Campos manuais — sempre visíveis */}
       <Field label="Cores principais" hint="Hex, nome ou descrição. Separe por vírgula.">
         <Input value={data.step4_primary_colors} onChange={set('step4_primary_colors')} placeholder="#6366f1, azul profundo, branco" />
       </Field>
