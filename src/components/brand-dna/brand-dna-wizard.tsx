@@ -33,6 +33,7 @@ export function BrandDnaWizard({ workspace, initialDna }: Props) {
   const [currentStep, setCurrentStep] = useState(initialDna?.current_step || 1)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
 
   const [data, setData] = useState({
     step1_brand_name: initialDna?.step1_brand_name || '',
@@ -70,7 +71,7 @@ export function BrandDnaWizard({ workspace, initialDna }: Props) {
 
   async function saveStep(nextStep: number) {
     setSaving(true)
-    const supabase = createClient()
+    setSaveError(null)
 
     const payload: any = {
       workspace_id: workspace.id,
@@ -105,7 +106,19 @@ export function BrandDnaWizard({ workspace, initialDna }: Props) {
       payload.completed_at = new Date().toISOString()
     }
 
-    await supabase.from('brand_dna').upsert(payload, { onConflict: 'workspace_id' })
+    try {
+      const res = await fetch('/api/brand/dna', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error || 'Erro ao salvar')
+    } catch (err: any) {
+      setSaveError(err.message || 'Erro ao salvar. Tente novamente.')
+      setSaving(false)
+      return
+    }
 
     setSaving(false)
 
@@ -206,6 +219,12 @@ export function BrandDnaWizard({ workspace, initialDna }: Props) {
         <p className="text-xs text-muted-foreground mt-5 text-center">
           Não sabe agora? Deixe em branco e edite depois — nada é permanente.
         </p>
+
+        {saveError && (
+          <p className="text-xs text-red-500 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2 mt-3">
+            ✗ {saveError}
+          </p>
+        )}
 
         <div className="flex items-center justify-between mt-4 pt-4 border-t border-border">
           <button
