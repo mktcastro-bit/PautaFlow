@@ -61,11 +61,11 @@ const JUSTIFY: Record<string, string> = {
 
 export const ArtCard = React.forwardRef<HTMLDivElement, Props>(
   ({ slide, total, editor, brandDna, scale = 1, publicationFormat }, ref) => {
-    const isPortrait = publicationFormat === 'story' || publicationFormat === 'reels'
+    const isStory = publicationFormat === 'story' || publicationFormat === 'reels'
 
-    // Dimensões base (exportação em 1080px)
+    // Dimensões base — feed/padrão: 1080×1350 | story/reels: 1080×1920
     const BASE_W = 1080
-    const BASE_H = isPortrait ? 1920 : 1080
+    const BASE_H = isStory ? 1920 : 1350
 
     // Dimensões de display
     const W = BASE_W * scale

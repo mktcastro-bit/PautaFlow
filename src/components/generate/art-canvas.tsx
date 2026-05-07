@@ -56,11 +56,12 @@ export function ArtCanvas({ slides, caption, idea, config, brandDna }: Props) {
 
   const total = slides.length
   const slide = slides[current]
-  const isPortrait = config.publicationFormat === 'story' || config.publicationFormat === 'reels'
+  const isStory = config.publicationFormat === 'story' || config.publicationFormat === 'reels'
 
-  // Preview dimensions: target ~340px wide for feed, ~220px wide for portrait
-  const PREVIEW_W = isPortrait ? 220 : 340
-  const PREVIEW_H = isPortrait ? Math.round(PREVIEW_W * (1920 / 1080)) : PREVIEW_W
+  // Feed/padrão: 1080×1350 (4:5) | Story/Reels: 1080×1920 (9:16)
+  const CARD_H = isStory ? 1920 : 1350
+  const PREVIEW_W = isStory ? 200 : 280
+  const PREVIEW_H = Math.round(PREVIEW_W * (CARD_H / 1080))
   const PREVIEW_SCALE = PREVIEW_W / 1080
 
   async function handleExportCurrent() {
