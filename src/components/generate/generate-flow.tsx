@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { Sparkles, ChevronLeft, Edit2, X, Copy, Check } from 'lucide-react'
+import { useState, useRef, useEffect } from 'react'
+import { Sparkles, ChevronLeft, Edit2, X, Copy, Check, Plus } from 'lucide-react'
 import { BrandDNA, Workspace } from '@/types'
 import { cn } from '@/lib/utils'
 import { ArtCanvas } from './art-canvas'
@@ -50,11 +50,16 @@ const PLATFORMS = ['Instagram', 'LinkedIn', 'Ambos']
 
 // ─── DNA Banner ──────────────────────────────────────────────────────────────
 
-function DnaBanner({ dna }: { dna: BrandDNA | null }) {
+function DnaBanner({ dna, workspaceSlug }: { dna: BrandDNA | null; workspaceSlug: string }) {
   if (!dna?.completed) return (
-    <div className="px-5 py-2.5 bg-amber-950/30 border-b border-amber-800/30 text-xs text-amber-400 flex items-center gap-2">
-      <Sparkles className="h-3.5 w-3.5 flex-shrink-0" />
-      DNA da Marca não configurado — conteúdo será gerado sem personalização de marca
+    <div className="px-5 py-2.5 bg-amber-950/30 border-b border-amber-800/30 text-xs text-amber-400 flex items-center justify-between">
+      <div className="flex items-center gap-2">
+        <Sparkles className="h-3.5 w-3.5 flex-shrink-0" />
+        DNA da Marca não configurado — conteúdo será gerado sem personalização de marca
+      </div>
+      <a href={`/workspaces/${workspaceSlug}/brand-dna`} className="underline hover:text-amber-300 transition-colors">
+        Configurar agora
+      </a>
     </div>
   )
 
@@ -72,14 +77,61 @@ function DnaBanner({ dna }: { dna: BrandDNA | null }) {
         {position && <><span className="text-zinc-600">·</span><span>{position}</span></>}
         {style && <><span className="text-zinc-600">·</span><span>visual {style}</span></>}
       </div>
-      <button className="text-zinc-500 hover:text-zinc-300 transition-colors flex items-center gap-1">
-        <Edit2 className="h-3 w-3" /> Editar
-      </button>
+      <a
+        href={`/workspaces/${workspaceSlug}/brand-dna`}
+        className="text-zinc-500 hover:text-zinc-300 transition-colors flex items-center gap-1"
+      >
+        <Edit2 className="h-3 w-3" /> Editar DNA
+      </a>
     </div>
   )
 }
 
 // ─── Config Panel ─────────────────────────────────────────────────────────────
+
+function PilarEditor({ pilars, onChange }: { pilars: string[]; onChange: (p: string[]) => void }) {
+  const [input, setInput] = useState('')
+  const ref = useRef<HTMLDivElement>(null)
+
+  function add() {
+    const v = input.trim()
+    if (v && !pilars.includes(v)) onChange([...pilars, v])
+    setInput('')
+  }
+
+  return (
+    <div ref={ref} className="mt-2 bg-zinc-900 border border-zinc-700 rounded-xl p-3 space-y-2">
+      <p className="text-[10px] text-zinc-500 uppercase tracking-widest font-semibold">Editar pilares</p>
+      <div className="flex flex-wrap gap-1.5">
+        {pilars.map(p => (
+          <span key={p} className="inline-flex items-center gap-1 bg-zinc-800 border border-zinc-700 rounded px-2 py-0.5 text-xs text-zinc-300">
+            {p}
+            <button type="button" onClick={() => onChange(pilars.filter(x => x !== p))} className="text-zinc-600 hover:text-red-400 transition-colors">
+              <X className="h-2.5 w-2.5" />
+            </button>
+          </span>
+        ))}
+      </div>
+      <div className="flex gap-1.5">
+        <input
+          value={input}
+          onChange={e => setInput(e.target.value)}
+          onKeyDown={e => e.key === 'Enter' && add()}
+          placeholder="Novo pilar..."
+          className="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs text-white placeholder-zinc-600 focus:outline-none focus:border-indigo-500"
+        />
+        <button
+          type="button"
+          onClick={add}
+          disabled={!input.trim()}
+          className="p-1.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 rounded-lg transition-colors"
+        >
+          <Plus className="h-3.5 w-3.5 text-white" />
+        </button>
+      </div>
+    </div>
+  )
+}
 
 function ConfigPanel({
   config, setConfig, pilars, onGenerate, loading,
@@ -92,6 +144,21 @@ function ConfigPanel({
 }) {
   const set = (key: keyof Config) => (val: string) =>
     setConfig({ ...config, [key]: val })
+
+  const [editingPilars, setEditingPilars] = useState(false)
+  const [localPilars, setLocalPilars] = useState<string[]>(pilars)
+
+  // Sincroniza quando pilars externos mudam
+  useEffect(() => { setLocalPilars(pilars) }, [pilars])
+
+  function handlePilarChange(updated: string[]) {
+    setLocalPilars(updated)
+    if (updated.length > 0 && !updated.includes(config.pilar)) {
+      setConfig({ ...config, pilar: updated[0] })
+    }
+  }
+
+  const activePilars = localPilars.length > 0 ? localPilars : ['Geral']
 
   return (
     <div className="w-60 flex-shrink-0 border-r border-zinc-800 flex flex-col">
@@ -106,13 +173,20 @@ function ConfigPanel({
               onChange={e => set('pilar')(e.target.value)}
               className="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-sm text-white focus:outline-none focus:border-indigo-500"
             >
-              {pilars.map(p => <option key={p} value={p}>{p}</option>)}
-              {pilars.length === 0 && <option value="Geral">Geral</option>}
+              {activePilars.map(p => <option key={p} value={p}>{p}</option>)}
             </select>
-            <button className="text-zinc-500 hover:text-zinc-300 p-1.5">
+            <button
+              type="button"
+              onClick={() => setEditingPilars(o => !o)}
+              className={cn('p-1.5 rounded-lg transition-colors', editingPilars ? 'text-indigo-400 bg-indigo-500/10' : 'text-zinc-500 hover:text-zinc-300')}
+              title="Editar pilares"
+            >
               <Edit2 className="h-3.5 w-3.5" />
             </button>
           </div>
+          {editingPilars && (
+            <PilarEditor pilars={localPilars} onChange={handlePilarChange} />
+          )}
         </div>
 
         <div className="space-y-1">
@@ -478,7 +552,7 @@ export function GenerateFlow({ workspace, brandDna, pilars }: Props) {
       </div>
 
       {/* DNA Banner */}
-      <DnaBanner dna={brandDna} />
+      <DnaBanner dna={brandDna} workspaceSlug={workspace.slug} />
 
       {/* Body */}
       {step === 'texto' ? (
@@ -486,7 +560,11 @@ export function GenerateFlow({ workspace, brandDna, pilars }: Props) {
           <ConfigPanel
             config={config}
             setConfig={setConfig}
-            pilars={pilars.length > 0 ? pilars : brandDna?.step5_content_pillars || ['Estratégia', 'Cases', 'Educação', 'Bastidores', 'Tendências']}
+            pilars={
+              pilars.length > 0 ? pilars
+              : (brandDna?.step5_content_pillars?.length ?? 0) > 0 ? brandDna!.step5_content_pillars!
+              : ['Estratégia', 'Cases', 'Educação', 'Bastidores', 'Tendências']
+            }
             onGenerate={handleGenerateIdeas}
             loading={loading}
           />
