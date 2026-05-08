@@ -8,7 +8,10 @@ export async function POST(request: Request) {
     if (!user) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
 
     const body = await request.json()
-    const { workspace_id, title, description, category, platform, format, tags } = body
+    const {
+      workspace_id, title, description, category, platform, format, tags,
+      slides, editor_state, caption,
+    } = body
 
     if (!workspace_id || !title) {
       return NextResponse.json({ error: 'workspace_id e title são obrigatórios' }, { status: 400 })
@@ -29,6 +32,9 @@ export async function POST(request: Request) {
         tags: tags || [],
         priority: 'media',
         created_by: user.id,
+        slides: slides || null,
+        editor_state: editor_state || null,
+        caption: caption || null,
       })
       .select('id, title')
       .single()
@@ -52,19 +58,26 @@ export async function PATCH(request: Request) {
     if (!user) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
 
     const body = await request.json()
-    const { id, title, description, category, platform, format, tags } = body
+    const {
+      id, title, description, category, platform, format, tags,
+      slides, editor_state, caption, status,
+    } = body
 
     if (!id) return NextResponse.json({ error: 'id obrigatório' }, { status: 400 })
 
     const admin = await createAdminClient()
 
     const updates: any = {}
-    if (title !== undefined) updates.title = title
-    if (description !== undefined) updates.description = description
-    if (category !== undefined) updates.category = category
-    if (platform !== undefined) updates.platform = Array.isArray(platform) ? platform : [platform].filter(Boolean)
-    if (format !== undefined) updates.format = format
-    if (tags !== undefined) updates.tags = tags
+    if (title !== undefined)        updates.title = title
+    if (description !== undefined)  updates.description = description
+    if (category !== undefined)     updates.category = category
+    if (platform !== undefined)     updates.platform = Array.isArray(platform) ? platform : [platform].filter(Boolean)
+    if (format !== undefined)       updates.format = format
+    if (tags !== undefined)         updates.tags = tags
+    if (status !== undefined)       updates.status = status
+    if (slides !== undefined)       updates.slides = slides
+    if (editor_state !== undefined) updates.editor_state = editor_state
+    if (caption !== undefined)      updates.caption = caption
 
     const { data, error } = await admin
       .from('pautas')

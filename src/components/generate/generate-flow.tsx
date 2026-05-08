@@ -27,6 +27,7 @@ interface Props {
   workspace: Workspace
   brandDna: BrandDNA | null
   pilars: string[]
+  initialPauta?: any | null  // Pauta com slides/editor_state/caption salvos
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -378,11 +379,13 @@ function SlidePreview({
         body: JSON.stringify({
           ...(isUpdate ? { id: savedPautaId } : { workspace_id: workspace.id }),
           title: idea.title,
-          description: caption || idea.subtitle,
+          description: idea.subtitle || caption?.split('\n')[0] || '',
           category: config.pilar,
           platform: plat,
           format: fmt,
           tags: [],
+          slides,
+          caption,
         }),
       })
       const json = await res.json()
@@ -489,24 +492,33 @@ function SlidePreview({
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-export function GenerateFlow({ workspace, brandDna, pilars }: Props) {
+export function GenerateFlow({ workspace, brandDna, pilars, initialPauta }: Props) {
   const defaultPilar = pilars[0] || brandDna?.step5_content_pillars?.[0] || 'Estratégia'
 
-  const [step, setStep] = useState<Step>('texto')
+  // Capitaliza primeira letra (DB salva lowercase, mas UI usa capitalizado)
+  const cap = (s: string | undefined) => s ? s[0].toUpperCase() + s.slice(1) : ''
+
+  const hasSavedSlides = !!(initialPauta?.slides && Array.isArray(initialPauta.slides) && initialPauta.slides.length > 0)
+
+  const [step, setStep] = useState<Step>(hasSavedSlides ? 'arte' : 'texto')
   const [loading, setLoading] = useState<LoadingState>(null)
   const [config, setConfig] = useState<Config>({
-    pilar: defaultPilar,
-    platform: 'Instagram',
-    format: 'Carrossel',
+    pilar: initialPauta?.category || defaultPilar,
+    platform: cap(initialPauta?.platform?.[0]) || 'Instagram',
+    format: cap(initialPauta?.format) || 'Carrossel',
     variant: 'dark',
     publicationFormat: 'feed',
     suggestion: '',
   })
   const [ideas, setIdeas] = useState<Idea[]>([])
-  const [selectedIdea, setSelectedIdea] = useState<Idea | null>(null)
-  const [slides, setSlides] = useState<Slide[]>([])
-  const [caption, setCaption] = useState('')
-  const [savedPautaId, setSavedPautaId] = useState<string | null>(null)
+  const [selectedIdea, setSelectedIdea] = useState<Idea | null>(
+    initialPauta?.title
+      ? { title: initialPauta.title, subtitle: initialPauta.description || '' }
+      : null
+  )
+  const [slides, setSlides] = useState<Slide[]>(initialPauta?.slides || [])
+  const [caption, setCaption] = useState<string>(initialPauta?.caption || initialPauta?.description || '')
+  const [savedPautaId, setSavedPautaId] = useState<string | null>(initialPauta?.id || null)
 
   async function handleGenerateIdeas() {
     setLoading('ideas')
@@ -657,6 +669,7 @@ export function GenerateFlow({ workspace, brandDna, pilars }: Props) {
           workspace={workspace}
           savedPautaId={savedPautaId}
           setSavedPautaId={setSavedPautaId}
+          initialEditorState={initialPauta?.editor_state || null}
         />
       )}
 

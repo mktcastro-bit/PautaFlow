@@ -94,6 +94,10 @@ export interface Pauta {
   assigned_to: string | null
   created_at: string
   updated_at: string
+  // Snapshot do conteúdo gerado (preenchido quando salva via /generate)
+  slides?: Array<{ number: number; text: string }> | null
+  editor_state?: Record<string, any> | null
+  caption?: string | null
 }
 
 export interface GeneratedContent {

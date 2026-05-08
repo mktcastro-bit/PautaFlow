@@ -309,8 +309,18 @@ function PautaCard({
     : pauta.status === 'arquivado' ? { text: 'ARQUIVADO', className: 'border-zinc-500/30 text-zinc-400 bg-zinc-500/5' }
     : { text: 'IDEIA', className: 'border-zinc-500/30 text-zinc-400 bg-zinc-500/5' }
 
+  function openPauta() {
+    router.push(`/workspaces/${workspaceSlug}/generate?pauta_id=${pauta.id}`)
+  }
+
+  // Stops o click do card quando o usuário clica em botões de ação
+  function stopProp(e: React.MouseEvent) { e.stopPropagation() }
+
   return (
-    <div className="group relative bg-card border border-border rounded-xl overflow-hidden hover:border-gold/30 transition-all duration-300 flex flex-col">
+    <div
+      onClick={openPauta}
+      className="group relative bg-card border border-border rounded-xl overflow-hidden hover:border-gold/30 transition-all duration-300 flex flex-col cursor-pointer"
+    >
 
       {/* Header art zone — gold gradient placeholder */}
       <div className="relative h-44 bg-gradient-to-br from-zinc-950 via-zinc-900 to-black border-b border-border overflow-hidden">
@@ -321,6 +331,12 @@ function PautaCard({
         </div>
         <div className="absolute bottom-4 left-4 z-10">
           <span className="font-serif text-2xl text-foreground/70">nexum<span className="text-gold">360</span></span>
+        </div>
+        {/* Hover overlay com indicador de ação */}
+        <div className="absolute inset-0 bg-background/0 group-hover:bg-background/40 backdrop-blur-0 group-hover:backdrop-blur-[2px] transition-all flex items-center justify-center pointer-events-none">
+          <span className="opacity-0 group-hover:opacity-100 transition-opacity text-[10px] tracking-luxe uppercase text-gold border border-gold/40 px-3 py-1.5 bg-background/60">
+            Abrir editor
+          </span>
         </div>
       </div>
 
@@ -359,7 +375,7 @@ function PautaCard({
         {/* "Ver mais" toggle */}
         {pauta.description && pauta.description.length > 100 && (
           <button
-            onClick={() => setExpanded(o => !o)}
+            onClick={(e) => { stopProp(e); setExpanded(o => !o) }}
             className="text-[10px] tracking-luxe uppercase text-gold hover:text-gold-soft self-start mb-2 transition-colors"
           >
             {expanded ? 'Ver menos ↑' : 'Ver mais ↓'}
@@ -374,21 +390,14 @@ function PautaCard({
           </span>
           <div className="flex items-center gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
             <button
-              onClick={() => router.push(`/workspaces/${workspaceSlug}/generate?pauta_id=${pauta.id}`)}
-              className="p-1.5 rounded-md hover:bg-gold/10 text-muted-foreground hover:text-gold transition-colors"
-              title="Gerar conteúdo"
-            >
-              <Zap className="h-3.5 w-3.5" />
-            </button>
-            <button
-              onClick={onEdit}
+              onClick={(e) => { stopProp(e); onEdit() }}
               className="p-1.5 rounded-md hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
-              title="Editar"
+              title="Editar metadados"
             >
               <Edit className="h-3.5 w-3.5" />
             </button>
             <button
-              onClick={onDelete}
+              onClick={(e) => { stopProp(e); onDelete() }}
               className="p-1.5 rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
               title="Excluir"
             >

@@ -30,6 +30,7 @@ interface Props {
   workspace: Workspace
   savedPautaId: string | null
   setSavedPautaId: (id: string | null) => void
+  initialEditorState?: Partial<EditorState> | null
 }
 
 function parseParts(text: string) {
@@ -46,13 +47,17 @@ function parseParts(text: string) {
   return parts
 }
 
-export function ArtCanvas({ slides, caption, idea, config, brandDna, workspace, savedPautaId, setSavedPautaId }: Props) {
+export function ArtCanvas({ slides, caption, idea, config, brandDna, workspace, savedPautaId, setSavedPautaId, initialEditorState }: Props) {
   const [current, setCurrent] = useState(0)
   const [copied, setCopied] = useState(false)
   const [exporting, setExporting] = useState(false)
   const [exportProgress, setExportProgress] = useState({ current: 0, total: 0 })
   const [savingPauta, setSavingPauta] = useState(false)
   const [editor, setEditor] = useState<EditorState>(() => {
+    // Prioridade: estado salvo da pauta > cor da marca > padrão
+    if (initialEditorState && Object.keys(initialEditorState).length > 0) {
+      return { ...DEFAULT_EDITOR, ...initialEditorState }
+    }
     const primary = brandDna?.step4_primary_colors?.[0]
     if (primary) return { ...DEFAULT_EDITOR, accentBarColor: primary, emphasisColor: primary }
     return DEFAULT_EDITOR
@@ -155,11 +160,14 @@ export function ArtCanvas({ slides, caption, idea, config, brandDna, workspace, 
         body: JSON.stringify({
           ...(isUpdate ? { id: savedPautaId } : { workspace_id: workspace.id }),
           title: idea.title,
-          description: caption || idea.subtitle,
+          description: idea.subtitle || caption?.split('\n')[0] || '',
           category: config.pilar,
           platform: plat,
           format: fmt,
           tags: [],
+          slides,
+          caption,
+          editor_state: editor,
         }),
       })
       const json = await res.json()
