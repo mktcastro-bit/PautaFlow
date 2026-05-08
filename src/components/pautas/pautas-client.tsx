@@ -2,11 +2,10 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Plus, Search, Filter, Download, Upload, Trash2, Edit, Zap, Calendar } from 'lucide-react'
-import { Pauta, Workspace, PautaFilters, PautaStatus } from '@/types'
+import { Plus, Search, Download, Upload, Trash2, Edit, Zap, Calendar, X, Sparkles } from 'lucide-react'
+import { Pauta, Workspace, PautaStatus } from '@/types'
 import {
-  STATUS_LABELS, STATUS_COLORS, PRIORITY_LABELS, PRIORITY_COLORS,
-  PLATFORM_LABELS, FORMAT_LABELS, formatDate, cn
+  STATUS_LABELS, PLATFORM_LABELS, FORMAT_LABELS, formatDate, cn
 } from '@/lib/utils'
 import { PautaModal } from './pauta-modal'
 import { createClient } from '@/lib/supabase/client'
@@ -18,11 +17,13 @@ interface Props {
   filters: { [key: string]: string | undefined }
 }
 
+const PLATFORMS = ['instagram', 'linkedin', 'ambos'] as const
+const FORMATS = ['carrossel', 'post', 'artigo', 'reels'] as const
+
 export function PautasClient({ pautas, workspace, categories, filters }: Props) {
   const router = useRouter()
   const [showModal, setShowModal] = useState(false)
   const [editingPauta, setEditingPauta] = useState<Pauta | null>(null)
-  const [showFilters, setShowFilters] = useState(false)
   const [search, setSearch] = useState(filters.search || '')
 
   function applyFilter(key: string, value: string | undefined) {
@@ -35,6 +36,7 @@ export function PautasClient({ pautas, workspace, categories, filters }: Props) 
   }
 
   function clearFilters() {
+    setSearch('')
     router.push('?')
   }
 
@@ -67,171 +69,155 @@ export function PautasClient({ pautas, workspace, categories, filters }: Props) 
     if (!file) return
     const text = await file.text()
     const data = JSON.parse(text)
-
     const res = await fetch('/api/import', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ workspace_id: workspace.id, data }),
     })
-
     if (res.ok) router.refresh()
   }
 
+  // ─── Stats ────────────────────────────────────────────────────────────
+  const stats = {
+    total: pautas.length,
+    ideia: pautas.filter(p => p.status === 'ideia').length,
+    producao: pautas.filter(p => p.status === 'em_desenvolvimento').length,
+    publicado: pautas.filter(p => p.status === 'publicado').length,
+  }
+
   const hasFilters = Object.values(filters).some(Boolean)
-  const statusOptions: PautaStatus[] = ['ideia', 'em_desenvolvimento', 'aprovado', 'publicado', 'arquivado']
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold">Repositório de Pautas</h1>
-          <p className="text-muted-foreground text-sm mt-0.5">
-            {pautas.length} pauta{pautas.length !== 1 ? 's' : ''} encontrada{pautas.length !== 1 ? 's' : ''}
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <label className="cursor-pointer">
-            <input type="file" accept=".json" className="hidden" onChange={handleImport} />
-            <span className="flex items-center gap-1.5 px-3 py-2 border border-input rounded-lg text-sm hover:bg-accent transition-colors">
-              <Upload className="h-3.5 w-3.5" />
-              Importar
-            </span>
-          </label>
-          <button
-            onClick={handleExport}
-            className="flex items-center gap-1.5 px-3 py-2 border border-input rounded-lg text-sm hover:bg-accent transition-colors"
-          >
-            <Download className="h-3.5 w-3.5" />
-            Exportar
-          </button>
-          <button
-            onClick={() => { setEditingPauta(null); setShowModal(true) }}
-            className="flex items-center gap-1.5 bg-primary text-primary-foreground px-3 py-2 rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
-          >
-            <Plus className="h-4 w-4" />
-            Nova pauta
-          </button>
-        </div>
-      </div>
+    <div className="min-h-screen bg-background">
 
-      {/* Search + Filters */}
-      <div className="flex gap-2 mb-4">
-        <form onSubmit={handleSearch} className="flex-1 flex gap-2">
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <input
-              type="text"
-              placeholder="Buscar pautas..."
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-            />
+      {/* ── Page header ─────────────────────────────────────────────────── */}
+      <header className="border-b border-border bg-background/80 backdrop-blur-md sticky top-0 z-30">
+        <div className="px-8 py-5 flex items-center justify-between gap-6">
+          <div>
+            <p className="text-[10px] text-muted-foreground tracking-luxe uppercase">
+              {workspace.name}
+            </p>
+            <h1 className="font-serif text-2xl tracking-tight mt-0.5">
+              Repositório de <span className="text-gold italic">Pautas</span>
+            </h1>
           </div>
-          <button type="submit" className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors">
-            Buscar
-          </button>
-        </form>
-        <button
-          onClick={() => setShowFilters(!showFilters)}
-          className={cn(
-            'flex items-center gap-1.5 px-3 py-2 border rounded-lg text-sm transition-colors',
-            hasFilters ? 'border-primary text-primary bg-primary/5' : 'border-input hover:bg-accent'
+          <div className="flex items-center gap-2">
+            <label className="cursor-pointer">
+              <input type="file" accept=".json" className="hidden" onChange={handleImport} />
+              <span className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs tracking-wide uppercase text-muted-foreground hover:text-foreground hover:bg-accent/40 transition-all">
+                <Upload className="h-3 w-3" /> Importar
+              </span>
+            </label>
+            <button
+              onClick={handleExport}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs tracking-wide uppercase text-muted-foreground hover:text-foreground hover:bg-accent/40 transition-all"
+            >
+              <Download className="h-3 w-3" /> Exportar
+            </button>
+            <button
+              onClick={() => router.push(`/workspaces/${workspace.slug}/generate`)}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs tracking-wide uppercase border border-border hover:border-gold/40 hover:text-gold transition-all"
+            >
+              <Zap className="h-3 w-3" /> Gerar
+            </button>
+            <button
+              onClick={() => { setEditingPauta(null); setShowModal(true) }}
+              className="flex items-center gap-1.5 bg-gold text-ink px-4 py-2 rounded-lg text-xs tracking-wide uppercase font-semibold hover:bg-gold-soft transition-all"
+            >
+              <Plus className="h-3 w-3" /> Nova Pauta
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <div className="px-8 py-8 space-y-8">
+
+        {/* ── Stats row ────────────────────────────────────────────────── */}
+        <section className="grid grid-cols-2 md:grid-cols-4 gap-6 border-b border-border pb-8">
+          <Stat n={stats.total}     label="Total" />
+          <Stat n={stats.ideia}     label="Ideias" />
+          <Stat n={stats.producao}  label="Em Produção" />
+          <Stat n={stats.publicado} label="Publicadas" />
+        </section>
+
+        {/* ── Filters ──────────────────────────────────────────────────── */}
+        <section className="space-y-4">
+          <FilterRow label="Status" current={filters.status} onChange={v => applyFilter('status', v)}
+            options={[
+              { value: undefined, label: 'Todos' },
+              { value: 'ideia', label: STATUS_LABELS.ideia },
+              { value: 'em_desenvolvimento', label: 'Em Produção' },
+              { value: 'publicado', label: STATUS_LABELS.publicado },
+            ]}
+          />
+          {categories.length > 0 && (
+            <FilterRow label="Pilar" current={filters.category} onChange={v => applyFilter('category', v)}
+              options={[
+                { value: undefined, label: 'Todos' },
+                ...categories.map(c => ({ value: c, label: c })),
+              ]}
+            />
           )}
-        >
-          <Filter className="h-3.5 w-3.5" />
-          Filtros
-          {hasFilters && (
-            <span className="ml-1 bg-primary text-primary-foreground text-xs rounded-full h-4 w-4 flex items-center justify-center">
-              {Object.values(filters).filter(Boolean).length}
-            </span>
-          )}
-        </button>
-        {hasFilters && (
-          <button onClick={clearFilters} className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-            Limpar
-          </button>
+          <FilterRow label="Rede Social" current={filters.platform} onChange={v => applyFilter('platform', v)}
+            options={[
+              { value: undefined, label: 'Todas' },
+              ...PLATFORMS.map(p => ({ value: p, label: PLATFORM_LABELS[p] || p })),
+            ]}
+          />
+          <FilterRow label="Formato" current={filters.format} onChange={v => applyFilter('format', v)}
+            options={[
+              { value: undefined, label: 'Todos' },
+              ...FORMATS.map(f => ({ value: f, label: FORMAT_LABELS[f] || f })),
+            ]}
+          />
+
+          {/* Search inline */}
+          <form onSubmit={handleSearch} className="flex gap-2 pt-2">
+            <div className="relative flex-1 max-w-md">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+              <input
+                type="text"
+                placeholder="Buscar pelo título..."
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                className="w-full pl-9 pr-3 py-2 bg-card border border-border rounded-lg text-sm focus:outline-none focus:border-gold/40 transition-colors"
+              />
+            </div>
+            {hasFilters && (
+              <button
+                type="button"
+                onClick={clearFilters}
+                className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors px-2"
+              >
+                <X className="h-3 w-3" /> Limpar filtros
+              </button>
+            )}
+          </form>
+        </section>
+
+        {/* ── Cards grid ───────────────────────────────────────────────── */}
+        {pautas.length === 0 ? (
+          <div className="text-center py-24 text-muted-foreground">
+            <div className="h-14 w-14 bg-card border border-border rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <Search className="h-6 w-6 text-gold-dim" />
+            </div>
+            <p className="font-serif text-xl">Nenhuma pauta encontrada</p>
+            <p className="text-sm mt-2">Crie sua primeira pauta ou ajuste os filtros</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-5">
+            {pautas.map(pauta => (
+              <PautaCard
+                key={pauta.id}
+                pauta={pauta}
+                workspaceSlug={workspace.slug}
+                onEdit={() => { setEditingPauta(pauta); setShowModal(true) }}
+                onDelete={() => handleDelete(pauta.id)}
+              />
+            ))}
+          </div>
         )}
       </div>
-
-      {showFilters && (
-        <div className="bg-card border border-border rounded-xl p-4 mb-4 grid grid-cols-2 md:grid-cols-4 gap-3">
-          <div className="space-y-1">
-            <label className="text-xs font-medium text-muted-foreground">Status</label>
-            <select
-              value={filters.status || ''}
-              onChange={e => applyFilter('status', e.target.value || undefined)}
-              className="w-full px-2 py-1.5 border border-input rounded-md text-sm"
-            >
-              <option value="">Todos</option>
-              {statusOptions.map(s => (
-                <option key={s} value={s}>{STATUS_LABELS[s]}</option>
-              ))}
-            </select>
-          </div>
-          <div className="space-y-1">
-            <label className="text-xs font-medium text-muted-foreground">Categoria</label>
-            <select
-              value={filters.category || ''}
-              onChange={e => applyFilter('category', e.target.value || undefined)}
-              className="w-full px-2 py-1.5 border border-input rounded-md text-sm"
-            >
-              <option value="">Todas</option>
-              {categories.map(c => (
-                <option key={c} value={c}>{c}</option>
-              ))}
-            </select>
-          </div>
-          <div className="space-y-1">
-            <label className="text-xs font-medium text-muted-foreground">Plataforma</label>
-            <select
-              value={filters.platform || ''}
-              onChange={e => applyFilter('platform', e.target.value || undefined)}
-              className="w-full px-2 py-1.5 border border-input rounded-md text-sm"
-            >
-              <option value="">Todas</option>
-              {Object.entries(PLATFORM_LABELS).map(([k, v]) => (
-                <option key={k} value={k}>{v}</option>
-              ))}
-            </select>
-          </div>
-          <div className="space-y-1">
-            <label className="text-xs font-medium text-muted-foreground">Prioridade</label>
-            <select
-              value={filters.priority || ''}
-              onChange={e => applyFilter('priority', e.target.value || undefined)}
-              className="w-full px-2 py-1.5 border border-input rounded-md text-sm"
-            >
-              <option value="">Todas</option>
-              {Object.entries(PRIORITY_LABELS).map(([k, v]) => (
-                <option key={k} value={k}>{v}</option>
-              ))}
-            </select>
-          </div>
-        </div>
-      )}
-
-      {/* Cards grid */}
-      {pautas.length === 0 ? (
-        <div className="text-center py-16 text-muted-foreground">
-          <div className="h-12 w-12 bg-muted rounded-xl flex items-center justify-center mx-auto mb-3">
-            <Search className="h-6 w-6" />
-          </div>
-          <p className="font-medium">Nenhuma pauta encontrada</p>
-          <p className="text-sm mt-1">Crie sua primeira pauta ou ajuste os filtros</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {pautas.map(pauta => (
-            <PautaCard
-              key={pauta.id}
-              pauta={pauta}
-              workspaceSlug={workspace.slug}
-              onEdit={() => { setEditingPauta(pauta); setShowModal(true) }}
-              onDelete={() => handleDelete(pauta.id)}
-            />
-          ))}
-        </div>
-      )}
 
       {showModal && (
         <PautaModal
@@ -245,6 +231,54 @@ export function PautasClient({ pautas, workspace, categories, filters }: Props) 
   )
 }
 
+// ─── Stat ──────────────────────────────────────────────────────────────────
+function Stat({ n, label }: { n: number; label: string }) {
+  return (
+    <div className="space-y-1">
+      <div className="font-serif text-5xl text-gold leading-none">{n}</div>
+      <div className="text-[10px] tracking-luxe uppercase text-muted-foreground">{label}</div>
+    </div>
+  )
+}
+
+// ─── FilterRow ─────────────────────────────────────────────────────────────
+function FilterRow({
+  label, current, options, onChange,
+}: {
+  label: string
+  current: string | undefined
+  options: Array<{ value: string | undefined; label: string }>
+  onChange: (v: string | undefined) => void
+}) {
+  return (
+    <div className="flex items-center gap-3 flex-wrap">
+      <span className="text-[10px] tracking-luxe uppercase text-muted-foreground w-20 flex-shrink-0">
+        {label}
+      </span>
+      <div className="flex items-center gap-1.5 flex-wrap">
+        {options.map((opt, i) => {
+          const active = current === opt.value || (current === undefined && opt.value === undefined)
+          return (
+            <button
+              key={i}
+              onClick={() => onChange(opt.value)}
+              className={cn(
+                'text-[10px] tracking-luxe uppercase px-3 py-1.5 rounded-md border transition-all',
+                active
+                  ? 'border-gold/50 text-gold bg-gold/5'
+                  : 'border-border text-muted-foreground hover:text-foreground hover:border-border/80'
+              )}
+            >
+              {opt.label}
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+// ─── PautaCard ─────────────────────────────────────────────────────────────
 function PautaCard({
   pauta, workspaceSlug, onEdit, onDelete
 }: {
@@ -254,73 +288,111 @@ function PautaCard({
   onDelete: () => void
 }) {
   const router = useRouter()
+  const [expanded, setExpanded] = useState(false)
+
+  const statusBadge =
+    pauta.status === 'publicado' ? { text: 'PUBLICADO', className: 'border-emerald-500/30 text-emerald-400 bg-emerald-500/5' }
+    : pauta.status === 'em_desenvolvimento' ? { text: 'PRODUÇÃO', className: 'border-gold/40 text-gold bg-gold/5' }
+    : pauta.status === 'aprovado' ? { text: 'APROVADO', className: 'border-sky-500/30 text-sky-400 bg-sky-500/5' }
+    : pauta.status === 'arquivado' ? { text: 'ARQUIVADO', className: 'border-zinc-500/30 text-zinc-400 bg-zinc-500/5' }
+    : { text: 'IDEIA', className: 'border-zinc-500/30 text-zinc-400 bg-zinc-500/5' }
 
   return (
-    <div className="bg-card border border-border rounded-xl p-4 hover:shadow-md transition-shadow group">
-      <div className="flex items-start justify-between gap-2 mb-3">
-        <div className="flex flex-wrap gap-1.5">
-          <span className={cn('text-xs px-2 py-0.5 rounded-full font-medium', STATUS_COLORS[pauta.status])}>
-            {STATUS_LABELS[pauta.status]}
-          </span>
-          <span className={cn('text-xs px-2 py-0.5 rounded-full font-medium', PRIORITY_COLORS[pauta.priority])}>
-            {PRIORITY_LABELS[pauta.priority]}
-          </span>
+    <div className="group relative bg-card border border-border rounded-xl overflow-hidden hover:border-gold/30 transition-all duration-300 flex flex-col">
+
+      {/* Header art zone — gold gradient placeholder */}
+      <div className="relative h-44 bg-gradient-to-br from-zinc-950 via-zinc-900 to-black border-b border-border overflow-hidden">
+        <div className="absolute inset-0 grain-overlay" />
+        <div className="absolute top-4 left-4 flex items-center gap-1.5 z-10">
+          <div className="h-1 w-1 rounded-full bg-gold" />
+          <span className="text-[10px] font-serif italic text-gold-soft">{pauta.category}</span>
         </div>
-        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-          <button
-            onClick={onEdit}
-            className="p-1.5 rounded-md hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <Edit className="h-3.5 w-3.5" />
-          </button>
-          <button
-            onClick={onDelete}
-            className="p-1.5 rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-          </button>
+        <div className="absolute bottom-4 left-4 z-10">
+          <span className="font-serif text-2xl text-foreground/70">nexum<span className="text-gold">360</span></span>
         </div>
       </div>
 
-      <h3 className="font-semibold text-sm mb-1 line-clamp-2">{pauta.title}</h3>
-      {pauta.description && (
-        <p className="text-xs text-muted-foreground line-clamp-2 mb-3">{pauta.description}</p>
-      )}
-
-      <div className="flex flex-wrap gap-1 mb-3">
-        {pauta.platform.map(p => (
-          <span key={p} className="text-xs bg-muted px-1.5 py-0.5 rounded text-muted-foreground">
-            {PLATFORM_LABELS[p] || p}
+      {/* Content */}
+      <div className="p-5 flex flex-col flex-1">
+        <div className="flex items-start justify-between gap-2 mb-3">
+          <h3 className="font-semibold text-sm leading-snug line-clamp-2 flex-1">{pauta.title}</h3>
+          <span className={cn(
+            'text-[9px] tracking-luxe uppercase px-2 py-1 rounded-md border font-medium flex-shrink-0',
+            statusBadge.className,
+          )}>
+            {statusBadge.text}
           </span>
-        ))}
-        <span className="text-xs bg-muted px-1.5 py-0.5 rounded text-muted-foreground">
-          {FORMAT_LABELS[pauta.format] || pauta.format}
-        </span>
-      </div>
+        </div>
 
-      {pauta.tags.length > 0 && (
+        {pauta.description && (
+          <p className={cn(
+            'text-xs text-muted-foreground italic border-l border-gold/30 pl-3 mb-4 leading-relaxed',
+            expanded ? '' : 'line-clamp-2',
+          )}>
+            {pauta.description}
+          </p>
+        )}
+
+        {/* Tags row */}
         <div className="flex flex-wrap gap-1 mb-3">
-          {pauta.tags.slice(0, 3).map(tag => (
-            <span key={tag} className="text-xs text-primary/70">#{tag}</span>
+          {pauta.category && (
+            <Tag>{pauta.category}</Tag>
+          )}
+          <Tag>{FORMAT_LABELS[pauta.format] || pauta.format}</Tag>
+          {pauta.platform.map(p => (
+            <Tag key={p}>{PLATFORM_LABELS[p] || p}</Tag>
           ))}
         </div>
-      )}
 
-      <div className="flex items-center justify-between pt-3 border-t border-border">
-        {pauta.scheduled_date && (
-          <span className="flex items-center gap-1 text-xs text-muted-foreground">
-            <Calendar className="h-3 w-3" />
-            {formatDate(pauta.scheduled_date)}
-          </span>
+        {/* "Ver mais" toggle */}
+        {pauta.description && pauta.description.length > 100 && (
+          <button
+            onClick={() => setExpanded(o => !o)}
+            className="text-[10px] tracking-luxe uppercase text-gold hover:text-gold-soft self-start mb-2 transition-colors"
+          >
+            {expanded ? 'Ver menos ↑' : 'Ver mais ↓'}
+          </button>
         )}
-        <button
-          onClick={() => router.push(`/workspaces/${workspaceSlug}/generate?pauta_id=${pauta.id}`)}
-          className="ml-auto flex items-center gap-1 text-xs text-primary hover:underline"
-        >
-          <Zap className="h-3 w-3" />
-          Gerar conteúdo
-        </button>
+
+        {/* Footer */}
+        <div className="mt-auto pt-3 border-t border-border flex items-center justify-between">
+          <span className="flex items-center gap-1 text-[10px] text-muted-foreground tracking-wide uppercase">
+            <Calendar className="h-3 w-3" />
+            {pauta.scheduled_date ? formatDate(pauta.scheduled_date) : 'Sem data'}
+          </span>
+          <div className="flex items-center gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
+            <button
+              onClick={() => router.push(`/workspaces/${workspaceSlug}/generate?pauta_id=${pauta.id}`)}
+              className="p-1.5 rounded-md hover:bg-gold/10 text-muted-foreground hover:text-gold transition-colors"
+              title="Gerar conteúdo"
+            >
+              <Zap className="h-3.5 w-3.5" />
+            </button>
+            <button
+              onClick={onEdit}
+              className="p-1.5 rounded-md hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
+              title="Editar"
+            >
+              <Edit className="h-3.5 w-3.5" />
+            </button>
+            <button
+              onClick={onDelete}
+              className="p-1.5 rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
+              title="Excluir"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        </div>
       </div>
     </div>
+  )
+}
+
+function Tag({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="text-[9px] tracking-luxe uppercase px-2 py-1 rounded bg-secondary text-muted-foreground border border-border/60">
+      {children}
+    </span>
   )
 }

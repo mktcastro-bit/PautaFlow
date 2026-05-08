@@ -2,54 +2,128 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ─── Theme: dark-first, Nexum360-inspired ──────────────────────────────── */
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 243 75% 59%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 243 75% 59%;
+    /* Backgrounds */
+    --background: 0 0% 4%;              /* #0a0a0a */
+    --foreground: 36 22% 92%;           /* #f0ece4 - off-white warm */
+
+    --card: 240 10% 6%;                 /* #0e0e12 */
+    --card-foreground: 36 22% 92%;
+
+    --popover: 240 10% 7%;              /* #11111a */
+    --popover-foreground: 36 22% 92%;
+
+    /* Brand */
+    --primary: 38 45% 60%;              /* #c9a86a - gold */
+    --primary-foreground: 0 0% 6%;      /* dark text on gold */
+
+    --secondary: 240 10% 9%;            /* #15151a */
+    --secondary-foreground: 36 22% 92%;
+
+    --muted: 240 10% 9%;                /* #15151a */
+    --muted-foreground: 36 6% 55%;      /* #918d85 */
+
+    --accent: 38 30% 14%;               /* dark gold tint for hover */
+    --accent-foreground: 38 45% 70%;    /* lighter gold */
+
+    --destructive: 0 65% 50%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 240 8% 14%;               /* #20202a - subtle */
+    --input: 240 8% 12%;                /* #1c1c24 */
+    --ring: 38 45% 60%;                 /* gold focus */
+
     --radius: 0.75rem;
+
+    /* Custom Nexum tokens */
+    --gold: 38 45% 60%;
+    --gold-soft: 38 35% 50%;
+    --gold-dim: 38 25% 35%;
+    --ink: 0 0% 2%;                     /* deeper black for layered surfaces */
   }
 
+  /* keep .dark working as alias for tooling that toggles it */
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 243 75% 59%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 243 75% 59%;
+    --background: 0 0% 4%;
+    --foreground: 36 22% 92%;
+    --card: 240 10% 6%;
+    --card-foreground: 36 22% 92%;
+    --popover: 240 10% 7%;
+    --popover-foreground: 36 22% 92%;
+    --primary: 38 45% 60%;
+    --primary-foreground: 0 0% 6%;
+    --secondary: 240 10% 9%;
+    --secondary-foreground: 36 22% 92%;
+    --muted: 240 10% 9%;
+    --muted-foreground: 36 6% 55%;
+    --accent: 38 30% 14%;
+    --accent-foreground: 38 45% 70%;
+    --destructive: 0 65% 50%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 8% 14%;
+    --input: 240 8% 12%;
+    --ring: 38 45% 60%;
   }
 }
 
 @layer base {
   * { @apply border-border; }
-  body { @apply bg-background text-foreground; }
+  html { color-scheme: dark; }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "ss01", "cv11";
+  }
+
+  /* Selection */
+  ::selection {
+    background-color: hsl(var(--primary) / 0.25);
+    color: hsl(var(--foreground));
+  }
+
+  /* Scrollbars */
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: hsl(var(--background)); }
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--border));
+    border-radius: 999px;
+    border: 2px solid hsl(var(--background));
+  }
+  ::-webkit-scrollbar-thumb:hover { background: hsl(var(--muted-foreground) / 0.5); }
+}
+
+/* ─── Utilities ──────────────────────────────────────────────────────────── */
+@layer utilities {
+  .text-gold       { color: hsl(var(--gold)); }
+  .text-gold-soft  { color: hsl(var(--gold-soft)); }
+  .text-gold-dim   { color: hsl(var(--gold-dim)); }
+  .bg-gold         { background-color: hsl(var(--gold)); }
+  .border-gold     { border-color: hsl(var(--gold)); }
+  .ring-gold       { --tw-ring-color: hsl(var(--gold)); }
+
+  /* Subtle elevated surface — for floating cards */
+  .surface-1 {
+    background: linear-gradient(180deg,
+      hsl(var(--card)) 0%,
+      hsl(var(--background)) 100%);
+  }
+  .surface-2 {
+    background: hsl(var(--card));
+    box-shadow: 0 1px 0 0 hsl(var(--border)) inset;
+  }
+
+  /* Faint texture overlay for premium feel */
+  .grain-overlay::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,0.014) 1px, transparent 0);
+    background-size: 18px 18px;
+    z-index: 0;
+  }
+
+  /* Tracking for caps labels */
+  .tracking-luxe { letter-spacing: 0.18em; }
 }

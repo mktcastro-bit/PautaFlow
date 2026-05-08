@@ -9,7 +9,17 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['var(--font-sans)', 'Inter', 'system-ui', 'sans-serif'],
+        serif: ['var(--font-serif)', '"Playfair Display"', 'Georgia', 'serif'],
+      },
       colors: {
+        gold: {
+          DEFAULT: 'hsl(var(--gold))',
+          soft: 'hsl(var(--gold-soft))',
+          dim: 'hsl(var(--gold-dim))',
+        },
+        ink: 'hsl(var(--ink))',
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
         ring: 'hsl(var(--ring))',
