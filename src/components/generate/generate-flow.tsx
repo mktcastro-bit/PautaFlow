@@ -71,7 +71,7 @@ function DnaBanner({ dna, workspaceSlug }: { dna: BrandDNA | null; workspaceSlug
   return (
     <div className="px-5 py-2.5 bg-zinc-900 border-b border-zinc-800 text-xs text-zinc-400 flex items-center justify-between">
       <div className="flex items-center gap-1.5">
-        <Sparkles className="h-3.5 w-3.5 text-indigo-400 flex-shrink-0" />
+        <Sparkles className="h-3.5 w-3.5 text-gold flex-shrink-0" />
         <span>Gerando como </span>
         <span className="text-white font-semibold">{dna.step1_brand_name}</span>
         {tone && <><span className="text-zinc-600">·</span><span>tom {tone}</span></>}
@@ -119,15 +119,15 @@ function PilarEditor({ pilars, onChange }: { pilars: string[]; onChange: (p: str
           onChange={e => setInput(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && add()}
           placeholder="Novo pilar..."
-          className="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs text-white placeholder-zinc-600 focus:outline-none focus:border-indigo-500"
+          className="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs text-white placeholder-zinc-600 focus:outline-none focus:border-gold/50"
         />
         <button
           type="button"
           onClick={add}
           disabled={!input.trim()}
-          className="p-1.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 rounded-lg transition-colors"
+          className="p-1.5 bg-gold hover:bg-gold-soft disabled:opacity-40 rounded-lg transition-colors"
         >
-          <Plus className="h-3.5 w-3.5 text-white" />
+          <Plus className="h-3.5 w-3.5 text-ink" />
         </button>
       </div>
     </div>
@@ -172,14 +172,14 @@ function ConfigPanel({
             <select
               value={config.pilar}
               onChange={e => set('pilar')(e.target.value)}
-              className="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-sm text-white focus:outline-none focus:border-indigo-500"
+              className="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-sm text-white focus:outline-none focus:border-gold/50"
             >
               {activePilars.map(p => <option key={p} value={p}>{p}</option>)}
             </select>
             <button
               type="button"
               onClick={() => setEditingPilars(o => !o)}
-              className={cn('p-1.5 rounded-lg transition-colors', editingPilars ? 'text-indigo-400 bg-indigo-500/10' : 'text-zinc-500 hover:text-zinc-300')}
+              className={cn('p-1.5 rounded-lg transition-colors', editingPilars ? 'text-gold bg-gold/10' : 'text-zinc-500 hover:text-zinc-300')}
               title="Editar pilares"
             >
               <Edit2 className="h-3.5 w-3.5" />
@@ -195,7 +195,7 @@ function ConfigPanel({
           <select
             value={config.platform}
             onChange={e => set('platform')(e.target.value)}
-            className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-sm text-white focus:outline-none focus:border-indigo-500"
+            className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-sm text-white focus:outline-none focus:border-gold/50"
           >
             {PLATFORMS.map(p => <option key={p} value={p}>{p}</option>)}
           </select>
@@ -206,7 +206,7 @@ function ConfigPanel({
           <select
             value={config.format}
             onChange={e => set('format')(e.target.value)}
-            className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-sm text-white focus:outline-none focus:border-indigo-500"
+            className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-sm text-white focus:outline-none focus:border-gold/50"
           >
             {FORMATS.map(f => <option key={f} value={f}>{f}</option>)}
           </select>
@@ -222,7 +222,7 @@ function ConfigPanel({
                 className={cn(
                   'flex-1 py-1.5 rounded-lg text-sm capitalize border transition-colors',
                   config.variant === v
-                    ? 'bg-indigo-600 border-indigo-500 text-white'
+                    ? 'bg-gold border-gold text-ink'
                     : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-zinc-500'
                 )}
               >
@@ -242,7 +242,7 @@ function ConfigPanel({
                 className={cn(
                   'flex-1 py-1.5 rounded-lg text-xs capitalize border transition-colors',
                   config.publicationFormat === f
-                    ? 'bg-indigo-600 border-indigo-500 text-white font-medium'
+                    ? 'bg-gold border-gold text-ink font-medium'
                     : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-zinc-500'
                 )}
               >
@@ -261,7 +261,7 @@ function ConfigPanel({
             onChange={e => set('suggestion')(e.target.value)}
             placeholder="Ex: algo sobre empresas que usam IA mas não veem resultado..."
             rows={3}
-            className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-2.5 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-indigo-500 resize-none"
+            className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-2.5 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-gold/50 resize-none"
           />
         </div>
       </div>
@@ -296,7 +296,7 @@ function IdeaGrid({
     return (
       <div className="flex-1 flex items-center justify-center">
         <div className="text-center space-y-3">
-          <div className="h-10 w-10 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto" />
+          <div className="h-10 w-10 border-2 border-gold border-t-transparent rounded-full animate-spin mx-auto" />
           <p className="text-zinc-400 text-sm">Gerando ideias com IA...</p>
         </div>
       </div>
@@ -322,9 +322,9 @@ function IdeaGrid({
           <button
             key={i}
             onClick={() => onSelect(idea)}
-            className="text-left bg-zinc-800/50 hover:bg-zinc-800 border border-zinc-700 hover:border-indigo-500 rounded-xl p-4 transition-all group"
+            className="text-left bg-zinc-800/50 hover:bg-zinc-800 border border-zinc-700 hover:border-gold rounded-xl p-4 transition-all group"
           >
-            <p className="text-[10px] text-zinc-500 uppercase tracking-widest mb-2 group-hover:text-indigo-400 transition-colors">
+            <p className="text-[10px] text-zinc-500 uppercase tracking-widest mb-2 group-hover:text-gold transition-colors">
               Ideia {i + 1}
             </p>
             <p className="text-white font-semibold text-sm leading-snug mb-2">{idea.title}</p>
@@ -402,7 +402,7 @@ function SlidePreview({
     return (
       <div className="flex-1 flex items-center justify-center">
         <div className="text-center space-y-3">
-          <div className="h-10 w-10 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto" />
+          <div className="h-10 w-10 border-2 border-gold border-t-transparent rounded-full animate-spin mx-auto" />
           <p className="text-zinc-400 text-sm">Gerando texto dos slides...</p>
         </div>
       </div>
@@ -414,7 +414,7 @@ function SlidePreview({
       {/* Selected idea header */}
       <div className="mb-5">
         <h2 className="text-xl font-bold text-white leading-snug">{idea.title}</h2>
-        <p className="text-zinc-400 text-sm mt-1 italic border-l-2 border-indigo-500 pl-3">{idea.subtitle}</p>
+        <p className="text-zinc-400 text-sm mt-1 italic border-l-2 border-gold pl-3">{idea.subtitle}</p>
         <div className="flex flex-wrap gap-1.5 mt-3">
           {[config.pilar, config.format, config.variant, config.platform].map(tag => (
             <span key={tag} className="text-[10px] font-bold px-2 py-0.5 bg-zinc-800 border border-zinc-700 rounded text-zinc-400 uppercase tracking-wider">
@@ -432,7 +432,7 @@ function SlidePreview({
             const parts = parseSlideParts(slide.text)
             return (
               <div key={slide.number} className="flex items-start gap-3 bg-zinc-800/40 rounded-lg px-3 py-2.5">
-                <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest w-12 flex-shrink-0 pt-0.5">
+                <span className="text-[10px] font-bold text-gold uppercase tracking-widest w-12 flex-shrink-0 pt-0.5">
                   Slide {slide.number}
                 </span>
                 <p className="text-sm text-zinc-200 leading-relaxed">
@@ -476,7 +476,7 @@ function SlidePreview({
         <button
           onClick={handleSavePauta}
           disabled={saving}
-          className="w-full flex items-center justify-center gap-2 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 hover:border-indigo-500 text-white py-2.5 rounded-xl text-sm font-medium transition-all disabled:opacity-50"
+          className="w-full flex items-center justify-center gap-2 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 hover:border-gold text-white py-2.5 rounded-xl text-sm font-medium transition-all disabled:opacity-50"
         >
           {saving
             ? <><div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Salvando...</>
@@ -689,7 +689,7 @@ export function GenerateFlow({ workspace, brandDna, pilars, initialPauta }: Prop
         {step === 'texto' && showSlides && canApprove ? (
           <button
             onClick={() => setStep('arte')}
-            className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-5 py-2 rounded-xl text-sm transition-colors"
+            className="flex items-center gap-2 bg-gold hover:bg-gold-soft text-ink font-bold px-5 py-2 rounded-xl text-sm transition-colors"
           >
             Aprovar e Gerar Arte →
           </button>

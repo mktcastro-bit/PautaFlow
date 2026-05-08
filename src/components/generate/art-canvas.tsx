@@ -244,7 +244,7 @@ export function ArtCanvas({ slides, caption, idea, config, brandDna, workspace, 
                 className={cn(
                   'rounded-full transition-all',
                   i === current
-                    ? 'w-4 h-1.5 bg-indigo-500'
+                    ? 'w-4 h-1.5 bg-gold'
                     : 'w-1.5 h-1.5 bg-zinc-700 hover:bg-zinc-500'
                 )}
               />
@@ -278,7 +278,7 @@ export function ArtCanvas({ slides, caption, idea, config, brandDna, workspace, 
           <button
             onClick={handleExportAll}
             disabled={exporting}
-            className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-500 text-white py-2 px-3 rounded-xl text-xs font-bold transition-colors disabled:opacity-50"
+            className="flex items-center gap-1.5 bg-gold hover:bg-gold-soft text-white py-2 px-3 rounded-xl text-xs font-bold transition-colors disabled:opacity-50"
           >
             {exporting
               ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /> {exportProgress.total > 0 ? `${exportProgress.current}/${exportProgress.total}` : 'Gerando...'}</>
@@ -288,7 +288,7 @@ export function ArtCanvas({ slides, caption, idea, config, brandDna, workspace, 
           <button
             onClick={handleSavePauta}
             disabled={savingPauta}
-            className="flex items-center gap-1.5 bg-zinc-800 hover:bg-zinc-700 border border-zinc-600 hover:border-indigo-500 text-white py-2 px-3 rounded-xl text-xs font-medium transition-all disabled:opacity-50"
+            className="flex items-center gap-1.5 bg-zinc-800 hover:bg-zinc-700 border border-zinc-600 hover:border-gold text-white py-2 px-3 rounded-xl text-xs font-medium transition-all disabled:opacity-50"
           >
             {savingPauta
               ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Salvando...</>
@@ -326,11 +326,11 @@ export function ArtCanvas({ slides, caption, idea, config, brandDna, workspace, 
                   className={cn(
                     'w-full text-left rounded-lg px-3 py-2 transition-colors',
                     i === current
-                      ? 'bg-indigo-600/20 border border-indigo-500/30'
+                      ? 'bg-gold/10 border border-gold/30'
                       : 'hover:bg-zinc-800/50 border border-transparent'
                   )}
                 >
-                  <p className="text-[9px] text-indigo-400 font-bold uppercase tracking-widest mb-0.5">
+                  <p className="text-[9px] text-gold font-bold uppercase tracking-widest mb-0.5">
                     Slide {s.number}
                   </p>
                   <p className="text-xs text-zinc-300 leading-snug line-clamp-2">

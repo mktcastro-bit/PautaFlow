@@ -41,7 +41,7 @@ function ColorInput({ value, onChange }: { value: string; onChange: (v: string) 
         onChange={e => {
           if (/^#[0-9a-fA-F]{0,6}$/.test(e.target.value)) onChange(e.target.value)
         }}
-        className="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs text-white font-mono focus:outline-none focus:border-indigo-500"
+        className="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs text-white font-mono focus:outline-none focus:border-gold/50"
       />
     </div>
   )
@@ -53,7 +53,7 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
       onClick={() => onChange(!checked)}
       className={cn(
         'w-9 h-5 rounded-full transition-colors relative flex-shrink-0',
-        checked ? 'bg-indigo-600' : 'bg-zinc-700'
+        checked ? 'bg-gold' : 'bg-zinc-700'
       )}
     >
       <span className={cn(
@@ -75,7 +75,7 @@ function Slider({
         max={max}
         value={value}
         onChange={e => onChange(Number(e.target.value))}
-        className="flex-1 accent-indigo-500 h-1"
+        className="flex-1 accent-[#c9a86a] h-1"
       />
       <span className="text-xs text-zinc-400 w-8 text-right">{value}%</span>
     </div>
@@ -114,7 +114,7 @@ function FundoTab({ editor, onChange }: Props) {
               className={cn(
                 'flex-1 py-1.5 rounded-lg text-xs capitalize border transition-colors',
                 editor.bgType === t
-                  ? 'bg-indigo-600 border-indigo-500 text-white font-semibold'
+                  ? 'bg-gold border-gold text-ink font-semibold'
                   : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-zinc-500'
               )}
             >
@@ -148,7 +148,7 @@ function FundoTab({ editor, onChange }: Props) {
             <select
               value={editor.gradientDirection}
               onChange={e => set('gradientDirection', e.target.value)}
-              className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500"
+              className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-gold/50"
             >
               {GRADIENT_DIRECTIONS.map(d => (
                 <option key={d.value} value={d.value}>{d.label}</option>
@@ -180,7 +180,7 @@ function FundoTab({ editor, onChange }: Props) {
           ) : (
             <button
               onClick={() => fileRef.current?.click()}
-              className="w-full flex flex-col items-center gap-2 border-2 border-dashed border-zinc-700 rounded-xl py-5 hover:border-indigo-500 transition-colors text-zinc-500 hover:text-indigo-400"
+              className="w-full flex flex-col items-center gap-2 border-2 border-dashed border-zinc-700 rounded-xl py-5 hover:border-gold transition-colors text-zinc-500 hover:text-gold"
             >
               <Upload className="h-5 w-5" />
               <span className="text-xs">Clique para fazer upload</span>
@@ -230,7 +230,7 @@ function TextoTab({ editor, onChange }: Props) {
               className={cn(
                 'py-2 rounded-lg border text-xs transition-colors flex flex-col items-center gap-1',
                 editor.textPosition === pos
-                  ? 'bg-indigo-600 border-indigo-500 text-white'
+                  ? 'bg-gold border-gold text-ink'
                   : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-zinc-500'
               )}
             >
@@ -253,7 +253,7 @@ function TextoTab({ editor, onChange }: Props) {
               className={cn(
                 'flex-1 py-1.5 rounded-lg border text-xs transition-colors',
                 editor.fontSize === s
-                  ? 'bg-indigo-600 border-indigo-500 text-white font-semibold'
+                  ? 'bg-gold border-gold text-ink font-semibold'
                   : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-zinc-500'
               )}
             >
@@ -356,7 +356,7 @@ function ElementosTab({ editor, onChange }: Props) {
                     className={cn(
                       'py-1.5 rounded-lg border text-[10px] transition-colors',
                       editor.logoPosition === pos
-                        ? 'bg-indigo-600 border-indigo-500 text-white font-semibold'
+                        ? 'bg-gold border-gold text-ink font-semibold'
                         : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-zinc-500'
                     )}
                   >
@@ -369,7 +369,7 @@ function ElementosTab({ editor, onChange }: Props) {
         ) : (
           <button
             onClick={() => logoRef.current?.click()}
-            className="w-full flex items-center justify-center gap-2 border-2 border-dashed border-zinc-700 rounded-xl py-3 hover:border-indigo-500 transition-colors text-zinc-500 hover:text-indigo-400 text-xs"
+            className="w-full flex items-center justify-center gap-2 border-2 border-dashed border-zinc-700 rounded-xl py-3 hover:border-gold transition-colors text-zinc-500 hover:text-gold text-xs"
           >
             <Upload className="h-4 w-4" />
             Fazer upload do logo
@@ -413,7 +413,7 @@ export function ArtEditor({ editor, onChange }: Props) {
             className={cn(
               'flex-1 flex flex-col items-center gap-1 py-2.5 text-[10px] font-semibold uppercase tracking-wider border-b-2 transition-colors',
               tab === t.id
-                ? 'border-indigo-500 text-indigo-400'
+                ? 'border-gold text-gold'
                 : 'border-transparent text-zinc-600 hover:text-zinc-400'
             )}
           >
