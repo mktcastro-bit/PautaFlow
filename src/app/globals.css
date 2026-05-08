@@ -76,6 +76,13 @@
     font-feature-settings: "ss01", "cv11";
   }
 
+  /* Quando a landing pública está montada, força body claro
+     (evita que bg-background dark vaze por trás da landing) */
+  body:has([data-theme="light"]) {
+    background-color: #faf8f3;
+    color: #0a0a0a;
+  }
+
   /* Selection */
   ::selection {
     background-color: hsl(var(--primary) / 0.25);

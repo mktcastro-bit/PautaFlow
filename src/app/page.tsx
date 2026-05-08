@@ -9,7 +9,11 @@ export default function LandingPage() {
   const plans = ['starter', 'pro', 'agency'] as const
 
   return (
-    <div className="bg-[#faf8f3] text-zinc-950">
+    <div
+      className="min-h-screen bg-[#faf8f3] text-zinc-950"
+      style={{ backgroundColor: '#faf8f3', color: '#0a0a0a' }}
+      data-theme="light"
+    >
 
       {/* ── NAV (light) ─────────────────────────────────────────────── */}
       <nav className="sticky top-0 z-40 bg-[#faf8f3]/85 backdrop-blur-md border-b border-zinc-200">
