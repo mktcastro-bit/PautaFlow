@@ -53,6 +53,8 @@ export function ArtCanvas({ slides, caption, idea, config, brandDna, workspace, 
   const [exporting, setExporting] = useState(false)
   const [exportProgress, setExportProgress] = useState({ current: 0, total: 0 })
   const [savingPauta, setSavingPauta] = useState(false)
+  const [pautaError, setPautaError] = useState<string | null>(null)
+  const [pautaJustSaved, setPautaJustSaved] = useState(false)
   const [editor, setEditor] = useState<EditorState>(() => {
     // Prioridade: estado salvo da pauta > cor da marca > padrão
     if (initialEditorState && Object.keys(initialEditorState).length > 0) {
@@ -147,6 +149,7 @@ export function ArtCanvas({ slides, caption, idea, config, brandDna, workspace, 
 
   async function handleSavePauta() {
     setSavingPauta(true)
+    setPautaError(null)
     try {
       const fmt = config.format.toLowerCase() as any
       const plat = config.platform === 'Ambos'
@@ -171,7 +174,14 @@ export function ArtCanvas({ slides, caption, idea, config, brandDna, workspace, 
         }),
       })
       const json = await res.json()
-      if (json.pauta?.id) setSavedPautaId(json.pauta.id)
+      if (!res.ok) throw new Error(json.error || `Erro HTTP ${res.status}`)
+      if (json.pauta?.id) {
+        setSavedPautaId(json.pauta.id)
+        setPautaJustSaved(true)
+        setTimeout(() => setPautaJustSaved(false), 3500)
+      }
+    } catch (e: any) {
+      setPautaError(e.message || 'Falha ao salvar pauta')
     } finally {
       setSavingPauta(false)
     }
@@ -282,12 +292,23 @@ export function ArtCanvas({ slides, caption, idea, config, brandDna, workspace, 
           >
             {savingPauta
               ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Salvando...</>
+              : pautaJustSaved
+              ? <><Check className="h-3.5 w-3.5 text-green-400" /> Salvo!</>
               : savedPautaId
-              ? <><Check className="h-3.5 w-3.5 text-green-400" /> Pauta salva — atualizar</>
+              ? <><Check className="h-3.5 w-3.5 text-green-400" /> Atualizar pauta</>
               : <><BookmarkPlus className="h-3.5 w-3.5" /> Salvar como pauta</>
             }
           </button>
         </div>
+
+        {/* Mensagem de erro do save */}
+        {pautaError && (
+          <div className="flex-shrink-0 max-w-md">
+            <p className="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded px-3 py-2 break-all">
+              ✗ {pautaError}
+            </p>
+          </div>
+        )}
       </div>
 
       {/* ── Right: slides list + caption ──────────────────────────────── */}
