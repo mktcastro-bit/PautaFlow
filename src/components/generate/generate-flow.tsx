@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { Sparkles, ChevronLeft, Edit2, X, Copy, Check, Plus } from 'lucide-react'
+import { Sparkles, ChevronLeft, Edit2, X, Copy, Check, Plus, BookmarkPlus } from 'lucide-react'
 import { BrandDNA, Workspace } from '@/types'
 import { cn } from '@/lib/utils'
 import { ArtCanvas } from './art-canvas'
@@ -338,23 +338,59 @@ function IdeaGrid({
 // ─── Slide Preview ────────────────────────────────────────────────────────────
 
 function SlidePreview({
-  idea, slides, caption, loading, config, onBack, onApprove, onCopyCaption,
+  idea, slides, caption, loading, config, workspace, onBack, onApprove, onCopyCaption,
 }: {
   idea: Idea
   slides: Slide[]
   caption: string
   loading: LoadingState
   config: Config
+  workspace: Workspace
   onBack: () => void
   onApprove: () => void
   onCopyCaption: () => void
 }) {
   const [copied, setCopied] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
 
   async function handleCopy() {
     await navigator.clipboard.writeText(caption)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
+  }
+
+  async function handleSavePauta() {
+    setSaving(true)
+    setSaveError(null)
+    try {
+      const fmt = config.format.toLowerCase() as any
+      const plat = config.platform === 'Ambos'
+        ? ['instagram', 'linkedin']
+        : [config.platform.toLowerCase()]
+
+      const res = await fetch('/api/pautas', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          workspace_id: workspace.id,
+          title: idea.title,
+          description: caption || idea.subtitle,
+          category: config.pilar,
+          platform: plat,
+          format: fmt,
+          tags: [],
+        }),
+      })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error || 'Erro ao salvar')
+      setSaved(true)
+    } catch (e: any) {
+      setSaveError(e.message)
+    } finally {
+      setSaving(false)
+    }
   }
 
   if (loading === 'slides') {
@@ -426,6 +462,25 @@ function SlidePreview({
           </div>
         </div>
       )}
+
+      {/* Salvar como pauta */}
+      <div className="pb-4">
+        {saveError && (
+          <p className="text-xs text-red-400 mb-2">✗ {saveError}</p>
+        )}
+        <button
+          onClick={handleSavePauta}
+          disabled={saving || saved}
+          className="w-full flex items-center justify-center gap-2 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 hover:border-indigo-500 text-white py-2.5 rounded-xl text-sm font-medium transition-all disabled:opacity-50"
+        >
+          {saved
+            ? <><Check className="h-4 w-4 text-green-400" /> Salvo no repositório de pautas</>
+            : saving
+            ? <><div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Salvando...</>
+            : <><BookmarkPlus className="h-4 w-4" /> Salvar como pauta</>
+          }
+        </button>
+      </div>
     </div>
   )
 }
@@ -576,6 +631,7 @@ export function GenerateFlow({ workspace, brandDna, pilars }: Props) {
               caption={caption}
               loading={loading}
               config={config}
+              workspace={workspace}
               onBack={handleBack}
               onApprove={() => setStep('arte')}
               onCopyCaption={() => navigator.clipboard.writeText(caption)}
@@ -591,6 +647,7 @@ export function GenerateFlow({ workspace, brandDna, pilars }: Props) {
           idea={selectedIdea!}
           config={config}
           brandDna={brandDna}
+          workspace={workspace}
         />
       )}
 

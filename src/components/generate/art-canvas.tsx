@@ -1,9 +1,9 @@
 'use client'
 
 import { useState, useRef } from 'react'
-import { Download, Copy, Check, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react'
+import { Download, Copy, Check, ChevronLeft, ChevronRight, Loader2, BookmarkPlus } from 'lucide-react'
 import { toPng } from 'html-to-image'
-import { BrandDNA } from '@/types'
+import { BrandDNA, Workspace } from '@/types'
 import { cn } from '@/lib/utils'
 import { ArtCard, Slide } from './art-card'
 import { ArtEditor } from './art-editor'
@@ -26,6 +26,7 @@ interface Props {
   idea: Idea
   config: Config
   brandDna: BrandDNA | null
+  workspace: Workspace
 }
 
 function parseParts(text: string) {
@@ -42,10 +43,12 @@ function parseParts(text: string) {
   return parts
 }
 
-export function ArtCanvas({ slides, caption, idea, config, brandDna }: Props) {
+export function ArtCanvas({ slides, caption, idea, config, brandDna, workspace }: Props) {
   const [current, setCurrent] = useState(0)
   const [copied, setCopied] = useState(false)
   const [exporting, setExporting] = useState(false)
+  const [savingPauta, setSavingPauta] = useState(false)
+  const [savedPauta, setSavedPauta] = useState(false)
   const [editor, setEditor] = useState<EditorState>(() => {
     const primary = brandDna?.step4_primary_colors?.[0]
     if (primary) return { ...DEFAULT_EDITOR, accentBarColor: primary, emphasisColor: primary }
@@ -110,6 +113,32 @@ export function ArtCanvas({ slides, caption, idea, config, brandDna }: Props) {
     await navigator.clipboard.writeText(caption)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
+  }
+
+  async function handleSavePauta() {
+    setSavingPauta(true)
+    try {
+      const fmt = config.format.toLowerCase() as any
+      const plat = config.platform === 'Ambos'
+        ? ['instagram', 'linkedin']
+        : [config.platform.toLowerCase()]
+      await fetch('/api/pautas', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          workspace_id: workspace.id,
+          title: idea.title,
+          description: caption || idea.subtitle,
+          category: config.pilar,
+          platform: plat,
+          format: fmt,
+          tags: [],
+        }),
+      })
+      setSavedPauta(true)
+    } finally {
+      setSavingPauta(false)
+    }
   }
 
   if (!slide) return null
@@ -190,8 +219,8 @@ export function ArtCanvas({ slides, caption, idea, config, brandDna }: Props) {
           />
         </div>
 
-        {/* Export buttons */}
-        <div className="flex gap-2 flex-shrink-0">
+        {/* Export + Save buttons */}
+        <div className="flex gap-2 flex-shrink-0 flex-wrap justify-center">
           <button
             onClick={handleExportCurrent}
             disabled={exporting}
@@ -207,6 +236,18 @@ export function ArtCanvas({ slides, caption, idea, config, brandDna }: Props) {
           >
             {exporting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
             Exportar todos
+          </button>
+          <button
+            onClick={handleSavePauta}
+            disabled={savingPauta || savedPauta}
+            className="flex items-center gap-1.5 bg-zinc-800 hover:bg-zinc-700 border border-zinc-600 hover:border-indigo-500 text-white py-2 px-3 rounded-xl text-xs font-medium transition-all disabled:opacity-50"
+          >
+            {savedPauta
+              ? <><Check className="h-3.5 w-3.5 text-green-400" /> Salvo na pauta</>
+              : savingPauta
+              ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Salvando...</>
+              : <><BookmarkPlus className="h-3.5 w-3.5" /> Salvar como pauta</>
+            }
           </button>
         </div>
       </div>
