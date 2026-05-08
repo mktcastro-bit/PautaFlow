@@ -232,6 +232,7 @@ export function ArtCanvas({ slides, caption, idea, config, brandDna, workspace, 
               brandDna={brandDna}
               scale={PREVIEW_SCALE}
               publicationFormat={config.publicationFormat}
+              pilar={config.pilar}
             />
           </div>
 
@@ -262,6 +263,7 @@ export function ArtCanvas({ slides, caption, idea, config, brandDna, workspace, 
             brandDna={brandDna}
             scale={1}
             publicationFormat={config.publicationFormat}
+            pilar={config.pilar}
           />
         </div>
 

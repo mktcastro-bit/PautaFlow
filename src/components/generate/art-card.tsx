@@ -15,6 +15,8 @@ interface Props {
   scale?: number
   /** Formato de publicação — define proporção */
   publicationFormat: 'feed' | 'story' | 'reels'
+  /** Pilar da geração atual — usado como tag no header */
+  pilar?: string
 }
 
 // ─── Tipos de layout editoriais ──────────────────────────────────────────────
@@ -62,7 +64,7 @@ function buildBackground(editor: EditorState): React.CSSProperties {
 
 // ─── ArtCard ─────────────────────────────────────────────────────────────────
 export const ArtCard = React.forwardRef<HTMLDivElement, Props>(
-  ({ slide, total, editor, brandDna, scale = 1, publicationFormat }, ref) => {
+  ({ slide, total, editor, brandDna, scale = 1, publicationFormat, pilar }, ref) => {
     const isStory = publicationFormat === 'story' || publicationFormat === 'reels'
 
     // Dimensões base
@@ -87,8 +89,8 @@ export const ArtCard = React.forwardRef<HTMLDivElement, Props>(
     const brandHandle = '@' + brandName.toLowerCase().replace(/\s+/g, '')
     const brandUrl = (brandName.toLowerCase().replace(/\s+/g, '') + '.com.br')
 
-    // Categoria/tag — derivada da primeira linha em uppercase
-    const categoryTag = (brandDna?.step5_content_pillars?.[0] || 'estratégia').toUpperCase()
+    // Categoria/tag — usa o pilar da geração atual; fallback pro primeiro do DNA
+    const categoryTag = (pilar || brandDna?.step5_content_pillars?.[0] || 'estratégia').toUpperCase()
 
     const layout = pickLayout(slide.number, total)
     const parts = parseParts(slide.text)
