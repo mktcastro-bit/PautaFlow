@@ -50,16 +50,20 @@ function ColorInput({ value, onChange }: { value: string; onChange: (v: string) 
 function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
   return (
     <button
+      type="button"
       onClick={() => onChange(!checked)}
       className={cn(
-        'w-9 h-5 rounded-full transition-colors relative flex-shrink-0',
+        'relative inline-flex h-5 w-9 flex-shrink-0 items-center rounded-full transition-colors',
         checked ? 'bg-gold' : 'bg-zinc-700'
       )}
     >
-      <span className={cn(
-        'absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform',
-        checked ? 'translate-x-4' : 'translate-x-0.5'
-      )} />
+      <span
+        aria-hidden="true"
+        className={cn(
+          'inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform duration-200',
+          checked ? 'translate-x-[18px]' : 'translate-x-0.5'
+        )}
+      />
     </button>
   )
 }
