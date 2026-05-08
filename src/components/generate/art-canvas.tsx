@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils'
 import { ArtCard, Slide } from './art-card'
 import { ArtEditor } from './art-editor'
 import { EditorState, DEFAULT_EDITOR } from './editor-types'
+import { getBrandPalette, getBrandTypography } from '@/lib/brand-style'
 
 interface Idea { title: string; subtitle: string }
 
@@ -56,14 +57,23 @@ export function ArtCanvas({ slides, caption, idea, config, brandDna, workspace, 
   const [pautaError, setPautaError] = useState<string | null>(null)
   const [pautaJustSaved, setPautaJustSaved] = useState(false)
   const [editor, setEditor] = useState<EditorState>(() => {
-    // Prioridade: estado salvo da pauta > cor da marca > padrão
+    // Prioridade: estado salvo da pauta > paleta da marca > padrão
     if (initialEditorState && Object.keys(initialEditorState).length > 0) {
       return { ...DEFAULT_EDITOR, ...initialEditorState }
     }
-    const primary = brandDna?.step4_primary_colors?.[0]
-    if (primary) return { ...DEFAULT_EDITOR, accentBarColor: primary, emphasisColor: primary }
-    return DEFAULT_EDITOR
+    const palette = getBrandPalette(brandDna)
+    return {
+      ...DEFAULT_EDITOR,
+      bgColor: palette.bg,
+      gradientFrom: palette.bg,
+      textColor: palette.text,
+      accentBarColor: palette.accent,
+      emphasisColor: palette.emphasis,
+    }
   })
+
+  // Tipografia derivada do DNA — usada nos cards
+  const typography = getBrandTypography(brandDna?.step4_typography_style)
 
   const exportRef = useRef<HTMLDivElement>(null)
 
@@ -233,6 +243,7 @@ export function ArtCanvas({ slides, caption, idea, config, brandDna, workspace, 
               scale={PREVIEW_SCALE}
               publicationFormat={config.publicationFormat}
               pilar={config.pilar}
+              typography={typography}
             />
           </div>
 
@@ -264,6 +275,7 @@ export function ArtCanvas({ slides, caption, idea, config, brandDna, workspace, 
             scale={1}
             publicationFormat={config.publicationFormat}
             pilar={config.pilar}
+            typography={typography}
           />
         </div>
 

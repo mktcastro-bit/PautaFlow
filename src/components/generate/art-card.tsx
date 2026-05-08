@@ -3,6 +3,7 @@
 import React from 'react'
 import { BrandDNA } from '@/types'
 import { EditorState, FONT_SIZES } from './editor-types'
+import { TypographyPreset, getBrandTypography } from '@/lib/brand-style'
 
 export interface Slide { number: number; text: string }
 
@@ -17,6 +18,8 @@ interface Props {
   publicationFormat: 'feed' | 'story' | 'reels'
   /** Pilar da geração atual — usado como tag no header */
   pilar?: string
+  /** Tipografia derivada do DNA (typography_style) — opcional, default: clássico-elegante */
+  typography?: TypographyPreset
 }
 
 // ─── Tipos de layout editoriais ──────────────────────────────────────────────
@@ -64,7 +67,12 @@ function buildBackground(editor: EditorState): React.CSSProperties {
 
 // ─── ArtCard ─────────────────────────────────────────────────────────────────
 export const ArtCard = React.forwardRef<HTMLDivElement, Props>(
-  ({ slide, total, editor, brandDna, scale = 1, publicationFormat, pilar }, ref) => {
+  ({ slide, total, editor, brandDna, scale = 1, publicationFormat, pilar, typography }, ref) => {
+    const typo = typography || getBrandTypography(brandDna?.step4_typography_style)
+    const TITLE_FONT = typo.title
+    const BODY_FONT = typo.body
+    const TITLE_WEIGHT = typo.titleWeight
+    const TITLE_TRACKING = typo.titleTracking
     const isStory = publicationFormat === 'story' || publicationFormat === 'reels'
 
     // Dimensões base
@@ -110,7 +118,7 @@ export const ArtCard = React.forwardRef<HTMLDivElement, Props>(
           <img src={editor.logoUrl} alt="logo" style={{ height: logoH, objectFit: 'contain' }} />
         ) : (
           <span style={{
-            fontFamily: 'var(--font-serif), Georgia, serif',
+            fontFamily: TITLE_FONT,
             fontSize: 32 * scale,
             color: textColor,
             letterSpacing: '-0.02em',
@@ -190,17 +198,18 @@ export const ArtCard = React.forwardRef<HTMLDivElement, Props>(
         }}>
           {TopRule}
           <h2 style={{
-            fontFamily: 'var(--font-serif), Georgia, serif',
+            fontFamily: TITLE_FONT,
             fontSize: titleSize * 1.25,
             color: textColor,
             lineHeight: 1.05,
-            letterSpacing: '-0.02em',
-            fontWeight: 700,
+            letterSpacing: TITLE_TRACKING,
+            fontWeight: TITLE_WEIGHT,
+            fontStyle: typo.titleStyle,
             margin: 0,
           }}>
             {parts.map((p, i) =>
               p.emphasis
-                ? <span key={i} style={{ color: emphasisColor, fontStyle: 'italic', fontWeight: 600 }}>{p.text}</span>
+                ? <span key={i} style={{ color: emphasisColor, fontStyle: typo.titleStyle === 'italic' ? 'normal' : 'italic', fontWeight: Math.min(TITLE_WEIGHT, 600) }}>{p.text}</span>
                 : <span key={i}>{p.text}</span>
             )}
           </h2>
@@ -232,7 +241,7 @@ export const ArtCard = React.forwardRef<HTMLDivElement, Props>(
             </span>
           </div>
           <h2 style={{
-            fontFamily: 'var(--font-serif), Georgia, serif',
+            fontFamily: TITLE_FONT,
             fontSize: titleSize * 1.05,
             color: textColor,
             lineHeight: 1.18,
@@ -262,7 +271,7 @@ export const ArtCard = React.forwardRef<HTMLDivElement, Props>(
           gap: 40 * scale,
         }}>
           <div style={{
-            fontFamily: 'var(--font-serif), Georgia, serif',
+            fontFamily: TITLE_FONT,
             fontSize: titleSize * 2.4,
             color: goldColor,
             lineHeight: 0.85,
@@ -276,7 +285,7 @@ export const ArtCard = React.forwardRef<HTMLDivElement, Props>(
           <div style={{ flex: 1, paddingTop: 20 * scale }}>
             <div style={{ width: 60 * scale, height: 1, backgroundColor: goldColor, marginBottom: 24 * scale }} />
             <h2 style={{
-              fontFamily: 'var(--font-serif), Georgia, serif',
+              fontFamily: TITLE_FONT,
               fontSize: titleSize * 0.92,
               color: textColor,
               lineHeight: 1.2,
@@ -304,7 +313,7 @@ export const ArtCard = React.forwardRef<HTMLDivElement, Props>(
           zIndex: 4,
         }}>
           <div style={{
-            fontFamily: 'var(--font-serif), Georgia, serif',
+            fontFamily: TITLE_FONT,
             fontSize: titleSize * 3.5,
             color: goldColor,
             lineHeight: 0.6,
@@ -315,7 +324,7 @@ export const ArtCard = React.forwardRef<HTMLDivElement, Props>(
             “
           </div>
           <h2 style={{
-            fontFamily: 'var(--font-serif), Georgia, serif',
+            fontFamily: TITLE_FONT,
             fontSize: titleSize * 1.0,
             color: textColor,
             lineHeight: 1.25,
@@ -366,7 +375,7 @@ export const ArtCard = React.forwardRef<HTMLDivElement, Props>(
             <div style={{ width: 50 * scale, height: 1, backgroundColor: goldColor }} />
           </div>
           <h2 style={{
-            fontFamily: 'var(--font-serif), Georgia, serif',
+            fontFamily: TITLE_FONT,
             fontSize: titleSize * 1.15,
             color: textColor,
             lineHeight: 1.18,
@@ -404,7 +413,7 @@ export const ArtCard = React.forwardRef<HTMLDivElement, Props>(
             ↳ E agora?
           </div>
           <h2 style={{
-            fontFamily: 'var(--font-serif), Georgia, serif',
+            fontFamily: TITLE_FONT,
             fontSize: titleSize * 1.2,
             color: textColor,
             lineHeight: 1.1,
@@ -460,7 +469,7 @@ export const ArtCard = React.forwardRef<HTMLDivElement, Props>(
           position: 'relative',
           overflow: 'hidden',
           flexShrink: 0,
-          fontFamily: 'var(--font-sans), Inter, sans-serif',
+          fontFamily: BODY_FONT,
           ...buildBackground(editor),
         }}
       >
@@ -497,7 +506,7 @@ export const ArtCard = React.forwardRef<HTMLDivElement, Props>(
           right: pad * 0.6,
           bottom: pad * 1.8,
           zIndex: 2,
-          fontFamily: 'var(--font-serif), Georgia, serif',
+          fontFamily: TITLE_FONT,
           fontSize: 240 * scale,
           color: textColor,
           opacity: 0.025,
