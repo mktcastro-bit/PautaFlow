@@ -102,6 +102,7 @@ export function BrandDnaWizard({ workspace, initialDna }: Props) {
     }
 
     if (nextStep > 5) {
+      payload.current_step = 5  // constraint aceita apenas 1-5
       payload.completed = true
       payload.completed_at = new Date().toISOString()
     }
