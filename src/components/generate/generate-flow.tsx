@@ -338,7 +338,7 @@ function IdeaGrid({
 // ─── Slide Preview ────────────────────────────────────────────────────────────
 
 function SlidePreview({
-  idea, slides, caption, loading, config, workspace, onBack, onApprove, onCopyCaption,
+  idea, slides, caption, loading, config, workspace, savedPautaId, setSavedPautaId, onBack, onApprove, onCopyCaption,
 }: {
   idea: Idea
   slides: Slide[]
@@ -346,13 +346,14 @@ function SlidePreview({
   loading: LoadingState
   config: Config
   workspace: Workspace
+  savedPautaId: string | null
+  setSavedPautaId: (id: string | null) => void
   onBack: () => void
   onApprove: () => void
   onCopyCaption: () => void
 }) {
   const [copied, setCopied] = useState(false)
   const [saving, setSaving] = useState(false)
-  const [saved, setSaved] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
 
   async function handleCopy() {
@@ -370,11 +371,12 @@ function SlidePreview({
         ? ['instagram', 'linkedin']
         : [config.platform.toLowerCase()]
 
+      const isUpdate = !!savedPautaId
       const res = await fetch('/api/pautas', {
-        method: 'POST',
+        method: isUpdate ? 'PATCH' : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          workspace_id: workspace.id,
+          ...(isUpdate ? { id: savedPautaId } : { workspace_id: workspace.id }),
           title: idea.title,
           description: caption || idea.subtitle,
           category: config.pilar,
@@ -385,7 +387,7 @@ function SlidePreview({
       })
       const json = await res.json()
       if (!res.ok) throw new Error(json.error || 'Erro ao salvar')
-      setSaved(true)
+      if (json.pauta?.id) setSavedPautaId(json.pauta.id)
     } catch (e: any) {
       setSaveError(e.message)
     } finally {
@@ -470,13 +472,13 @@ function SlidePreview({
         )}
         <button
           onClick={handleSavePauta}
-          disabled={saving || saved}
+          disabled={saving}
           className="w-full flex items-center justify-center gap-2 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 hover:border-indigo-500 text-white py-2.5 rounded-xl text-sm font-medium transition-all disabled:opacity-50"
         >
-          {saved
-            ? <><Check className="h-4 w-4 text-green-400" /> Salvo no repositório de pautas</>
-            : saving
+          {saving
             ? <><div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Salvando...</>
+            : savedPautaId
+            ? <><Check className="h-4 w-4 text-green-400" /> Pauta salva — atualizar</>
             : <><BookmarkPlus className="h-4 w-4" /> Salvar como pauta</>
           }
         </button>
@@ -504,6 +506,7 @@ export function GenerateFlow({ workspace, brandDna, pilars }: Props) {
   const [selectedIdea, setSelectedIdea] = useState<Idea | null>(null)
   const [slides, setSlides] = useState<Slide[]>([])
   const [caption, setCaption] = useState('')
+  const [savedPautaId, setSavedPautaId] = useState<string | null>(null)
 
   async function handleGenerateIdeas() {
     setLoading('ideas')
@@ -511,6 +514,7 @@ export function GenerateFlow({ workspace, brandDna, pilars }: Props) {
     setSelectedIdea(null)
     setSlides([])
     setCaption('')
+    setSavedPautaId(null)
 
     const res = await fetch('/api/generate/ideas', {
       method: 'POST',
@@ -535,6 +539,7 @@ export function GenerateFlow({ workspace, brandDna, pilars }: Props) {
     setLoading('slides')
     setSlides([])
     setCaption('')
+    setSavedPautaId(null)
 
     const res = await fetch('/api/generate/slides', {
       method: 'POST',
@@ -632,6 +637,8 @@ export function GenerateFlow({ workspace, brandDna, pilars }: Props) {
               loading={loading}
               config={config}
               workspace={workspace}
+              savedPautaId={savedPautaId}
+              setSavedPautaId={setSavedPautaId}
               onBack={handleBack}
               onApprove={() => setStep('arte')}
               onCopyCaption={() => navigator.clipboard.writeText(caption)}
@@ -648,6 +655,8 @@ export function GenerateFlow({ workspace, brandDna, pilars }: Props) {
           config={config}
           brandDna={brandDna}
           workspace={workspace}
+          savedPautaId={savedPautaId}
+          setSavedPautaId={setSavedPautaId}
         />
       )}
 

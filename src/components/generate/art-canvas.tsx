@@ -1,8 +1,9 @@
 'use client'
 
 import { useState, useRef } from 'react'
-import { Download, Copy, Check, ChevronLeft, ChevronRight, Loader2, BookmarkPlus } from 'lucide-react'
+import { Download, Copy, Check, ChevronLeft, ChevronRight, Loader2, BookmarkPlus, Archive } from 'lucide-react'
 import { toPng } from 'html-to-image'
+import JSZip from 'jszip'
 import { BrandDNA, Workspace } from '@/types'
 import { cn } from '@/lib/utils'
 import { ArtCard, Slide } from './art-card'
@@ -27,6 +28,8 @@ interface Props {
   config: Config
   brandDna: BrandDNA | null
   workspace: Workspace
+  savedPautaId: string | null
+  setSavedPautaId: (id: string | null) => void
 }
 
 function parseParts(text: string) {
@@ -43,12 +46,12 @@ function parseParts(text: string) {
   return parts
 }
 
-export function ArtCanvas({ slides, caption, idea, config, brandDna, workspace }: Props) {
+export function ArtCanvas({ slides, caption, idea, config, brandDna, workspace, savedPautaId, setSavedPautaId }: Props) {
   const [current, setCurrent] = useState(0)
   const [copied, setCopied] = useState(false)
   const [exporting, setExporting] = useState(false)
+  const [exportProgress, setExportProgress] = useState({ current: 0, total: 0 })
   const [savingPauta, setSavingPauta] = useState(false)
-  const [savedPauta, setSavedPauta] = useState(false)
   const [editor, setEditor] = useState<EditorState>(() => {
     const primary = brandDna?.step4_primary_colors?.[0]
     if (primary) return { ...DEFAULT_EDITOR, accentBarColor: primary, emphasisColor: primary }
@@ -92,20 +95,42 @@ export function ArtCanvas({ slides, caption, idea, config, brandDna, workspace }
 
   async function handleExportAll() {
     setExporting(true)
+    setExportProgress({ current: 0, total: slides.length })
     try {
+      const zip = new JSZip()
+      // Slug para nome de arquivo a partir do título da ideia
+      const baseName = (idea.title || 'pauta')
+        .toLowerCase()
+        .normalize('NFD').replace(/[̀-ͯ]/g, '')
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .slice(0, 40) || 'pauta'
+
       for (let i = 0; i < slides.length; i++) {
         setCurrent(i)
-        await new Promise(r => setTimeout(r, 200))
+        // Aguarda render do slide selecionado
+        await new Promise(r => setTimeout(r, 250))
         if (!exportRef.current) continue
         const dataUrl = await toPng(exportRef.current, { pixelRatio: 1 })
-        const a = document.createElement('a')
-        a.href = dataUrl
-        a.download = `slide-${i + 1}.png`
-        a.click()
-        await new Promise(r => setTimeout(r, 100))
+        // Converte data URL para blob
+        const base64 = dataUrl.split(',')[1]
+        zip.file(`slide-${String(i + 1).padStart(2, '0')}.png`, base64, { base64: true })
+        setExportProgress({ current: i + 1, total: slides.length })
       }
+
+      // Adiciona a legenda como txt no zip
+      if (caption) zip.file('legenda.txt', caption)
+
+      const blob = await zip.generateAsync({ type: 'blob' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `${baseName}.zip`
+      a.click()
+      setTimeout(() => URL.revokeObjectURL(url), 1000)
     } finally {
       setExporting(false)
+      setExportProgress({ current: 0, total: 0 })
     }
   }
 
@@ -122,11 +147,13 @@ export function ArtCanvas({ slides, caption, idea, config, brandDna, workspace }
       const plat = config.platform === 'Ambos'
         ? ['instagram', 'linkedin']
         : [config.platform.toLowerCase()]
-      await fetch('/api/pautas', {
-        method: 'POST',
+
+      const isUpdate = !!savedPautaId
+      const res = await fetch('/api/pautas', {
+        method: isUpdate ? 'PATCH' : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          workspace_id: workspace.id,
+          ...(isUpdate ? { id: savedPautaId } : { workspace_id: workspace.id }),
           title: idea.title,
           description: caption || idea.subtitle,
           category: config.pilar,
@@ -135,7 +162,8 @@ export function ArtCanvas({ slides, caption, idea, config, brandDna, workspace }
           tags: [],
         }),
       })
-      setSavedPauta(true)
+      const json = await res.json()
+      if (json.pauta?.id) setSavedPautaId(json.pauta.id)
     } finally {
       setSavingPauta(false)
     }
@@ -234,18 +262,20 @@ export function ArtCanvas({ slides, caption, idea, config, brandDna, workspace }
             disabled={exporting}
             className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-500 text-white py-2 px-3 rounded-xl text-xs font-bold transition-colors disabled:opacity-50"
           >
-            {exporting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
-            Exportar todos
+            {exporting
+              ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /> {exportProgress.total > 0 ? `${exportProgress.current}/${exportProgress.total}` : 'Gerando...'}</>
+              : <><Archive className="h-3.5 w-3.5" /> Baixar ZIP ({slides.length})</>
+            }
           </button>
           <button
             onClick={handleSavePauta}
-            disabled={savingPauta || savedPauta}
+            disabled={savingPauta}
             className="flex items-center gap-1.5 bg-zinc-800 hover:bg-zinc-700 border border-zinc-600 hover:border-indigo-500 text-white py-2 px-3 rounded-xl text-xs font-medium transition-all disabled:opacity-50"
           >
-            {savedPauta
-              ? <><Check className="h-3.5 w-3.5 text-green-400" /> Salvo na pauta</>
-              : savingPauta
+            {savingPauta
               ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Salvando...</>
+              : savedPautaId
+              ? <><Check className="h-3.5 w-3.5 text-green-400" /> Pauta salva — atualizar</>
               : <><BookmarkPlus className="h-3.5 w-3.5" /> Salvar como pauta</>
             }
           </button>
