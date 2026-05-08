@@ -140,59 +140,71 @@ export function PautasClient({ pautas, workspace, categories, filters }: Props) 
           <Stat n={stats.publicado} label="Publicadas" />
         </section>
 
-        {/* ── Filters ──────────────────────────────────────────────────── */}
-        <section className="space-y-4">
-          <FilterRow label="Status" current={filters.status} onChange={v => applyFilter('status', v)}
-            options={[
-              { value: undefined, label: 'Todos' },
-              { value: 'ideia', label: STATUS_LABELS.ideia },
-              { value: 'em_desenvolvimento', label: 'Em Produção' },
-              { value: 'publicado', label: STATUS_LABELS.publicado },
-            ]}
-          />
-          {categories.length > 0 && (
-            <FilterRow label="Pilar" current={filters.category} onChange={v => applyFilter('category', v)}
+        {/* ── Filters + Search row ──────────────────────────────────── */}
+        <section className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-x-10 gap-y-4 items-start">
+          {/* Left column: filter rows */}
+          <div className="space-y-4 min-w-0">
+            <FilterRow label="Status" current={filters.status} onChange={v => applyFilter('status', v)}
               options={[
                 { value: undefined, label: 'Todos' },
-                ...categories.map(c => ({ value: c, label: c })),
+                { value: 'ideia', label: STATUS_LABELS.ideia },
+                { value: 'em_desenvolvimento', label: 'Em Produção' },
+                { value: 'publicado', label: STATUS_LABELS.publicado },
               ]}
             />
-          )}
-          <FilterRow label="Rede Social" current={filters.platform} onChange={v => applyFilter('platform', v)}
-            options={[
-              { value: undefined, label: 'Todas' },
-              ...PLATFORMS.map(p => ({ value: p, label: PLATFORM_LABELS[p] || p })),
-            ]}
-          />
-          <FilterRow label="Formato" current={filters.format} onChange={v => applyFilter('format', v)}
-            options={[
-              { value: undefined, label: 'Todos' },
-              ...FORMATS.map(f => ({ value: f, label: FORMAT_LABELS[f] || f })),
-            ]}
-          />
-
-          {/* Search inline */}
-          <form onSubmit={handleSearch} className="flex gap-2 pt-2">
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-              <input
-                type="text"
-                placeholder="Buscar pelo título..."
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 bg-card border border-border rounded-lg text-sm focus:outline-none focus:border-gold/40 transition-colors"
+            {categories.length > 0 && (
+              <FilterRow label="Pilar" current={filters.category} onChange={v => applyFilter('category', v)}
+                options={[
+                  { value: undefined, label: 'Todos' },
+                  ...categories.map(c => ({ value: c, label: c })),
+                ]}
               />
-            </div>
-            {hasFilters && (
-              <button
-                type="button"
-                onClick={clearFilters}
-                className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors px-2"
-              >
-                <X className="h-3 w-3" /> Limpar filtros
-              </button>
             )}
-          </form>
+            <FilterRow label="Rede Social" current={filters.platform} onChange={v => applyFilter('platform', v)}
+              options={[
+                { value: undefined, label: 'Todas' },
+                ...PLATFORMS.map(p => ({ value: p, label: PLATFORM_LABELS[p] || p })),
+              ]}
+            />
+            <FilterRow label="Formato" current={filters.format} onChange={v => applyFilter('format', v)}
+              options={[
+                { value: undefined, label: 'Todos' },
+                ...FORMATS.map(f => ({ value: f, label: FORMAT_LABELS[f] || f })),
+              ]}
+            />
+          </div>
+
+          {/* Right column: search + active filter summary */}
+          <div className="space-y-3">
+            <form onSubmit={handleSearch}>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+                <input
+                  type="text"
+                  placeholder="Buscar pelo título..."
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  className="w-full pl-9 pr-3 py-2.5 bg-card border border-border text-sm focus:outline-none focus:border-gold/40 transition-colors"
+                />
+              </div>
+            </form>
+
+            {/* Active filters summary */}
+            <div className="flex items-center justify-between text-[10px] tracking-luxe uppercase text-muted-foreground">
+              <span>
+                {pautas.length} {pautas.length === 1 ? 'pauta' : 'pautas'} {hasFilters && 'encontradas'}
+              </span>
+              {hasFilters && (
+                <button
+                  type="button"
+                  onClick={clearFilters}
+                  className="flex items-center gap-1 hover:text-gold transition-colors"
+                >
+                  <X className="h-3 w-3" /> Limpar
+                </button>
+              )}
+            </div>
+          </div>
         </section>
 
         {/* ── Cards grid ───────────────────────────────────────────────── */}
