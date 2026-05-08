@@ -65,7 +65,8 @@ export const TYPOGRAPHY_PRESETS: Record<string, TypographyPreset> = {
   },
 }
 
-const DEFAULT_TYPOGRAPHY: TypographyPreset = TYPOGRAPHY_PRESETS['classico-elegante']
+// Default agora é editorial-moderno (Bricolage Grotesque) — sans-serif premium
+const DEFAULT_TYPOGRAPHY: TypographyPreset = TYPOGRAPHY_PRESETS['editorial-moderno']
 
 export function getBrandTypography(style: string | null | undefined): TypographyPreset {
   if (style && TYPOGRAPHY_PRESETS[style]) return TYPOGRAPHY_PRESETS[style]
