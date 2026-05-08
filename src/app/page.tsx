@@ -19,8 +19,8 @@ export default function LandingPage() {
       <nav className="sticky top-0 z-40 bg-[#faf8f3]/85 backdrop-blur-md border-b border-zinc-200">
         <div className="max-w-7xl mx-auto px-6 lg:px-10 h-16 flex items-center justify-between">
           <div className="flex items-baseline gap-1">
-            <span className="font-serif text-2xl tracking-tight text-zinc-950">pauta</span>
-            <span className="font-serif text-2xl text-[#c9a86a] italic">flow</span>
+            <span className="font-grotesque text-2xl tracking-tight text-zinc-950">pauta</span>
+            <span className="font-grotesque text-2xl text-[#c9a86a] italic">flow</span>
           </div>
           <div className="flex items-center gap-1">
             <Link href="/login" className="text-xs tracking-[0.18em] uppercase text-zinc-700 hover:text-zinc-950 transition-colors px-4 py-2">
@@ -46,7 +46,7 @@ export default function LandingPage() {
           </span>
         </div>
 
-        <h1 className="font-serif text-5xl md:text-7xl lg:text-[88px] leading-[0.95] tracking-tight text-zinc-950 max-w-5xl">
+        <h1 className="font-grotesque text-5xl md:text-7xl lg:text-[88px] leading-[0.95] tracking-tight text-zinc-950 max-w-5xl">
           Da ideia à publicação,
           <br />
           com <span className="italic text-[#c9a86a]">inteligência</span> de marca.
@@ -78,7 +78,7 @@ export default function LandingPage() {
         </p>
 
         {/* Decorative big serif watermark */}
-        <div className="absolute -right-10 top-32 font-serif text-[280px] text-[#c9a86a] opacity-[0.06] leading-none italic pointer-events-none select-none hidden lg:block">
+        <div className="absolute -right-10 top-32 font-grotesque text-[280px] text-[#c9a86a] opacity-[0.06] leading-none italic pointer-events-none select-none hidden lg:block">
           P
         </div>
       </section>
@@ -103,7 +103,7 @@ export default function LandingPage() {
                   O que está dentro
                 </span>
               </div>
-              <h2 className="font-serif text-4xl md:text-5xl leading-[1.05] tracking-tight max-w-2xl">
+              <h2 className="font-grotesque text-4xl md:text-5xl leading-[1.05] tracking-tight max-w-2xl">
                 Tudo que sua equipe precisa para criar conteúdo de marca, <span className="italic text-[#c9a86a]">com método</span>.
               </h2>
             </div>
@@ -125,9 +125,9 @@ export default function LandingPage() {
               <div key={i} className="bg-[#0a0a0a] p-10 hover:bg-[#0e0e0e] transition-colors group">
                 <div className="flex items-start justify-between mb-8">
                   <f.icon className="h-6 w-6 text-[#c9a86a]" />
-                  <span className="font-serif text-2xl text-[#c9a86a]/40 italic">{f.n}</span>
+                  <span className="font-grotesque text-2xl text-[#c9a86a]/40 italic">{f.n}</span>
                 </div>
-                <h3 className="font-serif text-2xl mb-3 leading-tight">{f.title}</h3>
+                <h3 className="font-grotesque text-2xl mb-3 leading-tight">{f.title}</h3>
                 <p className="text-sm text-zinc-400 leading-relaxed">{f.description}</p>
               </div>
             ))}
@@ -144,7 +144,7 @@ export default function LandingPage() {
               Como funciona
             </span>
           </div>
-          <h2 className="font-serif text-4xl md:text-5xl leading-[1.05] tracking-tight max-w-3xl mb-20">
+          <h2 className="font-grotesque text-4xl md:text-5xl leading-[1.05] tracking-tight max-w-3xl mb-20">
             Três passos para sua marca falar <span className="italic text-[#c9a86a]">sozinha</span>.
           </h2>
 
@@ -167,8 +167,8 @@ export default function LandingPage() {
               },
             ].map((step, i) => (
               <div key={i} className="relative">
-                <div className="font-serif text-7xl text-[#c9a86a] italic leading-none mb-6">{step.n}</div>
-                <h3 className="font-serif text-2xl mb-3">{step.title}</h3>
+                <div className="font-grotesque text-7xl text-[#c9a86a] italic leading-none mb-6">{step.n}</div>
+                <h3 className="font-grotesque text-2xl mb-3">{step.title}</h3>
                 <p className="text-zinc-700 leading-relaxed">{step.description}</p>
                 {i < 2 && (
                   <ChevronRight className="hidden lg:block absolute -right-4 top-8 h-6 w-6 text-[#c9a86a]/40" />
@@ -183,7 +183,7 @@ export default function LandingPage() {
       <section className="bg-zinc-100 py-24 border-y border-zinc-200">
         <div className="max-w-4xl mx-auto px-6 lg:px-10 text-center">
           <Quote className="h-10 w-10 text-[#c9a86a] mx-auto mb-8" />
-          <blockquote className="font-serif text-3xl md:text-4xl leading-[1.2] tracking-tight text-zinc-950">
+          <blockquote className="font-grotesque text-3xl md:text-4xl leading-[1.2] tracking-tight text-zinc-950">
             "Conteúdo bem feito não nasce de fórmula.
             Nasce de <span className="italic text-[#c9a86a]">marca clara</span> + estratégia + execução."
           </blockquote>
@@ -206,7 +206,7 @@ export default function LandingPage() {
               </span>
               <div className="h-px w-12 bg-[#c9a86a]" />
             </div>
-            <h2 className="font-serif text-4xl md:text-5xl tracking-tight">
+            <h2 className="font-grotesque text-4xl md:text-5xl tracking-tight">
               Simples e <span className="italic text-[#c9a86a]">transparente</span>.
             </h2>
             <p className="text-zinc-700 mt-4">14 dias grátis. Cancele quando quiser.</p>
@@ -230,13 +230,13 @@ export default function LandingPage() {
                       ★ Recomendado
                     </div>
                   )}
-                  <h3 className="font-serif text-2xl mb-2">{details.name}</h3>
+                  <h3 className="font-grotesque text-2xl mb-2">{details.name}</h3>
                   <p className={`text-xs ${isPopular ? 'text-zinc-400' : 'text-zinc-600'} mb-8`}>
                     {details.description}
                   </p>
                   <div className="flex items-baseline gap-1 mb-8">
                     <span className={`text-xs ${isPopular ? 'text-[#c9a86a]' : 'text-zinc-500'}`}>R$</span>
-                    <span className="font-serif text-6xl tracking-tight">{details.price}</span>
+                    <span className="font-grotesque text-6xl tracking-tight">{details.price}</span>
                     <span className={`text-xs ml-1 ${isPopular ? 'text-zinc-400' : 'text-zinc-500'}`}>/mês</span>
                   </div>
                   <ul className="space-y-3 mb-10 flex-1">
@@ -276,7 +276,7 @@ export default function LandingPage() {
               É hora
             </span>
           </div>
-          <h2 className="font-serif text-5xl md:text-7xl leading-[1.0] tracking-tight mb-8">
+          <h2 className="font-grotesque text-5xl md:text-7xl leading-[1.0] tracking-tight mb-8">
             Sua marca, <span className="italic text-[#c9a86a]">no comando</span>.
             <br />
             A IA, na execução.
@@ -298,8 +298,8 @@ export default function LandingPage() {
       <footer className="bg-[#0a0a0a] text-zinc-500 border-t border-zinc-900 py-10">
         <div className="max-w-7xl mx-auto px-6 lg:px-10 flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-baseline gap-1">
-            <span className="font-serif text-xl tracking-tight text-zinc-300">pauta</span>
-            <span className="font-serif text-xl text-[#c9a86a] italic">flow</span>
+            <span className="font-grotesque text-xl tracking-tight text-zinc-300">pauta</span>
+            <span className="font-grotesque text-xl text-[#c9a86a] italic">flow</span>
           </div>
           <p className="text-[10px] tracking-[0.2em] uppercase">
             © {new Date().getFullYear()} · Todos os direitos reservados
