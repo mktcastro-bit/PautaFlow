@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { Inter, Playfair_Display, Bebas_Neue, Caveat, IBM_Plex_Sans } from 'next/font/google'
+import { Inter, Playfair_Display, Bebas_Neue, Caveat, IBM_Plex_Sans, Bricolage_Grotesque } from 'next/font/google'
 import './globals.css'
 
 // ─── 5 famílias tipográficas suportadas ────────────────────────────────────
@@ -39,12 +39,20 @@ const ibmPlex = IBM_Plex_Sans({
   weight: ['400', '500', '600', '700'],
 })
 
+const bricolage = Bricolage_Grotesque({
+  subsets: ['latin'],
+  variable: '--font-grotesque',
+  display: 'swap',
+  weight: ['400', '500', '600', '700', '800'],
+})
+
 const fontVariables = [
   inter.variable,
   playfair.variable,
   bebas.variable,
   caveat.variable,
   ibmPlex.variable,
+  bricolage.variable,
 ].join(' ')
 
 export const metadata: Metadata = {

@@ -635,8 +635,9 @@ function Step4({ data, setData }: any) {
           value={data.step4_typography_style}
           onChange={set('step4_typography_style')}
           options={[
+            { value: 'editorial-moderno', label: 'Editorial moderno (sem serifa) ★' },
+            { value: 'classico-elegante', label: 'Clássico e elegante (serif)' },
             { value: 'moderno-minimalista', label: 'Moderno e minimalista' },
-            { value: 'classico-elegante', label: 'Clássico e elegante' },
             { value: 'bold-impactante', label: 'Bold e impactante' },
             { value: 'playful-descontraido', label: 'Playful e descontraído' },
             { value: 'tecnico-corporativo', label: 'Técnico e corporativo' },

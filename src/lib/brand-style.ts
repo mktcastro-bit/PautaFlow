@@ -56,6 +56,13 @@ export const TYPOGRAPHY_PRESETS: Record<string, TypographyPreset> = {
     titleTracking: '-0.01em',
     titleStyle: 'normal',
   },
+  'editorial-moderno': {
+    title: 'var(--font-grotesque), "Bricolage Grotesque", system-ui, sans-serif',
+    body: 'var(--font-grotesque), "Bricolage Grotesque", system-ui, sans-serif',
+    titleWeight: 700,
+    titleTracking: '-0.025em',
+    titleStyle: 'normal',
+  },
 }
 
 const DEFAULT_TYPOGRAPHY: TypographyPreset = TYPOGRAPHY_PRESETS['classico-elegante']

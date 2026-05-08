@@ -38,11 +38,11 @@ export default function LandingPage() {
 
       {/* ── HERO (light) ────────────────────────────────────────────── */}
       <section className="relative max-w-7xl mx-auto px-6 lg:px-10 pt-24 pb-32">
-        {/* Decorative gold rule + tag */}
+        {/* Decorative gold rule */}
         <div className="flex items-center gap-3 mb-10">
           <div className="h-px w-12 bg-[#c9a86a]" />
           <span className="text-[10px] tracking-[0.3em] uppercase text-[#9a7d4a] font-semibold">
-            Powered by Anthropic Claude
+            Estratégia · Marca · Inteligência
           </span>
         </div>
 
