@@ -43,14 +43,21 @@ function buildSlidesPrompt(
 ): string {
   const tone = dna.step3_tone?.join(', ') || 'direto'
   const brand = dna.step1_brand_name || 'a marca'
-  const audience = dna.step2_target_audience || 'empreendedores'
+  const audience = dna.step2_target_audience || dna.step2_roles?.join(', ') || 'empreendedores'
   const preferred = dna.step3_preferred_words?.join(', ') || ''
 
-  const slideCount = format === 'carrossel' ? 8 : format === 'thread' ? 10 : 1
+  const fmt = format.toLowerCase()
+  const plat = platform.toLowerCase()
 
-  const platformGuide = platform === 'linkedin'
+  const slideCount =
+    fmt === 'carrossel' ? 8 :
+    fmt === 'thread'    ? 10 :
+    fmt === 'artigo'    ? 6 :
+    1
+
+  const platformGuide = plat === 'linkedin'
     ? 'LinkedIn — mais texto, mais profundidade, storytelling corporativo'
-    : platform === 'instagram'
+    : plat === 'instagram'
     ? 'Instagram — direto, visual, impacto em poucos segundos'
     : 'Instagram e LinkedIn — equilibre profundidade e impacto visual'
 
@@ -70,7 +77,7 @@ function buildSlidesPrompt(
 ${preferred ? `- Vocabulário: ${preferred}` : ''}
 
 ## Tarefa
-Gere os textos de ${slideCount} slides para este ${format}.
+Gere os textos de EXATAMENTE ${slideCount} slides para este ${format}. Não gere menos que ${slideCount} slides.
 
 ### Regras para os slides:
 1. Use _underscores_ em volta de palavras-chave para dar ênfase visual
@@ -80,7 +87,7 @@ Gere os textos de ${slideCount} slides para este ${format}.
 5. Cada slide deve ser curto — máx 15 palavras
 6. Pense nos slides como cartões visuais independentes
 
-### Legenda para ${platform === 'linkedin' ? 'LinkedIn' : platform === 'instagram' ? 'Instagram' : 'as plataformas'}:
+### Legenda para ${plat === 'linkedin' ? 'LinkedIn' : plat === 'instagram' ? 'Instagram' : 'as plataformas'}:
 - Abertura que prende (1-2 linhas)
 - Desenvolvimento em blocos curtos
 - Pergunta ou CTA no final
