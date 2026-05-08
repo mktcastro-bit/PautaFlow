@@ -52,10 +52,11 @@ export const DEFAULT_EDITOR: EditorState = {
   logoPosition: 'bottom-right',
 }
 
+// Valores em resolução real (1080px) — multiplicados por scale em ArtCard
 export const FONT_SIZES = {
-  sm: { title: 15, body: 13 },
-  md: { title: 19, body: 15 },
-  lg: { title: 24, body: 18 },
+  sm: { title: 52, body: 36 },
+  md: { title: 72, body: 48 },
+  lg: { title: 96, body: 64 },
 }
 
 export const GRADIENT_DIRECTIONS = [

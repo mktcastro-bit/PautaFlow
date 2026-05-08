@@ -71,11 +71,17 @@ export const ArtCard = React.forwardRef<HTMLDivElement, Props>(
     const W = BASE_W * scale
     const H = BASE_H * scale
 
+    // Todos os valores em resolução real (1080px) × scale
     const sizes = FONT_SIZES[editor.fontSize]
-    const titleSize = sizes.title * (scale < 1 ? 1 : scale)
-    const bodySize = sizes.body * (scale < 1 ? 1 : scale)
+    const titleSize = sizes.title * scale
+    const bodySize = sizes.body * scale
 
-    const pad = 28 * scale
+    const pad = 80 * scale          // margem interna
+    const accentW = 14 * scale      // largura da barra de acento
+    const logoH = 100 * scale       // altura do logo
+    const metaFont = 28 * scale     // handle / slide number
+    const lineW = 56 * scale        // linha decorativa
+
     const handle = brandDna?.step1_brand_name
       ? '@' + brandDna.step1_brand_name.toLowerCase().replace(/\s+/g, '')
       : '@marca'
@@ -109,7 +115,7 @@ export const ArtCard = React.forwardRef<HTMLDivElement, Props>(
         {editor.showAccentBar && (
           <div style={{
             position: 'absolute', top: 0, left: 0, zIndex: 2,
-            width: Math.max(3, 4 * scale),
+            width: accentW,
             height: '100%',
             backgroundColor: editor.accentBarColor,
           }} />
@@ -119,14 +125,14 @@ export const ArtCard = React.forwardRef<HTMLDivElement, Props>(
         <div style={{
           position: 'absolute', inset: 0, zIndex: 2, pointerEvents: 'none',
           backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.012) 1px, transparent 1px)',
-          backgroundSize: `${16 * scale}px ${16 * scale}px`,
+          backgroundSize: `${60 * scale}px ${60 * scale}px`,
         }} />
 
         {/* Slide number */}
         {editor.showSlideNumber && (
           <div style={{
             position: 'absolute', top: pad, right: pad, zIndex: 3,
-            fontSize: Math.max(8, 9 * scale),
+            fontSize: metaFont,
             color: editor.accentBarColor,
             fontWeight: 700,
             letterSpacing: '0.1em',
@@ -143,12 +149,12 @@ export const ArtCard = React.forwardRef<HTMLDivElement, Props>(
             style={{
               position: 'absolute',
               zIndex: 4,
-              height: Math.max(20, 28 * scale),
+              height: logoH,
               objectFit: 'contain',
-              ...(editor.logoPosition === 'top-left' && { top: pad, left: pad + 8 * scale }),
+              ...(editor.logoPosition === 'top-left' && { top: pad, left: pad }),
               ...(editor.logoPosition === 'top-right' && { top: pad, right: pad }),
-              ...(editor.logoPosition === 'bottom-left' && { bottom: pad + 20 * scale, left: pad + 8 * scale }),
-              ...(editor.logoPosition === 'bottom-right' && { bottom: pad + 20 * scale, right: pad }),
+              ...(editor.logoPosition === 'bottom-left' && { bottom: pad * 1.5, left: pad }),
+              ...(editor.logoPosition === 'bottom-right' && { bottom: pad * 1.5, right: pad }),
             }}
           />
         )}
@@ -156,29 +162,16 @@ export const ArtCard = React.forwardRef<HTMLDivElement, Props>(
         {/* Main text */}
         <div style={{
           position: 'absolute',
-          top: editor.showAccentBar ? 4 * scale : 0,
+          top: editor.showAccentBar ? accentW : 0,
           bottom: 0,
-          left: editor.showAccentBar ? 4 * scale : 0,
+          left: editor.showAccentBar ? accentW : 0,
           right: 0,
           zIndex: 3,
           display: 'flex',
           flexDirection: 'column',
           justifyContent: JUSTIFY[editor.textPosition],
-          padding: `${pad * 0.8}px ${pad}px ${pad + (editor.showHandle ? 22 * scale : 0)}px ${pad}px`,
+          padding: `${pad}px ${pad}px ${pad + (editor.showHandle ? metaFont * 2 : 0)}px ${pad}px`,
         }}>
-          {isFirst && (
-            <div style={{
-              fontSize: Math.max(7, 8 * scale),
-              color: editor.accentBarColor,
-              fontWeight: 800,
-              letterSpacing: '0.18em',
-              textTransform: 'uppercase',
-              marginBottom: 8 * scale,
-            }}>
-              {/* pilar tag opcional */}
-            </div>
-          )}
-
           <div style={{
             fontSize: titleSize,
             fontWeight: isFirst ? 800 : 700,
@@ -200,17 +193,17 @@ export const ArtCard = React.forwardRef<HTMLDivElement, Props>(
           <div style={{
             position: 'absolute',
             bottom: 0,
-            left: editor.showAccentBar ? 4 * scale : 0,
+            left: editor.showAccentBar ? accentW : 0,
             right: 0,
             zIndex: 3,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            padding: `${8 * scale}px ${pad}px`,
-            borderTop: `1px solid rgba(255,255,255,0.07)`,
+            padding: `${pad * 0.4}px ${pad}px`,
+            borderTop: `${Math.max(1, scale)}px solid rgba(255,255,255,0.07)`,
           }}>
             <span style={{
-              fontSize: Math.max(7, 8 * scale),
+              fontSize: metaFont,
               color: editor.accentBarColor,
               fontWeight: 800,
               letterSpacing: '0.15em',
@@ -219,8 +212,8 @@ export const ArtCard = React.forwardRef<HTMLDivElement, Props>(
               {handle}
             </span>
             <div style={{
-              width: 14 * scale,
-              height: 2,
+              width: lineW,
+              height: Math.max(1, 3 * scale),
               backgroundColor: editor.accentBarColor,
               borderRadius: 999,
             }} />
