@@ -59,10 +59,19 @@ export function ArtCanvas({ slides, caption, idea, config, brandDna }: Props) {
   const isStory = config.publicationFormat === 'story' || config.publicationFormat === 'reels'
 
   // Feed/padrão: 1080×1350 (4:5) | Story/Reels: 1080×1920 (9:16)
+  const CARD_W = 1080
   const CARD_H = isStory ? 1920 : 1350
-  const PREVIEW_W = isStory ? 200 : 280
-  const PREVIEW_H = Math.round(PREVIEW_W * (CARD_H / 1080))
-  const PREVIEW_SCALE = PREVIEW_W / 1080
+  const ASPECT = CARD_H / CARD_W   // 1.25 para feed, 1.778 para story
+
+  // Preview responsivo: ocupa até 68vh de altura, limitado por largura disponível
+  const MAX_PREVIEW_H = typeof window !== 'undefined'
+    ? Math.round(window.innerHeight * 0.68)
+    : isStory ? 560 : 500
+  const BY_HEIGHT_W = Math.round(MAX_PREVIEW_H / ASPECT)
+  const MAX_PREVIEW_W = isStory ? 340 : 480
+  const PREVIEW_W = Math.min(BY_HEIGHT_W, MAX_PREVIEW_W)
+  const PREVIEW_H = Math.round(PREVIEW_W * ASPECT)
+  const PREVIEW_SCALE = PREVIEW_W / CARD_W
 
   async function handleExportCurrent() {
     if (!exportRef.current) return
@@ -112,10 +121,10 @@ export function ArtCanvas({ slides, caption, idea, config, brandDna }: Props) {
       <ArtEditor editor={editor} onChange={setEditor} />
 
       {/* ── Center: card preview ──────────────────────────────────────── */}
-      <div className="flex-1 flex flex-col items-center justify-center bg-zinc-900/40 p-6 gap-4 overflow-hidden">
+      <div className="flex-1 flex flex-col items-center justify-between bg-zinc-900/40 py-4 px-6 overflow-hidden">
 
         {/* Navigation */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-shrink-0">
           <button
             onClick={() => setCurrent(c => Math.max(0, c - 1))}
             disabled={current === 0}
@@ -135,19 +144,37 @@ export function ArtCanvas({ slides, caption, idea, config, brandDna }: Props) {
           </button>
         </div>
 
-        {/* Visible preview card */}
-        <div
-          className="rounded-xl overflow-hidden shadow-2xl ring-1 ring-white/5"
-          style={{ width: PREVIEW_W, height: PREVIEW_H, flexShrink: 0 }}
-        >
-          <ArtCard
-            slide={slide}
-            total={total}
-            editor={editor}
-            brandDna={brandDna}
-            scale={PREVIEW_SCALE}
-            publicationFormat={config.publicationFormat}
-          />
+        {/* Visible preview card — ocupa o espaço central */}
+        <div className="flex flex-col items-center gap-3 flex-1 justify-center">
+          <div
+            className="rounded-xl overflow-hidden shadow-2xl ring-1 ring-white/10"
+            style={{ width: PREVIEW_W, height: PREVIEW_H, flexShrink: 0 }}
+          >
+            <ArtCard
+              slide={slide}
+              total={total}
+              editor={editor}
+              brandDna={brandDna}
+              scale={PREVIEW_SCALE}
+              publicationFormat={config.publicationFormat}
+            />
+          </div>
+
+          {/* Slide dots */}
+          <div className="flex items-center gap-1.5">
+            {slides.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setCurrent(i)}
+                className={cn(
+                  'rounded-full transition-all',
+                  i === current
+                    ? 'w-4 h-1.5 bg-indigo-500'
+                    : 'w-1.5 h-1.5 bg-zinc-700 hover:bg-zinc-500'
+                )}
+              />
+            ))}
+          </div>
         </div>
 
         {/* Hidden full-res card for export */}
@@ -163,33 +190,14 @@ export function ArtCanvas({ slides, caption, idea, config, brandDna }: Props) {
           />
         </div>
 
-        {/* Slide dots */}
-        <div className="flex items-center gap-1.5">
-          {slides.map((_, i) => (
-            <button
-              key={i}
-              onClick={() => setCurrent(i)}
-              className={cn(
-                'rounded-full transition-all',
-                i === current
-                  ? 'w-4 h-1.5 bg-indigo-500'
-                  : 'w-1.5 h-1.5 bg-zinc-700 hover:bg-zinc-500'
-              )}
-            />
-          ))}
-        </div>
-
         {/* Export buttons */}
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-shrink-0">
           <button
             onClick={handleExportCurrent}
             disabled={exporting}
             className="flex items-center gap-1.5 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-white py-2 px-3 rounded-xl text-xs font-medium transition-colors disabled:opacity-50"
           >
-            {exporting
-              ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              : <Download className="h-3.5 w-3.5" />
-            }
+            {exporting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
             Exportar slide
           </button>
           <button
@@ -197,10 +205,7 @@ export function ArtCanvas({ slides, caption, idea, config, brandDna }: Props) {
             disabled={exporting}
             className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-500 text-white py-2 px-3 rounded-xl text-xs font-bold transition-colors disabled:opacity-50"
           >
-            {exporting
-              ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              : <Download className="h-3.5 w-3.5" />
-            }
+            {exporting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
             Exportar todos
           </button>
         </div>
