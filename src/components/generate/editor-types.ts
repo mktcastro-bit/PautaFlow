@@ -29,9 +29,9 @@ export interface EditorState {
 
 export const DEFAULT_EDITOR: EditorState = {
   bgType: 'color',
-  bgColor: '#0a0a0f',
-  gradientFrom: '#0a0a0f',
-  gradientTo: '#1a1040',
+  bgColor: '#0a0a0a',
+  gradientFrom: '#0a0a0a',
+  gradientTo: '#1a1208',
   gradientDirection: 'to bottom right',
   bgImageUrl: null,
 
@@ -41,11 +41,11 @@ export const DEFAULT_EDITOR: EditorState = {
 
   textPosition: 'center',
   fontSize: 'md',
-  textColor: '#ffffff',
-  emphasisColor: '#6366f1',
+  textColor: '#f0ece4',
+  emphasisColor: '#c9a86a',
 
   showAccentBar: true,
-  accentBarColor: '#6366f1',
+  accentBarColor: '#c9a86a',
   showHandle: true,
   showSlideNumber: true,
   logoUrl: null,
@@ -53,10 +53,11 @@ export const DEFAULT_EDITOR: EditorState = {
 }
 
 // Valores em resolução real (1080px) — multiplicados por scale em ArtCard
+// Tamanhos serif editoriais — base para os layouts que multiplicam por fatores
 export const FONT_SIZES = {
-  sm: { title: 52, body: 36 },
-  md: { title: 72, body: 48 },
-  lg: { title: 96, body: 64 },
+  sm: { title: 64, body: 36 },
+  md: { title: 84, body: 48 },
+  lg: { title: 108, body: 64 },
 }
 
 export const GRADIENT_DIRECTIONS = [

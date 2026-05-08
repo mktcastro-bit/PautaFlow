@@ -17,8 +17,20 @@ interface Props {
   publicationFormat: 'feed' | 'story' | 'reels'
 }
 
-// ─── Parse _emphasis_ ────────────────────────────────────────────────────────
+// ─── Tipos de layout editoriais ──────────────────────────────────────────────
+type Layout = 'hero' | 'rule' | 'numbered' | 'quote' | 'statement' | 'cta'
 
+/** Distribui layouts pelos slides para criar variação editorial */
+function pickLayout(num: number, total: number): Layout {
+  if (num === 1) return 'hero'
+  if (num === total) return 'cta'
+  // Rotaciona entre 4 estilos no meio
+  const middle = num - 2
+  const styles: Layout[] = ['rule', 'numbered', 'quote', 'statement']
+  return styles[middle % styles.length]
+}
+
+// ─── Parse _emphasis_ ────────────────────────────────────────────────────────
 function parseParts(text: string) {
   const parts: Array<{ text: string; emphasis: boolean }> = []
   const regex = /_([^_]+)_/g
@@ -34,7 +46,6 @@ function parseParts(text: string) {
 }
 
 // ─── Background style ────────────────────────────────────────────────────────
-
 function buildBackground(editor: EditorState): React.CSSProperties {
   if (editor.bgType === 'gradient') {
     return { background: `linear-gradient(${editor.gradientDirection}, ${editor.gradientFrom}, ${editor.gradientTo})` }
@@ -49,45 +60,394 @@ function buildBackground(editor: EditorState): React.CSSProperties {
   return { backgroundColor: editor.bgColor }
 }
 
-// ─── Text position ────────────────────────────────────────────────────────────
-
-const JUSTIFY: Record<string, string> = {
-  top: 'flex-start',
-  center: 'center',
-  bottom: 'flex-end',
-}
-
 // ─── ArtCard ─────────────────────────────────────────────────────────────────
-
 export const ArtCard = React.forwardRef<HTMLDivElement, Props>(
   ({ slide, total, editor, brandDna, scale = 1, publicationFormat }, ref) => {
     const isStory = publicationFormat === 'story' || publicationFormat === 'reels'
 
-    // Dimensões base — feed/padrão: 1080×1350 | story/reels: 1080×1920
+    // Dimensões base
     const BASE_W = 1080
     const BASE_H = isStory ? 1920 : 1350
-
-    // Dimensões de display
     const W = BASE_W * scale
     const H = BASE_H * scale
 
-    // Todos os valores em resolução real (1080px) × scale
+    // Tamanhos em resolução real × scale
     const sizes = FONT_SIZES[editor.fontSize]
     const titleSize = sizes.title * scale
     const bodySize = sizes.body * scale
 
-    const pad = 80 * scale          // margem interna
-    const accentW = 14 * scale      // largura da barra de acento
-    const logoH = 100 * scale       // altura do logo
-    const metaFont = 28 * scale     // handle / slide number
-    const lineW = 56 * scale        // linha decorativa
+    const pad = 70 * scale
+    const accentW = 6 * scale
+    const logoH = 60 * scale
+    const metaFont = 22 * scale
+    const dashW = 32 * scale
 
-    const handle = brandDna?.step1_brand_name
-      ? '@' + brandDna.step1_brand_name.toLowerCase().replace(/\s+/g, '')
-      : '@marca'
+    // Brand info
+    const brandName = brandDna?.step1_brand_name || 'marca'
+    const brandHandle = '@' + brandName.toLowerCase().replace(/\s+/g, '')
+    const brandUrl = (brandName.toLowerCase().replace(/\s+/g, '') + '.com.br')
 
+    // Categoria/tag — derivada da primeira linha em uppercase
+    const categoryTag = (brandDna?.step5_content_pillars?.[0] || 'estratégia').toUpperCase()
+
+    const layout = pickLayout(slide.number, total)
     const parts = parseParts(slide.text)
-    const isFirst = slide.number === 1
+
+    // ─── Estilos compartilhados ──────────────────────────────────────────
+    const goldColor = editor.accentBarColor
+    const emphasisColor = editor.emphasisColor
+    const textColor = editor.textColor
+
+    // ── Pieces shared by all layouts ─────────────────────────────────────
+    const HeaderBar = (
+      <div style={{
+        position: 'absolute', top: pad, left: pad, right: pad, zIndex: 5,
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      }}>
+        {editor.logoUrl ? (
+          <img src={editor.logoUrl} alt="logo" style={{ height: logoH, objectFit: 'contain' }} />
+        ) : (
+          <span style={{
+            fontFamily: 'var(--font-serif), Georgia, serif',
+            fontSize: 32 * scale,
+            color: textColor,
+            letterSpacing: '-0.02em',
+            fontStyle: 'italic',
+          }}>
+            <span>{brandName.replace(/360$/, '')}</span>
+            <span style={{ color: goldColor, fontStyle: 'normal', fontSize: 22 * scale, marginLeft: 2 * scale, verticalAlign: 'super' }}>
+              {brandName.match(/360$/) ? '360' : ''}
+            </span>
+          </span>
+        )}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 * scale }}>
+          <div style={{ width: dashW, height: 1, backgroundColor: textColor, opacity: 0.6 }} />
+          <span style={{
+            fontSize: metaFont * 0.85,
+            color: textColor,
+            opacity: 0.85,
+            letterSpacing: '0.22em',
+            fontWeight: 600,
+            textTransform: 'uppercase',
+          }}>
+            {categoryTag}
+          </span>
+        </div>
+      </div>
+    )
+
+    const FooterBar = editor.showHandle && (
+      <div style={{
+        position: 'absolute', bottom: pad, left: pad, right: pad, zIndex: 5,
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      }}>
+        {editor.showSlideNumber && (
+          <span style={{
+            fontSize: metaFont,
+            color: textColor,
+            opacity: 0.7,
+            letterSpacing: '0.22em',
+            fontWeight: 500,
+          }}>
+            {String(slide.number).padStart(2, '0')} / {String(total).padStart(2, '0')}
+          </span>
+        )}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 * scale }}>
+          <div style={{ width: dashW, height: 1, backgroundColor: textColor, opacity: 0.4 }} />
+          <span style={{
+            fontSize: metaFont * 0.85,
+            color: textColor,
+            opacity: 0.7,
+            letterSpacing: '0.18em',
+            fontWeight: 500,
+          }}>
+            {brandUrl}
+          </span>
+        </div>
+      </div>
+    )
+
+    // Decorative top-rule
+    const TopRule = (
+      <div style={{
+        width: 80 * scale, height: 2,
+        backgroundColor: goldColor,
+        marginBottom: 32 * scale,
+      }} />
+    )
+
+    // ─── Layout renderers ────────────────────────────────────────────────
+
+    function renderHero() {
+      return (
+        <div style={{
+          position: 'absolute',
+          left: pad, right: pad,
+          top: '32%',
+          zIndex: 4,
+        }}>
+          {TopRule}
+          <h2 style={{
+            fontFamily: 'var(--font-serif), Georgia, serif',
+            fontSize: titleSize * 1.25,
+            color: textColor,
+            lineHeight: 1.05,
+            letterSpacing: '-0.02em',
+            fontWeight: 700,
+            margin: 0,
+          }}>
+            {parts.map((p, i) =>
+              p.emphasis
+                ? <span key={i} style={{ color: emphasisColor, fontStyle: 'italic', fontWeight: 600 }}>{p.text}</span>
+                : <span key={i}>{p.text}</span>
+            )}
+          </h2>
+        </div>
+      )
+    }
+
+    function renderRule() {
+      return (
+        <div style={{
+          position: 'absolute',
+          left: pad, right: pad,
+          top: '38%',
+          zIndex: 4,
+        }}>
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 24 * scale,
+            marginBottom: 28 * scale,
+          }}>
+            <div style={{ width: 120 * scale, height: 1, backgroundColor: goldColor }} />
+            <span style={{
+              fontSize: metaFont,
+              color: goldColor,
+              letterSpacing: '0.25em',
+              textTransform: 'uppercase',
+              fontWeight: 600,
+            }}>
+              ↘ Capítulo {slide.number - 1}
+            </span>
+          </div>
+          <h2 style={{
+            fontFamily: 'var(--font-serif), Georgia, serif',
+            fontSize: titleSize * 1.05,
+            color: textColor,
+            lineHeight: 1.18,
+            letterSpacing: '-0.015em',
+            fontWeight: 600,
+            margin: 0,
+          }}>
+            {parts.map((p, i) =>
+              p.emphasis
+                ? <span key={i} style={{ color: emphasisColor, fontStyle: 'italic' }}>{p.text}</span>
+                : <span key={i}>{p.text}</span>
+            )}
+          </h2>
+        </div>
+      )
+    }
+
+    function renderNumbered() {
+      return (
+        <div style={{
+          position: 'absolute',
+          left: pad, right: pad,
+          top: '30%',
+          zIndex: 4,
+          display: 'flex',
+          alignItems: 'flex-start',
+          gap: 40 * scale,
+        }}>
+          <div style={{
+            fontFamily: 'var(--font-serif), Georgia, serif',
+            fontSize: titleSize * 2.4,
+            color: goldColor,
+            lineHeight: 0.85,
+            fontStyle: 'italic',
+            fontWeight: 400,
+            letterSpacing: '-0.04em',
+            flexShrink: 0,
+          }}>
+            {String(slide.number - 1).padStart(2, '0')}
+          </div>
+          <div style={{ flex: 1, paddingTop: 20 * scale }}>
+            <div style={{ width: 60 * scale, height: 1, backgroundColor: goldColor, marginBottom: 24 * scale }} />
+            <h2 style={{
+              fontFamily: 'var(--font-serif), Georgia, serif',
+              fontSize: titleSize * 0.92,
+              color: textColor,
+              lineHeight: 1.2,
+              letterSpacing: '-0.01em',
+              fontWeight: 600,
+              margin: 0,
+            }}>
+              {parts.map((p, i) =>
+                p.emphasis
+                  ? <span key={i} style={{ color: emphasisColor, fontStyle: 'italic' }}>{p.text}</span>
+                  : <span key={i}>{p.text}</span>
+              )}
+            </h2>
+          </div>
+        </div>
+      )
+    }
+
+    function renderQuote() {
+      return (
+        <div style={{
+          position: 'absolute',
+          left: pad * 1.5, right: pad * 1.5,
+          top: '32%',
+          zIndex: 4,
+        }}>
+          <div style={{
+            fontFamily: 'var(--font-serif), Georgia, serif',
+            fontSize: titleSize * 3.5,
+            color: goldColor,
+            lineHeight: 0.6,
+            opacity: 0.8,
+            marginBottom: -40 * scale,
+            fontWeight: 700,
+          }}>
+            “
+          </div>
+          <h2 style={{
+            fontFamily: 'var(--font-serif), Georgia, serif',
+            fontSize: titleSize * 1.0,
+            color: textColor,
+            lineHeight: 1.25,
+            letterSpacing: '-0.01em',
+            fontWeight: 500,
+            fontStyle: 'italic',
+            margin: 0,
+            paddingLeft: 30 * scale,
+            borderLeft: `${2 * scale}px solid ${goldColor}`,
+          }}>
+            {parts.map((p, i) =>
+              p.emphasis
+                ? <span key={i} style={{ color: emphasisColor, fontStyle: 'normal', fontWeight: 700 }}>{p.text}</span>
+                : <span key={i}>{p.text}</span>
+            )}
+          </h2>
+        </div>
+      )
+    }
+
+    function renderStatement() {
+      return (
+        <div style={{
+          position: 'absolute',
+          inset: 0,
+          padding: `${pad * 2.5}px ${pad}px`,
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 4,
+          textAlign: 'center',
+        }}>
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 16 * scale,
+            marginBottom: 36 * scale,
+          }}>
+            <div style={{ width: 50 * scale, height: 1, backgroundColor: goldColor }} />
+            <span style={{
+              fontSize: metaFont * 0.9,
+              color: goldColor,
+              letterSpacing: '0.3em',
+              textTransform: 'uppercase',
+              fontWeight: 600,
+            }}>
+              Insight
+            </span>
+            <div style={{ width: 50 * scale, height: 1, backgroundColor: goldColor }} />
+          </div>
+          <h2 style={{
+            fontFamily: 'var(--font-serif), Georgia, serif',
+            fontSize: titleSize * 1.15,
+            color: textColor,
+            lineHeight: 1.18,
+            letterSpacing: '-0.015em',
+            fontWeight: 600,
+            margin: 0,
+            maxWidth: '85%',
+          }}>
+            {parts.map((p, i) =>
+              p.emphasis
+                ? <span key={i} style={{ color: emphasisColor, fontStyle: 'italic' }}>{p.text}</span>
+                : <span key={i}>{p.text}</span>
+            )}
+          </h2>
+        </div>
+      )
+    }
+
+    function renderCta() {
+      return (
+        <div style={{
+          position: 'absolute',
+          left: pad, right: pad,
+          top: '28%',
+          zIndex: 4,
+        }}>
+          <div style={{
+            fontSize: metaFont,
+            color: goldColor,
+            letterSpacing: '0.3em',
+            textTransform: 'uppercase',
+            fontWeight: 600,
+            marginBottom: 28 * scale,
+          }}>
+            ↳ E agora?
+          </div>
+          <h2 style={{
+            fontFamily: 'var(--font-serif), Georgia, serif',
+            fontSize: titleSize * 1.2,
+            color: textColor,
+            lineHeight: 1.1,
+            letterSpacing: '-0.02em',
+            fontWeight: 700,
+            margin: 0,
+            marginBottom: 40 * scale,
+          }}>
+            {parts.map((p, i) =>
+              p.emphasis
+                ? <span key={i} style={{ color: emphasisColor, fontStyle: 'italic', fontWeight: 600 }}>{p.text}</span>
+                : <span key={i}>{p.text}</span>
+            )}
+          </h2>
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: 16 * scale,
+            padding: `${20 * scale}px ${36 * scale}px`,
+            border: `${2 * scale}px solid ${goldColor}`,
+            backgroundColor: 'transparent',
+          }}>
+            <span style={{
+              fontSize: metaFont * 0.9,
+              color: goldColor,
+              letterSpacing: '0.25em',
+              textTransform: 'uppercase',
+              fontWeight: 700,
+            }}>
+              Salve · Compartilhe · Comente
+            </span>
+          </div>
+        </div>
+      )
+    }
+
+    function renderBody() {
+      switch (layout) {
+        case 'hero':      return renderHero()
+        case 'rule':      return renderRule()
+        case 'numbered':  return renderNumbered()
+        case 'quote':     return renderQuote()
+        case 'statement': return renderStatement()
+        case 'cta':       return renderCta()
+        default:          return renderRule()
+      }
+    }
 
     return (
       <div
@@ -98,11 +458,11 @@ export const ArtCard = React.forwardRef<HTMLDivElement, Props>(
           position: 'relative',
           overflow: 'hidden',
           flexShrink: 0,
-          fontFamily: '"Inter", "Helvetica Neue", Arial, sans-serif',
+          fontFamily: 'var(--font-sans), Inter, sans-serif',
           ...buildBackground(editor),
         }}
       >
-        {/* Overlay */}
+        {/* Overlay color */}
         {editor.overlayEnabled && (
           <div style={{
             position: 'absolute', inset: 0, zIndex: 1,
@@ -111,114 +471,46 @@ export const ArtCard = React.forwardRef<HTMLDivElement, Props>(
           }} />
         )}
 
-        {/* Accent bar (left) */}
-        {editor.showAccentBar && (
-          <div style={{
-            position: 'absolute', top: 0, left: 0, zIndex: 2,
-            width: accentW,
-            height: '100%',
-            backgroundColor: editor.accentBarColor,
-          }} />
-        )}
-
-        {/* Subtle texture */}
+        {/* Subtle grain texture */}
         <div style={{
           position: 'absolute', inset: 0, zIndex: 2, pointerEvents: 'none',
           backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.012) 1px, transparent 1px)',
-          backgroundSize: `${60 * scale}px ${60 * scale}px`,
+          backgroundSize: `${50 * scale}px ${50 * scale}px`,
         }} />
 
-        {/* Slide number */}
-        {editor.showSlideNumber && (
+        {/* Vertical accent bar (left) */}
+        {editor.showAccentBar && (
           <div style={{
-            position: 'absolute', top: pad, right: pad, zIndex: 3,
-            fontSize: metaFont,
-            color: editor.accentBarColor,
-            fontWeight: 700,
-            letterSpacing: '0.1em',
-          }}>
-            {slide.number}/{total}
-          </div>
+            position: 'absolute', top: 0, left: 0, zIndex: 3,
+            width: accentW,
+            height: '100%',
+            backgroundColor: goldColor,
+            opacity: 0.95,
+          }} />
         )}
 
-        {/* Logo */}
-        {editor.logoUrl && (
-          <img
-            src={editor.logoUrl}
-            alt="logo"
-            style={{
-              position: 'absolute',
-              zIndex: 4,
-              height: logoH,
-              objectFit: 'contain',
-              ...(editor.logoPosition === 'top-left' && { top: pad, left: pad }),
-              ...(editor.logoPosition === 'top-right' && { top: pad, right: pad }),
-              ...(editor.logoPosition === 'bottom-left' && { bottom: pad * 1.5, left: pad }),
-              ...(editor.logoPosition === 'bottom-right' && { bottom: pad * 1.5, right: pad }),
-            }}
-          />
-        )}
-
-        {/* Main text */}
+        {/* Watermark logo bottom-right (subtle) */}
         <div style={{
           position: 'absolute',
-          top: editor.showAccentBar ? accentW : 0,
-          bottom: 0,
-          left: editor.showAccentBar ? accentW : 0,
-          right: 0,
-          zIndex: 3,
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: JUSTIFY[editor.textPosition],
-          padding: `${pad}px ${pad}px ${pad + (editor.showHandle ? metaFont * 2 : 0)}px ${pad}px`,
+          right: pad * 0.6,
+          bottom: pad * 1.8,
+          zIndex: 2,
+          fontFamily: 'var(--font-serif), Georgia, serif',
+          fontSize: 240 * scale,
+          color: textColor,
+          opacity: 0.025,
+          fontStyle: 'italic',
+          fontWeight: 700,
+          lineHeight: 0.8,
+          pointerEvents: 'none',
+          letterSpacing: '-0.04em',
         }}>
-          <div style={{
-            fontSize: titleSize,
-            fontWeight: isFirst ? 800 : 700,
-            color: editor.textColor,
-            lineHeight: isFirst ? 1.15 : 1.3,
-            letterSpacing: isFirst ? '-0.02em' : '-0.01em',
-            whiteSpace: 'pre-line',
-          }}>
-            {parts.map((p, i) =>
-              p.emphasis
-                ? <span key={i} style={{ color: editor.emphasisColor }}>{p.text}</span>
-                : <span key={i}>{p.text}</span>
-            )}
-          </div>
+          {brandName.charAt(0).toLowerCase()}
         </div>
 
-        {/* Bottom bar / handle */}
-        {editor.showHandle && (
-          <div style={{
-            position: 'absolute',
-            bottom: 0,
-            left: editor.showAccentBar ? accentW : 0,
-            right: 0,
-            zIndex: 3,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: `${pad * 0.4}px ${pad}px`,
-            borderTop: `${Math.max(1, scale)}px solid rgba(255,255,255,0.07)`,
-          }}>
-            <span style={{
-              fontSize: metaFont,
-              color: editor.accentBarColor,
-              fontWeight: 800,
-              letterSpacing: '0.15em',
-              textTransform: 'uppercase',
-            }}>
-              {handle}
-            </span>
-            <div style={{
-              width: lineW,
-              height: Math.max(1, 3 * scale),
-              backgroundColor: editor.accentBarColor,
-              borderRadius: 999,
-            }} />
-          </div>
-        )}
+        {HeaderBar}
+        {renderBody()}
+        {FooterBar}
       </div>
     )
   }
