@@ -41,6 +41,7 @@ export function BrandDnaWizard({ workspace, initialDna, isWelcome = false }: Pro
   const [data, setData] = useState({
     step1_brand_name: initialDna?.step1_brand_name || '',
     step1_tagline: initialDna?.step1_tagline || '',
+    step1_offerings: (initialDna as any)?.step1_offerings || '',
     step1_mission: initialDna?.step1_mission || '',
     step1_vision: initialDna?.step1_vision || '',
     step1_values: initialDna?.step1_values?.join(', ') || '',
@@ -81,6 +82,7 @@ export function BrandDnaWizard({ workspace, initialDna, isWelcome = false }: Pro
       current_step: nextStep,
       step1_brand_name: data.step1_brand_name || null,
       step1_tagline: data.step1_tagline || null,
+      step1_offerings: data.step1_offerings || null,
       step1_mission: data.step1_mission || null,
       step1_vision: data.step1_vision || null,
       step1_values: parseArray(data.step1_values),
@@ -457,24 +459,33 @@ function Step1({ data, setData }: any) {
       <Field label="Nome da marca *" hint="Como sua marca é conhecida no mercado.">
         <Input value={data.step1_brand_name} onChange={set('step1_brand_name')} placeholder="Ex: Nexum360" />
       </Field>
-      <Field label="Tagline / Slogan" hint="A frase que sintetiza sua proposta em poucas palavras.">
-        <Input value={data.step1_tagline} onChange={set('step1_tagline')} placeholder="Ex: Estratégia que transforma" />
+      <Field
+        label="Produtos e/ou serviços *"
+        hint="O que você vende ou oferece. Quanto mais específico, melhor o conteúdo gerado."
+        tooltip="Liste com clareza o que sua marca entrega. Ex: 'Consultoria estratégica de marca, gestão de tráfego pago e criação de conteúdo para PMEs.' ou 'Cursos online de finanças pessoais e mentoria 1:1 para investidores iniciantes.'"
+      >
+        <Textarea
+          value={data.step1_offerings}
+          onChange={set('step1_offerings')}
+          placeholder="Ex: Consultoria de marca, gestão de tráfego pago e criação de conteúdo para PMEs no setor de tecnologia."
+          rows={3}
+        />
       </Field>
       <Field
         label="Missão"
-        hint="Por que sua marca existe?"
+        hint="Por que sua marca existe? (opcional)"
         tooltip="Descreva o propósito da sua marca além do lucro. Ex: 'Ajudar pequenas empresas a crescerem com estratégia digital acessível.'"
       >
         <Textarea value={data.step1_mission} onChange={set('step1_mission')} placeholder="Ajudar empresas a crescerem com estratégia digital..." />
       </Field>
       <Field
         label="Visão"
-        hint="Onde sua marca quer chegar em 3 a 5 anos?"
+        hint="Onde sua marca quer chegar em 3 a 5 anos? (opcional)"
         tooltip="Pense no estado futuro que você quer construir. Ex: 'Ser a principal referência em marketing baseado em dados no Brasil.'"
       >
         <Textarea value={data.step1_vision} onChange={set('step1_vision')} placeholder="Ser referência em marketing digital no Brasil..." />
       </Field>
-      <Field label="Valores" hint="Separe por vírgula. Ex: Inovação, Transparência, Resultado">
+      <Field label="Valores" hint="Separe por vírgula. (opcional) Ex: Inovação, Transparência, Resultado">
         <Input value={data.step1_values} onChange={set('step1_values')} placeholder="Inovação, Transparência, Resultado, Parceria" />
       </Field>
     </>

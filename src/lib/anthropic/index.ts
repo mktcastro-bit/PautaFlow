@@ -26,11 +26,12 @@ Use linguagem clara, objetiva e que gere engajamento.`
   const avoid = brandDna.step3_avoid_words?.join(', ') || ''
   const preferred = brandDna.step3_preferred_words?.join(', ') || ''
 
+  const offerings = (brandDna as any).step1_offerings || ''
   return `Você é o copywriter oficial da marca "${brandDna.step1_brand_name || 'nossa marca'}".
 
 ## Identidade da Marca
+${offerings ? `- **Produtos/Serviços**: ${offerings}` : ''}
 - **Missão**: ${brandDna.step1_mission || 'não definida'}
-- **Tagline**: ${brandDna.step1_tagline || 'não definida'}
 - **Valores**: ${brandDna.step1_values?.join(', ') || 'não definidos'}
 
 ## Público-Alvo

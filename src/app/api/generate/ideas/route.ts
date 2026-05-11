@@ -35,6 +35,7 @@ function buildIdeasPrompt(
   const avoid = dna.step3_avoid_words?.join(', ') || ''
   const preferred = dna.step3_preferred_words?.join(', ') || ''
   const brand = dna.step1_brand_name || 'a marca'
+  const offerings = (dna as any).step1_offerings || ''
   const differentiator = dna.step5_differentiators || ''
   const pain = (dna as any).step2_pain_points?.join(', ') || ''
 
@@ -49,6 +50,7 @@ function buildIdeasPrompt(
   return `Você é o estrategista de conteúdo de ${brand}.
 
 ## Contexto da Marca
+${offerings ? `- O que oferece: ${offerings}` : ''}
 - Tom de voz: ${tone}
 - Público: ${audience}
 ${pain ? `- Dor principal: ${pain}` : ''}

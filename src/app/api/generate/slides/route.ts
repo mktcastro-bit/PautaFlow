@@ -47,6 +47,7 @@ function buildSlidesPrompt(
 ): string {
   const tone = dna.step3_tone?.join(', ') || 'direto'
   const brand = dna.step1_brand_name || 'a marca'
+  const offerings = (dna as any).step1_offerings || ''
   const audience = (dna as any).step2_target_audience || (dna as any).step2_roles?.join(', ') || 'empreendedores'
   const preferred = dna.step3_preferred_words?.join(', ') || ''
 
@@ -83,6 +84,7 @@ Exemplo de aplicação: ${formulaSpec.example}` : ''
 ${formulaBlock}
 
 ## Configuração
+${offerings ? `- O que a marca oferece: ${offerings}` : ''}
 - Pilar: ${pilar}
 - Plataforma: ${platformGuide}
 - Formato: ${format} (${publicationFormat})

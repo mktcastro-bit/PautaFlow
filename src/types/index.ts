@@ -43,7 +43,8 @@ export interface BrandDNA {
   id: string
   workspace_id: string
   step1_brand_name: string | null
-  step1_tagline: string | null
+  step1_tagline: string | null   // legado — não exibido no UI
+  step1_offerings: string | null // produtos e/ou serviços oferecidos
   step1_mission: string | null
   step1_vision: string | null
   step1_values: string[] | null
