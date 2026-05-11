@@ -1,10 +1,11 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import {
   Zap, FileText, Dna, Calendar,
-  Settings, CreditCard, Plus, LogOut
+  Settings, CreditCard, Plus, LogOut, Menu, X
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Workspace, Organization } from '@/types'
@@ -19,6 +20,20 @@ interface SidebarProps {
 export function Sidebar({ organization, workspaces, currentWorkspace }: SidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
+  const [mobileOpen, setMobileOpen] = useState(false)
+
+  // Fecha sidebar mobile ao navegar
+  useEffect(() => { setMobileOpen(false) }, [pathname])
+
+  // Trava scroll do body quando sidebar mobile está aberta
+  useEffect(() => {
+    if (mobileOpen) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+    return () => { document.body.style.overflow = '' }
+  }, [mobileOpen])
 
   const wsSlug = currentWorkspace?.slug
   const base = wsSlug ? `/workspaces/${wsSlug}` : null
@@ -38,17 +53,26 @@ export function Sidebar({ organization, workspaces, currentWorkspace }: SidebarP
     router.refresh()
   }
 
-  return (
-    <aside className="w-60 border-r border-border bg-background flex flex-col h-screen sticky top-0">
-
+  const sidebarContent = (
+    <>
       {/* ── Brand ─────────────────────────────────────────────────────── */}
-      <div className="px-5 py-6 border-b border-border">
-        <h1 className="font-serif text-2xl tracking-tight leading-none">
-          <span className="text-foreground">nexum</span><span className="text-gold">360</span>
-        </h1>
-        <p className="text-[9px] text-muted-foreground tracking-luxe uppercase mt-1.5">
-          {organization.name} · {organization.plan}
-        </p>
+      <div className="px-5 py-6 border-b border-border flex items-center justify-between">
+        <div>
+          <h1 className="font-serif text-2xl tracking-tight leading-none">
+            <span className="text-foreground">nexum</span><span className="text-gold">360</span>
+          </h1>
+          <p className="text-[9px] text-muted-foreground tracking-luxe uppercase mt-1.5">
+            {organization.name} · {organization.plan}
+          </p>
+        </div>
+        {/* Botão fechar (mobile) */}
+        <button
+          onClick={() => setMobileOpen(false)}
+          className="lg:hidden p-2 text-muted-foreground hover:text-foreground"
+          aria-label="Fechar menu"
+        >
+          <X className="h-4 w-4" />
+        </button>
       </div>
 
       {/* ── Workspaces ────────────────────────────────────────────────── */}
@@ -65,9 +89,7 @@ export function Sidebar({ organization, workspaces, currentWorkspace }: SidebarP
                 href={`/workspaces/${ws.slug}/pautas`}
                 className={cn(
                   'flex items-center gap-2 py-1.5 text-sm transition-colors group',
-                  active
-                    ? 'text-gold'
-                    : 'text-muted-foreground hover:text-foreground'
+                  active ? 'text-gold' : 'text-muted-foreground hover:text-foreground'
                 )}
               >
                 <span
@@ -103,9 +125,7 @@ export function Sidebar({ organization, workspaces, currentWorkspace }: SidebarP
                   href={item.href}
                   className={cn(
                     'relative flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all group',
-                    active
-                      ? 'text-gold bg-gold/5'
-                      : 'text-muted-foreground hover:text-foreground hover:bg-accent/30'
+                    active ? 'text-gold bg-gold/5' : 'text-muted-foreground hover:text-foreground hover:bg-accent/30'
                   )}
                 >
                   {active && (
@@ -140,6 +160,48 @@ export function Sidebar({ organization, workspaces, currentWorkspace }: SidebarP
           Sair
         </button>
       </div>
-    </aside>
+    </>
+  )
+
+  return (
+    <>
+      {/* ── Mobile top bar (fixa) ─────────────────────────────────────── */}
+      <div className="lg:hidden fixed top-0 left-0 right-0 z-40 h-14 bg-background/95 backdrop-blur-md border-b border-border flex items-center justify-between px-4">
+        <button
+          onClick={() => setMobileOpen(true)}
+          className="p-2 -ml-2 text-foreground"
+          aria-label="Abrir menu"
+        >
+          <Menu className="h-5 w-5" />
+        </button>
+        <h1 className="font-serif text-lg tracking-tight leading-none">
+          <span className="text-foreground">nexum</span><span className="text-gold">360</span>
+        </h1>
+        <div className="w-9" />
+      </div>
+
+      {/* Espaço pra topbar fixa em mobile */}
+      <div className="lg:hidden h-14 flex-shrink-0" />
+
+      {/* ── Desktop sidebar ───────────────────────────────────────────── */}
+      <aside className="hidden lg:flex w-60 border-r border-border bg-background flex-col h-screen sticky top-0">
+        {sidebarContent}
+      </aside>
+
+      {/* ── Mobile sidebar (drawer) ───────────────────────────────────── */}
+      {mobileOpen && (
+        <div className="lg:hidden fixed inset-0 z-50 flex">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={() => setMobileOpen(false)}
+          />
+          {/* Drawer */}
+          <aside className="relative w-72 max-w-[85vw] bg-background border-r border-border flex flex-col animate-in slide-in-from-left">
+            {sidebarContent}
+          </aside>
+        </div>
+      )}
+    </>
   )
 }

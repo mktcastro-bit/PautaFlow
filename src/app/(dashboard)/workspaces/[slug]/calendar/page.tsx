@@ -1,5 +1,5 @@
 import { notFound, redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { CalendarClient } from '@/components/calendar/calendar-client'
 import { DEMO_MODE, demoWorkspaces, demoCalendarEvents, demoPautas } from '@/lib/demo-data'
 
@@ -12,31 +12,45 @@ export default async function CalendarPage({ params }: Props) {
     const workspace = demoWorkspaces.find(ws => ws.slug === params.slug)
     if (!workspace) notFound()
     const pautas = demoPautas.map(p => ({ id: p.id, title: p.title, platform: p.platform, format: p.format, status: p.status }))
-    return <CalendarClient workspace={workspace} events={demoCalendarEvents} pautas={pautas} />
+    return <CalendarClient workspace={workspace} events={demoCalendarEvents} pautas={pautas} dnaIncomplete={false} />
   }
 
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const { data: workspace } = await supabase.from('workspaces').select('*').eq('slug', params.slug).single()
+  const admin = await createAdminClient()
+
+  const { data: workspace } = await admin.from('workspaces').select('*').eq('slug', params.slug).single()
   if (!workspace) notFound()
 
+  // 3 meses para frente e 1 mês para trás
   const now = new Date()
-  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
-  const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 2, 0)
+  const start = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+  const end = new Date(now.getFullYear(), now.getMonth() + 3, 0)
 
-  const { data: events } = await supabase
+  const { data: events } = await admin
     .from('calendar_events').select('*').eq('workspace_id', workspace.id)
-    .gte('scheduled_date', startOfMonth.toISOString().split('T')[0])
-    .lte('scheduled_date', endOfMonth.toISOString().split('T')[0])
+    .gte('scheduled_date', start.toISOString().split('T')[0])
+    .lte('scheduled_date', end.toISOString().split('T')[0])
     .order('scheduled_date')
 
-  const { data: pautas } = await supabase
+  const { data: pautas } = await admin
     .from('pautas').select('id, title, platform, format, status')
     .eq('workspace_id', workspace.id)
     .in('status', ['ideia', 'em_desenvolvimento', 'aprovado'])
     .order('title')
 
-  return <CalendarClient workspace={workspace} events={events || []} pautas={pautas || []} />
+  // DNA pendente?
+  const { data: dna } = await admin
+    .from('brand_dna').select('completed').eq('workspace_id', workspace.id).maybeSingle()
+
+  return (
+    <CalendarClient
+      workspace={workspace}
+      events={events || []}
+      pautas={pautas || []}
+      dnaIncomplete={!dna?.completed}
+    />
+  )
 }

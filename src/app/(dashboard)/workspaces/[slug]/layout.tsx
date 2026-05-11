@@ -13,7 +13,7 @@ export default async function WorkspaceLayout({ children, params }: Props) {
     const currentWorkspace = demoWorkspaces.find(ws => ws.slug === params.slug)
     if (!currentWorkspace) notFound()
     return (
-      <div className="flex min-h-screen bg-background">
+      <div className="lg:flex min-h-screen bg-background">
         <Sidebar
           organization={demoOrg}
           workspaces={demoWorkspaces}

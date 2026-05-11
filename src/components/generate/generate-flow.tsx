@@ -6,6 +6,7 @@ import { BrandDNA, Workspace } from '@/types'
 import { cn } from '@/lib/utils'
 import { ArtCanvas } from './art-canvas'
 import { UsageBadge } from '@/components/shared/usage-badge'
+import { ProgressiveLoader } from '@/components/shared/progressive-loader'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -173,7 +174,7 @@ function ConfigPanel({
   const activePilars = localPilars.length > 0 ? localPilars : ['Geral']
 
   return (
-    <div className="w-60 flex-shrink-0 border-r border-zinc-800 flex flex-col">
+    <div className="w-full md:w-60 flex-shrink-0 md:border-r border-b md:border-b-0 border-zinc-800 flex flex-col">
       <div className="p-4 flex-1 space-y-4 overflow-y-auto">
         <p className="text-[10px] font-semibold text-zinc-500 uppercase tracking-widest">Configurações</p>
 
@@ -307,12 +308,15 @@ function IdeaGrid({
 }) {
   if (loading === 'ideas') {
     return (
-      <div className="flex-1 flex items-center justify-center">
-        <div className="text-center space-y-3 max-w-sm">
-          <div className="h-10 w-10 border-2 border-gold border-t-transparent rounded-full animate-spin mx-auto" />
-          <p className="text-zinc-400 text-sm">Aplicando 5 fórmulas virais à sua marca…</p>
-          <p className="text-[10px] tracking-[0.2em] uppercase text-zinc-600">Pode levar até 30 segundos</p>
-        </div>
+      <div className="flex-1 flex items-center justify-center p-8">
+        <ProgressiveLoader
+          steps={[
+            'Lendo o DNA da sua marca…',
+            'Aplicando as 5 fórmulas virais…',
+            'Refinando ângulos e ganchos…',
+          ]}
+          subtitle="Pode levar até 30 segundos"
+        />
       </div>
     )
   }
@@ -464,11 +468,16 @@ function SlidePreview({
 
   if (loading === 'slides') {
     return (
-      <div className="flex-1 flex items-center justify-center">
-        <div className="text-center space-y-3">
-          <div className="h-10 w-10 border-2 border-gold border-t-transparent rounded-full animate-spin mx-auto" />
-          <p className="text-zinc-400 text-sm">Gerando texto dos slides...</p>
-        </div>
+      <div className="flex-1 flex items-center justify-center p-8">
+        <ProgressiveLoader
+          steps={[
+            'Estruturando os slides…',
+            'Aplicando a fórmula viral escolhida…',
+            'Escrevendo legenda e CTA…',
+            'Refinando textos e ênfases…',
+          ]}
+          subtitle="Pode levar até 30 segundos"
+        />
       </div>
     )
   }
@@ -816,7 +825,7 @@ export function GenerateFlow({ workspace, brandDna, pilars, initialPauta }: Prop
 
       {/* Body */}
       {step === 'texto' ? (
-        <div className="flex flex-1 overflow-hidden">
+        <div className="flex flex-col md:flex-row flex-1 overflow-hidden">
           <ConfigPanel
             config={config}
             setConfig={setConfig}

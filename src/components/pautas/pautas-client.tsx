@@ -96,8 +96,8 @@ export function PautasClient({ pautas, workspace, categories, filters, dnaIncomp
       {dnaIncomplete && <DnaIncompleteBanner workspaceSlug={workspace.slug} variant="sticky" />}
 
       {/* ── Page header ─────────────────────────────────────────────────── */}
-      <header className="border-b border-border bg-background/80 backdrop-blur-md sticky top-0 z-30">
-        <div className="px-8 py-5 flex items-center justify-between gap-6">
+      <header className="border-b border-border bg-background/80 backdrop-blur-md sticky top-0 lg:top-0 z-20">
+        <div className="px-4 lg:px-8 py-4 lg:py-5 flex items-center justify-between gap-3 flex-wrap">
           <div>
             <p className="text-[10px] text-muted-foreground tracking-luxe uppercase">
               {workspace.name}
@@ -135,7 +135,7 @@ export function PautasClient({ pautas, workspace, categories, filters, dnaIncomp
         </div>
       </header>
 
-      <div className="px-8 py-8 space-y-8">
+      <div className="px-4 lg:px-8 py-6 lg:py-8 space-y-6 lg:space-y-8">
 
         {/* ── Stats row ────────────────────────────────────────────────── */}
         <section className="grid grid-cols-2 md:grid-cols-4 gap-6 border-b border-border pb-8">
