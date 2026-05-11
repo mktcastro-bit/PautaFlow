@@ -141,9 +141,9 @@ export default function RegisterPage() {
 
       <p className="text-xs text-center text-muted-foreground">
         Ao criar uma conta, você concorda com os{' '}
-        <Link href="/terms" className="underline">Termos de Uso</Link>{' '}
+        <Link href="/termos" className="underline hover:text-gold transition-colors">Termos de Uso</Link>{' '}
         e a{' '}
-        <Link href="/privacy" className="underline">Política de Privacidade</Link>
+        <Link href="/privacidade" className="underline hover:text-gold transition-colors">Política de Privacidade</Link>
       </p>
     </div>
   )

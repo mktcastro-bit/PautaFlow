@@ -304,7 +304,10 @@ export default function LandingPage() {
           <p className="text-[10px] tracking-[0.2em] uppercase">
             © {new Date().getFullYear()} · Todos os direitos reservados
           </p>
-          <div className="flex items-center gap-6 text-[10px] tracking-[0.2em] uppercase">
+          <div className="flex items-center gap-5 text-[10px] tracking-[0.2em] uppercase flex-wrap justify-center">
+            <Link href="/termos" className="hover:text-[#c9a86a] transition-colors">Termos</Link>
+            <Link href="/privacidade" className="hover:text-[#c9a86a] transition-colors">Privacidade</Link>
+            <span className="opacity-40">·</span>
             <Link href="/login" className="hover:text-[#c9a86a] transition-colors">Entrar</Link>
             <Link href="/register" className="hover:text-[#c9a86a] transition-colors">Cadastrar</Link>
           </div>
