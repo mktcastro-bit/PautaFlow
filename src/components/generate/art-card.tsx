@@ -5,31 +5,35 @@ import { BrandDNA } from '@/types'
 import { EditorState, FONT_SIZES } from './editor-types'
 import { TypographyPreset, getBrandTypography } from '@/lib/brand-style'
 
-export interface Slide { number: number; text: string }
+export interface Slide {
+  number: number
+  /** Texto principal — mantido para backward compat */
+  text?: string
+  /** Título principal — frase de impacto com _word_ destaque */
+  title?: string
+  /** Subtítulo — frase explicativa abaixo do título */
+  subtitle?: string
+  /** Callout — frase curta de destaque (CTA, conclusão) */
+  callout?: string
+}
 
 interface Props {
   slide: Slide
   total: number
   editor: EditorState
   brandDna: BrandDNA | null
-  /** Escala de exibição (1 = tamanho real exportável, <1 = preview) */
   scale?: number
-  /** Formato de publicação — define proporção */
   publicationFormat: 'feed' | 'story' | 'reels'
-  /** Pilar da geração atual — usado como tag no header */
   pilar?: string
-  /** Tipografia derivada do DNA (typography_style) — opcional, default: clássico-elegante */
   typography?: TypographyPreset
 }
 
-// ─── Tipos de layout editoriais ──────────────────────────────────────────────
+// ─── Layouts editoriais ──────────────────────────────────────────────────────
 type Layout = 'hero' | 'rule' | 'numbered' | 'quote' | 'statement' | 'cta'
 
-/** Distribui layouts pelos slides para criar variação editorial */
 function pickLayout(num: number, total: number): Layout {
   if (num === 1) return 'hero'
   if (num === total) return 'cta'
-  // Rotaciona entre 4 estilos no meio
   const middle = num - 2
   const styles: Layout[] = ['rule', 'numbered', 'quote', 'statement']
   return styles[middle % styles.length]
@@ -50,7 +54,7 @@ function parseParts(text: string) {
   return parts
 }
 
-// ─── Background style ────────────────────────────────────────────────────────
+// ─── Background ──────────────────────────────────────────────────────────────
 function buildBackground(editor: EditorState): React.CSSProperties {
   if (editor.bgType === 'gradient') {
     return { background: `linear-gradient(${editor.gradientDirection}, ${editor.gradientFrom}, ${editor.gradientTo})` }
@@ -75,13 +79,11 @@ export const ArtCard = React.forwardRef<HTMLDivElement, Props>(
     const TITLE_TRACKING = typo.titleTracking
     const isStory = publicationFormat === 'story' || publicationFormat === 'reels'
 
-    // Dimensões base
     const BASE_W = 1080
     const BASE_H = isStory ? 1920 : 1350
     const W = BASE_W * scale
     const H = BASE_H * scale
 
-    // Tamanhos em resolução real × scale
     const sizes = FONT_SIZES[editor.fontSize]
     const titleSize = sizes.title * scale
     const bodySize = sizes.body * scale
@@ -94,21 +96,24 @@ export const ArtCard = React.forwardRef<HTMLDivElement, Props>(
 
     // Brand info
     const brandName = brandDna?.step1_brand_name || 'marca'
-    const brandHandle = '@' + brandName.toLowerCase().replace(/\s+/g, '')
-    const brandUrl = (brandName.toLowerCase().replace(/\s+/g, '') + '.com.br')
-
-    // Categoria/tag — usa o pilar da geração atual; fallback pro primeiro do DNA
+    const brandUrl = brandName.toLowerCase().replace(/\s+/g, '') + '.com.br'
     const categoryTag = (pilar || brandDna?.step5_content_pillars?.[0] || 'estratégia').toUpperCase()
 
     const layout = pickLayout(slide.number, total)
-    const parts = parseParts(slide.text)
 
-    // ─── Estilos compartilhados ──────────────────────────────────────────
+    // ── Extrai title/subtitle/callout, com fallback do antigo "text" ──
+    const titleText = slide.title || slide.text || ''
+    const subtitleText = slide.subtitle || ''
+    const calloutText = slide.callout || ''
+
+    const titleParts = parseParts(titleText)
+    const subtitleParts = subtitleText ? parseParts(subtitleText) : []
+
     const goldColor = editor.accentBarColor
     const emphasisColor = editor.emphasisColor
     const textColor = editor.textColor
 
-    // ── Pieces shared by all layouts ─────────────────────────────────────
+    // ── Header (logo + categoria) ──
     const HeaderBar = (
       <div style={{
         position: 'absolute', top: pad, left: pad, right: pad, zIndex: 5,
@@ -125,9 +130,11 @@ export const ArtCard = React.forwardRef<HTMLDivElement, Props>(
             fontStyle: 'italic',
           }}>
             <span>{brandName.replace(/360$/, '')}</span>
-            <span style={{ color: goldColor, fontStyle: 'normal', fontSize: 22 * scale, marginLeft: 2 * scale, verticalAlign: 'super' }}>
-              {brandName.match(/360$/) ? '360' : ''}
-            </span>
+            {brandName.match(/360$/) && (
+              <span style={{ color: goldColor, fontStyle: 'normal', fontSize: 22 * scale, marginLeft: 2 * scale, verticalAlign: 'super' }}>
+                360
+              </span>
+            )}
           </span>
         )}
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 * scale }}>
@@ -146,6 +153,7 @@ export const ArtCard = React.forwardRef<HTMLDivElement, Props>(
       </div>
     )
 
+    // ── Footer (slide counter + url) ──
     const FooterBar = editor.showHandle && (
       <div style={{
         position: 'absolute', bottom: pad, left: pad, right: pad, zIndex: 5,
@@ -177,7 +185,72 @@ export const ArtCard = React.forwardRef<HTMLDivElement, Props>(
       </div>
     )
 
-    // Decorative top-rule
+    // ── Helpers de render ──
+    function renderTitle(opts: { sizeMul?: number; align?: 'left' | 'center' | 'right' } = {}) {
+      const { sizeMul = 1, align = 'left' } = opts
+      return (
+        <h2 style={{
+          fontFamily: TITLE_FONT,
+          fontSize: titleSize * sizeMul,
+          color: textColor,
+          lineHeight: 1.05,
+          letterSpacing: TITLE_TRACKING,
+          fontWeight: TITLE_WEIGHT,
+          fontStyle: typo.titleStyle,
+          textAlign: align,
+          margin: 0,
+        }}>
+          {titleParts.map((p, i) =>
+            p.emphasis
+              ? <span key={i} style={{ color: emphasisColor, fontStyle: typo.titleStyle === 'italic' ? 'normal' : 'italic', fontWeight: Math.min(TITLE_WEIGHT, 600) }}>{p.text}</span>
+              : <span key={i}>{p.text}</span>
+          )}
+        </h2>
+      )
+    }
+
+    function renderSubtitle(opts: { align?: 'left' | 'center' | 'right' } = {}) {
+      if (!subtitleText) return null
+      const { align = 'left' } = opts
+      return (
+        <p style={{
+          fontFamily: BODY_FONT,
+          fontSize: bodySize * 0.85,
+          color: textColor,
+          opacity: 0.78,
+          lineHeight: 1.4,
+          margin: `${28 * scale}px 0 0 0`,
+          fontWeight: 400,
+          textAlign: align,
+        }}>
+          {subtitleParts.map((p, i) =>
+            p.emphasis
+              ? <span key={i} style={{ color: emphasisColor, fontStyle: 'italic' }}>{p.text}</span>
+              : <span key={i}>{p.text}</span>
+          )}
+        </p>
+      )
+    }
+
+    function renderCallout(opts: { align?: 'left' | 'center' | 'right' } = {}) {
+      if (!calloutText) return null
+      const { align = 'left' } = opts
+      return (
+        <p style={{
+          fontFamily: BODY_FONT,
+          fontSize: bodySize * 0.95,
+          color: textColor,
+          lineHeight: 1.3,
+          margin: `${20 * scale}px 0 0 0`,
+          fontWeight: 700,
+          textAlign: align,
+        }}>
+          {calloutText}
+        </p>
+      )
+    }
+
+    // ── Decorative ──
     const TopRule = (
       <div style={{
         width: 80 * scale, height: 2,
@@ -186,33 +259,21 @@ export const ArtCard = React.forwardRef<HTMLDivElement, Props>(
       }} />
     )
 
-    // ─── Layout renderers ────────────────────────────────────────────────
+    // ─── Layouts ─────────────────────────────────────────────────────────
 
     function renderHero() {
       return (
         <div style={{
           position: 'absolute',
           left: pad, right: pad,
-          top: '32%',
+          top: '28%',
           zIndex: 4,
+          textAlign: 'left',
         }}>
           {TopRule}
-          <h2 style={{
-            fontFamily: TITLE_FONT,
-            fontSize: titleSize * 1.25,
-            color: textColor,
-            lineHeight: 1.05,
-            letterSpacing: TITLE_TRACKING,
-            fontWeight: TITLE_WEIGHT,
-            fontStyle: typo.titleStyle,
-            margin: 0,
-          }}>
-            {parts.map((p, i) =>
-              p.emphasis
-                ? <span key={i} style={{ color: emphasisColor, fontStyle: typo.titleStyle === 'italic' ? 'normal' : 'italic', fontWeight: Math.min(TITLE_WEIGHT, 600) }}>{p.text}</span>
-                : <span key={i}>{p.text}</span>
-            )}
-          </h2>
+          {renderTitle({ sizeMul: 1.25 })}
+          {renderSubtitle()}
+          {renderCallout()}
         </div>
       )
     }
@@ -222,13 +283,10 @@ export const ArtCard = React.forwardRef<HTMLDivElement, Props>(
         <div style={{
           position: 'absolute',
           left: pad, right: pad,
-          top: '38%',
+          top: '32%',
           zIndex: 4,
         }}>
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: 24 * scale,
-            marginBottom: 28 * scale,
-          }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 24 * scale, marginBottom: 28 * scale }}>
             <div style={{ width: 120 * scale, height: 1, backgroundColor: goldColor }} />
             <span style={{
               fontSize: metaFont,
@@ -237,24 +295,12 @@ export const ArtCard = React.forwardRef<HTMLDivElement, Props>(
               textTransform: 'uppercase',
               fontWeight: 600,
             }}>
-              ↘ Capítulo {slide.number - 1}
+              Capítulo {String(slide.number - 1).padStart(2, '0')}
             </span>
           </div>
-          <h2 style={{
-            fontFamily: TITLE_FONT,
-            fontSize: titleSize * 1.05,
-            color: textColor,
-            lineHeight: 1.18,
-            letterSpacing: '-0.015em',
-            fontWeight: 600,
-            margin: 0,
-          }}>
-            {parts.map((p, i) =>
-              p.emphasis
-                ? <span key={i} style={{ color: emphasisColor, fontStyle: 'italic' }}>{p.text}</span>
-                : <span key={i}>{p.text}</span>
-            )}
-          </h2>
+          {renderTitle({ sizeMul: 1.05 })}
+          {renderSubtitle()}
+          {renderCallout()}
         </div>
       )
     }
@@ -264,7 +310,7 @@ export const ArtCard = React.forwardRef<HTMLDivElement, Props>(
         <div style={{
           position: 'absolute',
           left: pad, right: pad,
-          top: '30%',
+          top: '28%',
           zIndex: 4,
           display: 'flex',
           alignItems: 'flex-start',
@@ -284,21 +330,9 @@ export const ArtCard = React.forwardRef<HTMLDivElement, Props>(
           </div>
           <div style={{ flex: 1, paddingTop: 20 * scale }}>
             <div style={{ width: 60 * scale, height: 1, backgroundColor: goldColor, marginBottom: 24 * scale }} />
-            <h2 style={{
-              fontFamily: TITLE_FONT,
-              fontSize: titleSize * 0.92,
-              color: textColor,
-              lineHeight: 1.2,
-              letterSpacing: '-0.01em',
-              fontWeight: 600,
-              margin: 0,
-            }}>
-              {parts.map((p, i) =>
-                p.emphasis
-                  ? <span key={i} style={{ color: emphasisColor, fontStyle: 'italic' }}>{p.text}</span>
-                  : <span key={i}>{p.text}</span>
-              )}
-            </h2>
+            {renderTitle({ sizeMul: 0.92 })}
+            {renderSubtitle()}
+            {renderCallout()}
           </div>
         </div>
       )
@@ -308,8 +342,8 @@ export const ArtCard = React.forwardRef<HTMLDivElement, Props>(
       return (
         <div style={{
           position: 'absolute',
-          left: pad * 1.5, right: pad * 1.5,
-          top: '32%',
+          left: pad * 1.4, right: pad * 1.4,
+          top: '30%',
           zIndex: 4,
         }}>
           <div style={{
@@ -317,30 +351,48 @@ export const ArtCard = React.forwardRef<HTMLDivElement, Props>(
             fontSize: titleSize * 3.5,
             color: goldColor,
             lineHeight: 0.6,
-            opacity: 0.8,
-            marginBottom: -40 * scale,
+            opacity: 0.85,
+            marginBottom: -50 * scale,
             fontWeight: 700,
+            fontStyle: 'italic',
           }}>
             “
           </div>
-          <h2 style={{
-            fontFamily: TITLE_FONT,
-            fontSize: titleSize * 1.0,
-            color: textColor,
-            lineHeight: 1.25,
-            letterSpacing: '-0.01em',
-            fontWeight: 500,
-            fontStyle: 'italic',
-            margin: 0,
+          <div style={{
             paddingLeft: 30 * scale,
             borderLeft: `${2 * scale}px solid ${goldColor}`,
           }}>
-            {parts.map((p, i) =>
-              p.emphasis
-                ? <span key={i} style={{ color: emphasisColor, fontStyle: 'normal', fontWeight: 700 }}>{p.text}</span>
-                : <span key={i}>{p.text}</span>
+            <h2 style={{
+              fontFamily: TITLE_FONT,
+              fontSize: titleSize * 1.0,
+              color: textColor,
+              lineHeight: 1.25,
+              letterSpacing: TITLE_TRACKING,
+              fontWeight: 500,
+              fontStyle: 'italic',
+              margin: 0,
+            }}>
+              {titleParts.map((p, i) =>
+                p.emphasis
+                  ? <span key={i} style={{ color: emphasisColor, fontStyle: 'normal', fontWeight: 700 }}>{p.text}</span>
+                  : <span key={i}>{p.text}</span>
+              )}
+            </h2>
+            {subtitleText && (
+              <p style={{
+                fontFamily: BODY_FONT,
+                fontSize: bodySize * 0.8,
+                color: textColor,
+                opacity: 0.7,
+                lineHeight: 1.4,
+                margin: `${24 * scale}px 0 0 0`,
+                fontWeight: 400,
+              }}>
+                — {subtitleText}
+              </p>
             )}
-          </h2>
+          </div>
+          {renderCallout()}
         </div>
       )
     }
@@ -356,7 +408,6 @@ export const ArtCard = React.forwardRef<HTMLDivElement, Props>(
           justifyContent: 'center',
           alignItems: 'center',
           zIndex: 4,
-          textAlign: 'center',
         }}>
           <div style={{
             display: 'flex', alignItems: 'center', gap: 16 * scale,
@@ -374,22 +425,11 @@ export const ArtCard = React.forwardRef<HTMLDivElement, Props>(
             </span>
             <div style={{ width: 50 * scale, height: 1, backgroundColor: goldColor }} />
           </div>
-          <h2 style={{
-            fontFamily: TITLE_FONT,
-            fontSize: titleSize * 1.15,
-            color: textColor,
-            lineHeight: 1.18,
-            letterSpacing: '-0.015em',
-            fontWeight: 600,
-            margin: 0,
-            maxWidth: '85%',
-          }}>
-            {parts.map((p, i) =>
-              p.emphasis
-                ? <span key={i} style={{ color: emphasisColor, fontStyle: 'italic' }}>{p.text}</span>
-                : <span key={i}>{p.text}</span>
-            )}
-          </h2>
+          <div style={{ maxWidth: '85%' }}>
+            {renderTitle({ sizeMul: 1.15, align: 'center' })}
+            {renderSubtitle({ align: 'center' })}
+            {renderCallout({ align: 'center' })}
+          </div>
         </div>
       )
     }
@@ -399,7 +439,7 @@ export const ArtCard = React.forwardRef<HTMLDivElement, Props>(
         <div style={{
           position: 'absolute',
           left: pad, right: pad,
-          top: '28%',
+          top: '24%',
           zIndex: 4,
         }}>
           <div style={{
@@ -410,38 +450,25 @@ export const ArtCard = React.forwardRef<HTMLDivElement, Props>(
             fontWeight: 600,
             marginBottom: 28 * scale,
           }}>
-            ↳ E agora?
+            E agora?
           </div>
-          <h2 style={{
-            fontFamily: TITLE_FONT,
-            fontSize: titleSize * 1.2,
-            color: textColor,
-            lineHeight: 1.1,
-            letterSpacing: '-0.02em',
-            fontWeight: 700,
-            margin: 0,
-            marginBottom: 40 * scale,
-          }}>
-            {parts.map((p, i) =>
-              p.emphasis
-                ? <span key={i} style={{ color: emphasisColor, fontStyle: 'italic', fontWeight: 600 }}>{p.text}</span>
-                : <span key={i}>{p.text}</span>
-            )}
-          </h2>
+          {renderTitle({ sizeMul: 1.2 })}
+          {renderSubtitle()}
           <div style={{
             display: 'inline-flex', alignItems: 'center', gap: 16 * scale,
             padding: `${20 * scale}px ${36 * scale}px`,
             border: `${2 * scale}px solid ${goldColor}`,
             backgroundColor: 'transparent',
+            marginTop: 40 * scale,
           }}>
             <span style={{
-              fontSize: metaFont * 0.9,
+              fontSize: metaFont * 0.95,
               color: goldColor,
               letterSpacing: '0.25em',
               textTransform: 'uppercase',
               fontWeight: 700,
             }}>
-              Salve · Compartilhe · Comente
+              {calloutText || 'Salve · Compartilhe · Comente'}
             </span>
           </div>
         </div>
@@ -473,7 +500,6 @@ export const ArtCard = React.forwardRef<HTMLDivElement, Props>(
           ...buildBackground(editor),
         }}
       >
-        {/* Overlay color */}
         {editor.overlayEnabled && (
           <div style={{
             position: 'absolute', inset: 0, zIndex: 1,
@@ -482,14 +508,12 @@ export const ArtCard = React.forwardRef<HTMLDivElement, Props>(
           }} />
         )}
 
-        {/* Subtle grain texture */}
         <div style={{
           position: 'absolute', inset: 0, zIndex: 2, pointerEvents: 'none',
           backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.012) 1px, transparent 1px)',
           backgroundSize: `${50 * scale}px ${50 * scale}px`,
         }} />
 
-        {/* Vertical accent bar (left) */}
         {editor.showAccentBar && (
           <div style={{
             position: 'absolute', top: 0, left: 0, zIndex: 3,
@@ -500,7 +524,7 @@ export const ArtCard = React.forwardRef<HTMLDivElement, Props>(
           }} />
         )}
 
-        {/* Watermark logo bottom-right (subtle) */}
+        {/* Watermark inicial gigante */}
         <div style={{
           position: 'absolute',
           right: pad * 0.6,

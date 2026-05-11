@@ -331,8 +331,8 @@ export function ArtCanvas({ slides, caption, idea, config, brandDna, workspace, 
 
           <p className="text-[10px] font-semibold text-zinc-500 uppercase tracking-widest mb-3">Slides</p>
           <div className="space-y-1.5">
-            {slides.map((s, i) => {
-              const parts = parseParts(s.text)
+            {slides.map((s: any, i) => {
+              const parts = parseParts(s.title || s.text || '')
               return (
                 <button
                   key={i}

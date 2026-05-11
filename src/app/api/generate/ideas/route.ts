@@ -2,33 +2,25 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { anthropic } from '@/lib/anthropic'
 import { BrandDNA } from '@/types'
+import { FORMULAS, FORMULA_ORDER } from '@/lib/viral-formulas'
 
-const DEMO_IDEAS = [
-  {
-    title: 'IA sem modelo de comportamento é automação de achismo',
-    subtitle: 'Quando a tecnologia não parte do humano, ela apenas acelera decisões erradas.',
-  },
-  {
-    title: 'Você comprou IA. Quem está treinando ela para o seu negócio?',
-    subtitle: 'Ferramenta sem estratégia comportamental é custo disfarçado de inovação.',
-  },
-  {
-    title: 'O problema não é adotar IA — é saber o que perguntar a ela',
-    subtitle: 'A qualidade do output de IA depende diretamente da maturidade estratégica de quem a opera.',
-  },
-  {
-    title: 'IA lê padrão. Humano lê contexto. Sua empresa sabe usar os dois?',
-    subtitle: 'A vantagem competitiva real está na interseção entre dado comportamental e decisão estratégica.',
-  },
-  {
-    title: 'Personalização em escala só funciona se você entende o que escalar',
-    subtitle: 'Empresas usam IA para multiplicar mensagens sem entender o comportamento que as mensagens devem ativar.',
-  },
-  {
-    title: 'Sua stack de IA está crescendo. Sua clareza estratégica, não.',
-    subtitle: 'Mais ferramentas com menos direção criam complexidade operacional, não vantagem competitiva.',
-  },
-]
+const DEMO_IDEAS = FORMULA_ORDER.map((key, i) => ({
+  formula: key,
+  title: [
+    'Sem tempo, mas quer estruturar marca? Salve estas 5 ações',
+    'Construindo presença digital? Os 5 passos que realmente importam',
+    'Se eu começasse uma marca hoje, faria essas 7 coisas',
+    'Esse cliente cresceu 300% sem ads. O que ele fez diferente.',
+    'Aos 30 e quer construir autoridade? 6 decisões inadiáveis',
+  ][i],
+  subtitle: [
+    'O que não precisa ser perfeito desde já — e o que precisa.',
+    'Esquece o cronograma rígido. Foca no que move o ponteiro.',
+    'O que eu não faria, e o que faria primeiro.',
+    'A escolha estratégica que poucos têm coragem de fazer.',
+    'O que parece atalho — e o que de fato move o ponteiro.',
+  ][i],
+}))
 
 function buildIdeasPrompt(
   pilar: string,
@@ -38,50 +30,63 @@ function buildIdeasPrompt(
   dna: Partial<BrandDNA>
 ): string {
   const tone = dna.step3_tone?.join(', ') || 'direto e estratégico'
-  const audience = dna.step2_target_audience || 'empreendedores e gestores'
+  const audience = (dna as any).step2_target_audience || (dna as any).step2_roles?.join(', ') || 'empreendedores e gestores'
   const avoid = dna.step3_avoid_words?.join(', ') || ''
   const preferred = dna.step3_preferred_words?.join(', ') || ''
-  const pillars = dna.step5_content_pillars?.join(', ') || pilar
   const brand = dna.step1_brand_name || 'a marca'
   const differentiator = dna.step5_differentiators || ''
+  const pain = (dna as any).step2_pain_points?.join(', ') || ''
+
+  // Lista as 5 fórmulas para a IA
+  const formulasBlock = FORMULA_ORDER.map((k, i) => {
+    const f = FORMULAS[k]
+    return `${i + 1}. **${f.label}** (${f.shortName})
+   - ${f.description}
+   - Exemplo: ${f.example}`
+  }).join('\n\n')
 
   return `Você é o estrategista de conteúdo de ${brand}.
 
 ## Contexto da Marca
 - Tom de voz: ${tone}
 - Público: ${audience}
+${pain ? `- Dor principal: ${pain}` : ''}
 - Diferencial: ${differentiator}
-- Pilares: ${pillars}
 ${avoid ? `- Evitar: ${avoid}` : ''}
 ${preferred ? `- Vocabulário preferido: ${preferred}` : ''}
 
-## Briefing desta geração
-- Pilar escolhido: ${pilar}
+## Briefing
+- Pilar: ${pilar}
 - Plataforma: ${platform}
 - Formato: ${format}
 ${suggestion ? `- Sugestão do usuário: ${suggestion}` : ''}
 
+## Fórmulas virais comprovadas
+Você vai gerar EXATAMENTE 5 ideias, UMA para cada fórmula abaixo:
+
+${formulasBlock}
+
 ## Tarefa
-Gere exatamente 6 ideias de conteúdo provocativas, diretas e estratégicas para o pilar "${pilar}".
+Para cada uma das 5 fórmulas, gere uma ideia de conteúdo APLICANDO a estrutura da fórmula ao pilar "${pilar}".
 
 Cada ideia deve ter:
-- **title**: título ousado e direto (máx 12 palavras) — deve gerar curiosidade ou provocar reflexão
-- **subtitle**: frase complementar que aprofunda a ideia (máx 20 palavras)
+- **formula**: chave da fórmula (atalho, guia, conselho, case, marco)
+- **title**: título que SEGUE a estrutura da fórmula (máx 14 palavras)
+- **subtitle**: frase complementar que aprofunda o ângulo (máx 18 palavras)
 
-Regras:
-1. Seja provocativo, não genérico
-2. Cada ideia deve ter um ângulo diferente
-3. Use o vocabulário e tom da marca
+REGRAS CRÍTICAS:
+1. Cada ideia DEVE seguir a estrutura da sua respectiva fórmula
+2. NÃO seja genérico — o título precisa entregar a fórmula claramente
+3. Use o tom e vocabulário da marca
 4. Pense no formato ${format} para ${platform}
 
-Retorne APENAS JSON válido, sem markdown, sem explicações:
+Retorne APENAS JSON válido, sem markdown:
 [
-  {"title": "...", "subtitle": "..."},
-  {"title": "...", "subtitle": "..."},
-  {"title": "...", "subtitle": "..."},
-  {"title": "...", "subtitle": "..."},
-  {"title": "...", "subtitle": "..."},
-  {"title": "...", "subtitle": "..."}
+  {"formula": "atalho",   "title": "...", "subtitle": "..."},
+  {"formula": "guia",     "title": "...", "subtitle": "..."},
+  {"formula": "conselho", "title": "...", "subtitle": "..."},
+  {"formula": "case",     "title": "...", "subtitle": "..."},
+  {"formula": "marco",    "title": "...", "subtitle": "..."}
 ]`
 }
 
@@ -107,7 +112,7 @@ export async function POST(req: NextRequest) {
   try {
     const message = await anthropic.messages.create({
       model: 'claude-sonnet-4-6',
-      max_tokens: 1024,
+      max_tokens: 1200,
       messages: [{ role: 'user', content: prompt }],
     })
 

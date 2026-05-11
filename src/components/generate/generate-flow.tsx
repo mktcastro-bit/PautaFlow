@@ -8,8 +8,18 @@ import { ArtCanvas } from './art-canvas'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-interface Idea { title: string; subtitle: string }
-interface Slide { number: number; text: string }
+interface Idea {
+  title: string
+  subtitle: string
+  formula?: string  // chave da fórmula viral (atalho, guia, conselho, case, marco)
+}
+interface Slide {
+  number: number
+  text?: string
+  title?: string
+  subtitle?: string
+  callout?: string
+}
 
 type Step = 'texto' | 'arte'
 type LoadingState = null | 'ideas' | 'slides'
@@ -316,24 +326,45 @@ function IdeaGrid({
 
   return (
     <div className="flex-1 overflow-y-auto p-5">
-      <p className="text-[10px] font-semibold text-zinc-500 uppercase tracking-widest mb-4">Escolha uma Ideia</p>
-      <div className="grid grid-cols-2 gap-3">
-        {ideas.map((idea, i) => (
-          <button
-            key={i}
-            onClick={() => onSelect(idea)}
-            className="text-left bg-zinc-800/50 hover:bg-zinc-800 border border-zinc-700 hover:border-gold rounded-xl p-4 transition-all group"
-          >
-            <p className="text-[10px] text-zinc-500 uppercase tracking-widest mb-2 group-hover:text-gold transition-colors">
-              Ideia {i + 1}
-            </p>
-            <p className="text-white font-semibold text-sm leading-snug mb-2">{idea.title}</p>
-            <p className="text-zinc-400 text-xs leading-relaxed">{idea.subtitle}</p>
-          </button>
-        ))}
+      <div className="flex items-center justify-between mb-4">
+        <p className="text-[10px] font-semibold text-zinc-500 uppercase tracking-widest">Escolha uma Ideia</p>
+        <p className="text-[9px] tracking-[0.2em] uppercase text-zinc-600">
+          5 fórmulas virais aplicadas
+        </p>
+      </div>
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+        {ideas.map((idea, i) => {
+          const label = idea.formula ? FORMULA_LABELS[idea.formula] : null
+          return (
+            <button
+              key={i}
+              onClick={() => onSelect(idea)}
+              className="relative text-left bg-zinc-800/50 hover:bg-zinc-800 border border-zinc-700 hover:border-gold rounded-xl p-4 transition-all group"
+            >
+              {label && (
+                <span className="absolute top-3 right-3 text-[9px] tracking-[0.2em] uppercase text-gold border border-gold/40 px-2 py-0.5 font-semibold">
+                  {label}
+                </span>
+              )}
+              <p className="text-[10px] text-zinc-500 uppercase tracking-widest mb-3 group-hover:text-gold transition-colors">
+                Ideia {i + 1}
+              </p>
+              <p className="text-white font-semibold text-sm leading-snug mb-2">{idea.title}</p>
+              <p className="text-zinc-400 text-xs leading-relaxed">{idea.subtitle}</p>
+            </button>
+          )
+        })}
       </div>
     </div>
   )
+}
+
+const FORMULA_LABELS: Record<string, string> = {
+  atalho:   'Atalho',
+  guia:     'Guia',
+  conselho: 'Conselho',
+  case:     'Case',
+  marco:    'Marco',
 }
 
 // ─── Slide Preview ────────────────────────────────────────────────────────────
@@ -383,7 +414,7 @@ function SlidePreview({
           category: config.pilar,
           platform: plat,
           format: fmt,
-          tags: [],
+          tags: idea.formula ? [idea.formula] : [],
           slides,
           caption,
         }),
@@ -429,19 +460,32 @@ function SlidePreview({
         <p className="text-[10px] font-semibold text-zinc-500 uppercase tracking-widest mb-3">Slides</p>
         <div className="space-y-2">
           {slides.map(slide => {
-            const parts = parseSlideParts(slide.text)
+            const titleText = slide.title || slide.text || ''
+            const titleParts = parseSlideParts(titleText)
             return (
               <div key={slide.number} className="flex items-start gap-3 bg-zinc-800/40 rounded-lg px-3 py-2.5">
                 <span className="text-[10px] font-bold text-gold uppercase tracking-widest w-12 flex-shrink-0 pt-0.5">
                   Slide {slide.number}
                 </span>
-                <p className="text-sm text-zinc-200 leading-relaxed">
-                  {parts.map((part, i) =>
-                    part.emphasis
-                      ? <span key={i} className="text-white font-semibold">{part.text}</span>
-                      : <span key={i}>{part.text}</span>
+                <div className="flex-1 space-y-1">
+                  <p className="text-sm text-zinc-200 leading-snug font-medium">
+                    {titleParts.map((part, i) =>
+                      part.emphasis
+                        ? <span key={i} className="text-gold">{part.text}</span>
+                        : <span key={i}>{part.text}</span>
+                    )}
+                  </p>
+                  {slide.subtitle && (
+                    <p className="text-xs text-zinc-500 leading-relaxed italic">
+                      {slide.subtitle}
+                    </p>
                   )}
-                </p>
+                  {slide.callout && (
+                    <p className="text-xs text-gold font-semibold">
+                      → {slide.callout}
+                    </p>
+                  )}
+                </div>
               </div>
             )
           })}
@@ -565,6 +609,7 @@ export function GenerateFlow({ workspace, brandDna, pilars, initialPauta }: Prop
         format: config.format,
         publicationFormat: config.publicationFormat,
         variant: config.variant,
+        formula: idea.formula,
         brand_dna: brandDna,
       }),
     })
