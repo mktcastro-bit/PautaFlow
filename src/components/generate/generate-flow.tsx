@@ -370,11 +370,13 @@ const FORMULA_LABELS: Record<string, string> = {
 // ─── Slide Preview ────────────────────────────────────────────────────────────
 
 function SlidePreview({
-  idea, slides, caption, loading, config, workspace, savedPautaId, setSavedPautaId, onBack, onApprove, onCopyCaption,
+  idea, slides, setSlides, caption, setCaption, loading, config, workspace, savedPautaId, setSavedPautaId, onBack, onApprove, onCopyCaption,
 }: {
   idea: Idea
   slides: Slide[]
+  setSlides: (slides: Slide[]) => void
   caption: string
+  setCaption: (c: string) => void
   loading: LoadingState
   config: Config
   workspace: Workspace
@@ -384,6 +386,12 @@ function SlidePreview({
   onApprove: () => void
   onCopyCaption: () => void
 }) {
+  const [editingSlide, setEditingSlide] = useState<number | null>(null)
+  const [editingCaption, setEditingCaption] = useState(false)
+
+  function updateSlide(n: number, patch: Partial<Slide>) {
+    setSlides(slides.map(s => s.number === n ? { ...s, ...patch } : s))
+  }
   const [copied, setCopied] = useState(false)
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
@@ -457,35 +465,99 @@ function SlidePreview({
 
       {/* Slides */}
       <div className="mb-5">
-        <p className="text-[10px] font-semibold text-zinc-500 uppercase tracking-widest mb-3">Slides</p>
+        <div className="flex items-center justify-between mb-3">
+          <p className="text-[10px] font-semibold text-zinc-500 uppercase tracking-widest">Slides</p>
+          <p className="text-[9px] tracking-[0.2em] uppercase text-zinc-600">Clique para editar</p>
+        </div>
         <div className="space-y-2">
           {slides.map(slide => {
             const titleText = slide.title || slide.text || ''
             const titleParts = parseSlideParts(titleText)
+            const isEditing = editingSlide === slide.number
+
             return (
-              <div key={slide.number} className="flex items-start gap-3 bg-zinc-800/40 rounded-lg px-3 py-2.5">
+              <div
+                key={slide.number}
+                className={cn(
+                  'flex items-start gap-3 rounded-lg px-3 py-2.5 transition-all',
+                  isEditing
+                    ? 'bg-zinc-800 border border-gold/30'
+                    : 'bg-zinc-800/40 hover:bg-zinc-800/70 cursor-pointer border border-transparent'
+                )}
+                onClick={() => !isEditing && setEditingSlide(slide.number)}
+              >
                 <span className="text-[10px] font-bold text-gold uppercase tracking-widest w-12 flex-shrink-0 pt-0.5">
-                  Slide {slide.number}
+                  {String(slide.number).padStart(2, '0')}
                 </span>
-                <div className="flex-1 space-y-1">
-                  <p className="text-sm text-zinc-200 leading-snug font-medium">
-                    {titleParts.map((part, i) =>
-                      part.emphasis
-                        ? <span key={i} className="text-gold">{part.text}</span>
-                        : <span key={i}>{part.text}</span>
-                    )}
-                  </p>
-                  {slide.subtitle && (
-                    <p className="text-xs text-zinc-500 leading-relaxed italic">
-                      {slide.subtitle}
-                    </p>
-                  )}
-                  {slide.callout && (
-                    <p className="text-xs text-gold font-semibold">
-                      → {slide.callout}
-                    </p>
-                  )}
-                </div>
+
+                {isEditing ? (
+                  <div className="flex-1 space-y-2" onClick={(e) => e.stopPropagation()}>
+                    <div>
+                      <label className="text-[9px] text-zinc-500 tracking-widest uppercase">Título</label>
+                      <input
+                        type="text"
+                        value={titleText}
+                        onChange={e => updateSlide(slide.number, { title: e.target.value, text: e.target.value })}
+                        className="w-full bg-zinc-900 border border-zinc-700 rounded px-2 py-1.5 text-sm text-zinc-100 focus:outline-none focus:border-gold/50 mt-0.5"
+                        placeholder="Texto principal · use _palavra_ para destaque dourado"
+                        autoFocus
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[9px] text-zinc-500 tracking-widest uppercase">Subtítulo</label>
+                      <textarea
+                        value={slide.subtitle || ''}
+                        onChange={e => updateSlide(slide.number, { subtitle: e.target.value })}
+                        rows={2}
+                        className="w-full bg-zinc-900 border border-zinc-700 rounded px-2 py-1.5 text-xs text-zinc-300 focus:outline-none focus:border-gold/50 resize-none mt-0.5"
+                        placeholder="Explicação (opcional)"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[9px] text-zinc-500 tracking-widest uppercase">Callout</label>
+                      <input
+                        type="text"
+                        value={slide.callout || ''}
+                        onChange={e => updateSlide(slide.number, { callout: e.target.value })}
+                        className="w-full bg-zinc-900 border border-zinc-700 rounded px-2 py-1.5 text-xs text-gold font-semibold focus:outline-none focus:border-gold/50 mt-0.5"
+                        placeholder="Frase curta de destaque (opcional)"
+                      />
+                    </div>
+                    <div className="flex items-center justify-end gap-2 pt-1">
+                      <button
+                        onClick={() => setEditingSlide(null)}
+                        className="text-[10px] tracking-widest uppercase text-zinc-500 hover:text-zinc-300 transition-colors px-2 py-1"
+                      >
+                        Fechar
+                      </button>
+                      <button
+                        onClick={() => setEditingSlide(null)}
+                        className="flex items-center gap-1.5 text-[10px] tracking-widest uppercase bg-gold text-ink px-3 py-1.5 font-semibold hover:bg-gold-soft transition-colors"
+                      >
+                        <Check className="h-3 w-3" /> OK
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex-1 space-y-1">
+                      <p className="text-sm text-zinc-200 leading-snug font-medium">
+                        {titleParts.map((part, i) =>
+                          part.emphasis
+                            ? <span key={i} className="text-gold">{part.text}</span>
+                            : <span key={i}>{part.text}</span>
+                        )}
+                      </p>
+                      {slide.subtitle && (
+                        <p className="text-xs text-zinc-500 leading-relaxed italic">{slide.subtitle}</p>
+                      )}
+                      {slide.callout && (
+                        <p className="text-xs text-gold font-semibold">→ {slide.callout}</p>
+                      )}
+                    </div>
+                    <Edit2 className="h-3 w-3 text-zinc-600 flex-shrink-0 mt-1 opacity-0 group-hover:opacity-100" />
+                  </>
+                )}
               </div>
             )
           })}
@@ -493,12 +565,20 @@ function SlidePreview({
       </div>
 
       {/* Caption */}
-      {caption && (
-        <div className="mb-4">
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-[10px] font-semibold text-zinc-500 uppercase tracking-widest">
-              Legenda {config.platform}
-            </p>
+      <div className="mb-4">
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-[10px] font-semibold text-zinc-500 uppercase tracking-widest">
+            Legenda {config.platform}
+          </p>
+          <div className="flex items-center gap-3">
+            {!editingCaption && (
+              <button
+                onClick={() => setEditingCaption(true)}
+                className="flex items-center gap-1 text-xs text-zinc-500 hover:text-zinc-300 transition-colors"
+              >
+                <Edit2 className="h-3 w-3" /> Editar
+              </button>
+            )}
             <button
               onClick={handleCopy}
               className="flex items-center gap-1 text-xs text-zinc-500 hover:text-zinc-300 transition-colors"
@@ -506,11 +586,34 @@ function SlidePreview({
               {copied ? <><Check className="h-3 w-3 text-green-400" /> Copiado</> : <><Copy className="h-3 w-3" /> Copiar</>}
             </button>
           </div>
-          <div className="bg-zinc-800/40 rounded-lg p-3 text-xs text-zinc-300 whitespace-pre-line leading-relaxed">
-            {caption}
-          </div>
         </div>
-      )}
+        {editingCaption ? (
+          <div className="space-y-2">
+            <textarea
+              value={caption}
+              onChange={e => setCaption(e.target.value)}
+              rows={Math.min(20, Math.max(6, caption.split('\n').length + 1))}
+              className="w-full bg-zinc-900 border border-gold/30 rounded-lg p-3 text-xs text-zinc-200 leading-relaxed focus:outline-none focus:border-gold/60 resize-none font-mono"
+              autoFocus
+            />
+            <div className="flex justify-end">
+              <button
+                onClick={() => setEditingCaption(false)}
+                className="flex items-center gap-1.5 text-[10px] tracking-widest uppercase bg-gold text-ink px-3 py-1.5 font-semibold hover:bg-gold-soft transition-colors"
+              >
+                <Check className="h-3 w-3" /> OK
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div
+            onClick={() => setEditingCaption(true)}
+            className="bg-zinc-800/40 hover:bg-zinc-800/70 cursor-pointer rounded-lg p-3 text-xs text-zinc-300 whitespace-pre-line leading-relaxed border border-transparent hover:border-zinc-700 transition-all"
+          >
+            {caption || <span className="text-zinc-600 italic">Clique para escrever uma legenda...</span>}
+          </div>
+        )}
+      </div>
 
       {/* Salvar como pauta */}
       <div className="pb-4">
@@ -690,7 +793,9 @@ export function GenerateFlow({ workspace, brandDna, pilars, initialPauta }: Prop
             <SlidePreview
               idea={selectedIdea!}
               slides={slides}
+              setSlides={setSlides}
               caption={caption}
+              setCaption={setCaption}
               loading={loading}
               config={config}
               workspace={workspace}
