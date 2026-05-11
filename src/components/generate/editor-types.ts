@@ -14,6 +14,7 @@ export interface EditorState {
 
   // ── Texto ──────────────────────────────────────────────────
   textPosition: 'top' | 'center' | 'bottom'
+  textAlign: 'left' | 'center' | 'right'   // alinhamento unificado de todos os slides
   fontSize: 'sm' | 'md' | 'lg'
   textColor: string
   emphasisColor: string
@@ -40,6 +41,7 @@ export const DEFAULT_EDITOR: EditorState = {
   overlayOpacity: 40,
 
   textPosition: 'center',
+  textAlign: 'left',
   fontSize: 'md',
   textColor: '#f0ece4',
   emphasisColor: '#c9a86a',

@@ -185,9 +185,12 @@ export const ArtCard = React.forwardRef<HTMLDivElement, Props>(
       </div>
     )
 
-    // ── Helpers de render ──
-    function renderTitle(opts: { sizeMul?: number; align?: 'left' | 'center' | 'right' } = {}) {
-      const { sizeMul = 1, align = 'left' } = opts
+    // ── Alinhamento unificado por post (vem do editor) ──
+    const align: 'left' | 'center' | 'right' = editor.textAlign || 'left'
+
+    // ── Helpers de render — todos usam o mesmo align ──
+    function renderTitle(opts: { sizeMul?: number } = {}) {
+      const { sizeMul = 1 } = opts
       return (
         <h2 style={{
           fontFamily: TITLE_FONT,
@@ -209,9 +212,8 @@ export const ArtCard = React.forwardRef<HTMLDivElement, Props>(
       )
     }
 
-    function renderSubtitle(opts: { align?: 'left' | 'center' | 'right' } = {}) {
+    function renderSubtitle() {
       if (!subtitleText) return null
-      const { align = 'left' } = opts
       return (
         <p style={{
           fontFamily: BODY_FONT,
@@ -232,9 +234,8 @@ export const ArtCard = React.forwardRef<HTMLDivElement, Props>(
       )
     }
 
-    function renderCallout(opts: { align?: 'left' | 'center' | 'right' } = {}) {
+    function renderCallout() {
       if (!calloutText) return null
-      const { align = 'left' } = opts
       return (
         <p style={{
           fontFamily: BODY_FONT,
@@ -249,6 +250,9 @@ export const ArtCard = React.forwardRef<HTMLDivElement, Props>(
         </p>
       )
     }
+
+    // Helper para items inline (rule, número, "Insight" tag)
+    const justify = align === 'center' ? 'center' : align === 'right' ? 'flex-end' : 'flex-start'
 
     // ── Decorative ──
     const TopRule = (
@@ -268,9 +272,8 @@ export const ArtCard = React.forwardRef<HTMLDivElement, Props>(
           left: pad, right: pad,
           top: '28%',
           zIndex: 4,
-          textAlign: 'left',
         }}>
-          {TopRule}
+          <div style={{ display: 'flex', justifyContent: justify }}>{TopRule}</div>
           {renderTitle({ sizeMul: 1.25 })}
           {renderSubtitle()}
           {renderCallout()}
@@ -286,7 +289,13 @@ export const ArtCard = React.forwardRef<HTMLDivElement, Props>(
           top: '32%',
           zIndex: 4,
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 24 * scale, marginBottom: 28 * scale }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 24 * scale,
+            marginBottom: 28 * scale,
+            justifyContent: justify,
+          }}>
             <div style={{ width: 120 * scale, height: 1, backgroundColor: goldColor }} />
             <span style={{
               fontSize: metaFont,
@@ -306,6 +315,34 @@ export const ArtCard = React.forwardRef<HTMLDivElement, Props>(
     }
 
     function renderNumbered() {
+      // No alinhamento à direita, inverte a ordem (texto à esquerda, número à direita)
+      const isRight = align === 'right'
+      const isCenter = align === 'center'
+
+      const numberEl = (
+        <div style={{
+          fontFamily: TITLE_FONT,
+          fontSize: titleSize * 2.4,
+          color: goldColor,
+          lineHeight: 0.85,
+          fontStyle: 'italic',
+          fontWeight: 400,
+          letterSpacing: '-0.04em',
+          flexShrink: 0,
+        }}>
+          {String(slide.number - 1).padStart(2, '0')}
+        </div>
+      )
+
+      const contentEl = (
+        <div style={{ flex: 1, paddingTop: 20 * scale }}>
+          <div style={{ width: 60 * scale, height: 1, backgroundColor: goldColor, marginBottom: 24 * scale, marginLeft: justify === 'flex-end' ? 'auto' : justify === 'center' ? 'auto' : 0, marginRight: justify === 'flex-end' ? 0 : justify === 'center' ? 'auto' : undefined }} />
+          {renderTitle({ sizeMul: 0.92 })}
+          {renderSubtitle()}
+          {renderCallout()}
+        </div>
+      )
+
       return (
         <div style={{
           position: 'absolute',
@@ -315,25 +352,11 @@ export const ArtCard = React.forwardRef<HTMLDivElement, Props>(
           display: 'flex',
           alignItems: 'flex-start',
           gap: 40 * scale,
+          flexDirection: isCenter ? 'column' : (isRight ? 'row-reverse' : 'row'),
+          textAlign: align,
         }}>
-          <div style={{
-            fontFamily: TITLE_FONT,
-            fontSize: titleSize * 2.4,
-            color: goldColor,
-            lineHeight: 0.85,
-            fontStyle: 'italic',
-            fontWeight: 400,
-            letterSpacing: '-0.04em',
-            flexShrink: 0,
-          }}>
-            {String(slide.number - 1).padStart(2, '0')}
-          </div>
-          <div style={{ flex: 1, paddingTop: 20 * scale }}>
-            <div style={{ width: 60 * scale, height: 1, backgroundColor: goldColor, marginBottom: 24 * scale }} />
-            {renderTitle({ sizeMul: 0.92 })}
-            {renderSubtitle()}
-            {renderCallout()}
-          </div>
+          {numberEl}
+          {contentEl}
         </div>
       )
     }
@@ -406,7 +429,7 @@ export const ArtCard = React.forwardRef<HTMLDivElement, Props>(
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'center',
-          alignItems: 'center',
+          alignItems: align === 'center' ? 'center' : align === 'right' ? 'flex-end' : 'flex-start',
           zIndex: 4,
         }}>
           <div style={{
@@ -426,9 +449,9 @@ export const ArtCard = React.forwardRef<HTMLDivElement, Props>(
             <div style={{ width: 50 * scale, height: 1, backgroundColor: goldColor }} />
           </div>
           <div style={{ maxWidth: '85%' }}>
-            {renderTitle({ sizeMul: 1.15, align: 'center' })}
-            {renderSubtitle({ align: 'center' })}
-            {renderCallout({ align: 'center' })}
+            {renderTitle({ sizeMul: 1.15 })}
+            {renderSubtitle()}
+            {renderCallout()}
           </div>
         </div>
       )

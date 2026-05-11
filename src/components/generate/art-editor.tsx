@@ -225,7 +225,31 @@ function TextoTab({ editor, onChange }: Props) {
   return (
     <div className="space-y-5">
       <div>
-        <Label>Posição do texto</Label>
+        <Label>Alinhamento do texto</Label>
+        <p className="text-[10px] text-zinc-500 -mt-1 mb-2">Aplica a todos os slides do post.</p>
+        <div className="grid grid-cols-3 gap-1.5">
+          {(['left', 'center', 'right'] as const).map(a => (
+            <button
+              key={a}
+              onClick={() => set('textAlign', a)}
+              className={cn(
+                'py-2 rounded-lg border text-xs transition-colors flex flex-col items-center gap-1',
+                editor.textAlign === a
+                  ? 'bg-gold border-gold text-ink'
+                  : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-zinc-500'
+              )}
+            >
+              <span className="text-base leading-none">
+                {a === 'left' ? '⬅' : a === 'center' ? '⬛' : '➡'}
+              </span>
+              <span className="capitalize">{a === 'left' ? 'Esquerda' : a === 'center' ? 'Centro' : 'Direita'}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <Label>Posição vertical</Label>
         <div className="grid grid-cols-3 gap-1.5">
           {(['top', 'center', 'bottom'] as const).map(pos => (
             <button
