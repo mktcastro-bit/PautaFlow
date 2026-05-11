@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { anthropic } from '@/lib/anthropic'
+import { mapAnthropicError } from '@/lib/anthropic/errors'
 import { BrandDNA } from '@/types'
 import { FORMULAS, FORMULA_ORDER } from '@/lib/viral-formulas'
 
@@ -121,8 +122,12 @@ export async function POST(req: NextRequest) {
     const ideas = jsonMatch ? JSON.parse(jsonMatch[0]) : []
 
     return NextResponse.json({ ideas })
-  } catch (err) {
-    console.error('Ideas generation error:', err)
-    return NextResponse.json({ error: 'Erro ao gerar ideias' }, { status: 500 })
+  } catch (err: any) {
+    console.error('[ideas] generation error:', err?.status, err?.message)
+    const friendly = mapAnthropicError(err)
+    return NextResponse.json(
+      { error: friendly.message, hint: friendly.hint, type: friendly.type },
+      { status: friendly.status }
+    )
   }
 }

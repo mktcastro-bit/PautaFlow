@@ -26,10 +26,13 @@ const PROFILE_ROLES: Record<string, string[]> = {
 interface Props {
   workspace: Workspace
   initialDna?: BrandDNA | null
+  /** Quando true, mostra tela de boas-vindas como primeira etapa */
+  isWelcome?: boolean
 }
 
-export function BrandDnaWizard({ workspace, initialDna }: Props) {
+export function BrandDnaWizard({ workspace, initialDna, isWelcome = false }: Props) {
   const router = useRouter()
+  const [showWelcome, setShowWelcome] = useState(isWelcome && !initialDna?.completed)
   const [currentStep, setCurrentStep] = useState(initialDna?.current_step || 1)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -140,23 +143,85 @@ export function BrandDnaWizard({ workspace, initialDna }: Props) {
     }))
   }
 
+  // ─── Tela de boas-vindas (primeira vez) ──────────────────────────────
+  if (showWelcome) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-6">
+        <div className="max-w-xl w-full">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="h-px w-12 bg-gold" />
+            <span className="text-[10px] tracking-[0.3em] uppercase text-gold font-semibold">
+              Bem-vindo
+            </span>
+          </div>
+          <h1 className="font-serif text-4xl md:text-5xl leading-tight tracking-tight mb-6">
+            Antes de gerar, vamos <span className="italic text-gold">conhecer sua marca</span>.
+          </h1>
+          <p className="text-muted-foreground leading-relaxed mb-8 text-base">
+            5 passos rápidos — em cerca de 3 minutos a IA aprende como sua marca pensa, fala e se posiciona.
+            Toda geração futura herda essa identidade automaticamente.
+          </p>
+          <div className="space-y-3 mb-10">
+            {[
+              { n: '01', t: 'Marca', d: 'Nome, missão, visão' },
+              { n: '02', t: 'Público', d: 'Quem você fala' },
+              { n: '03', t: 'Voz', d: 'Como sua marca soa' },
+              { n: '04', t: 'Identidade', d: 'Cores e tipografia' },
+              { n: '05', t: 'Posicionamento', d: 'Diferencial e pilares' },
+            ].map(item => (
+              <div key={item.n} className="flex items-center gap-4 py-2 border-b border-border/40">
+                <span className="font-serif text-2xl text-gold italic w-10">{item.n}</span>
+                <div>
+                  <p className="font-medium text-sm">{item.t}</p>
+                  <p className="text-xs text-muted-foreground">{item.d}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setShowWelcome(false)}
+              className="flex items-center gap-2 bg-gold text-ink px-6 py-3 text-xs tracking-[0.2em] uppercase font-bold hover:bg-gold-soft transition-colors"
+            >
+              Começar configuração <ArrowRight className="h-3 w-3" />
+            </button>
+            <button
+              onClick={() => router.push(`/workspaces/${workspace.slug}/pautas`)}
+              className="text-xs tracking-[0.2em] uppercase text-muted-foreground hover:text-foreground transition-colors px-4 py-3"
+            >
+              Pular por agora
+            </button>
+          </div>
+          <p className="text-[10px] tracking-luxe uppercase text-muted-foreground mt-4">
+            Pulando? Você pode configurar depois em <span className="text-gold">DNA da Marca</span>
+          </p>
+        </div>
+      </div>
+    )
+  }
+
   if (saved) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center space-y-4 max-w-md">
-          <div className="h-16 w-16 bg-green-100 rounded-2xl flex items-center justify-center mx-auto">
-            <Sparkles className="h-8 w-8 text-green-600" />
+      <div className="min-h-screen flex items-center justify-center p-6">
+        <div className="max-w-md text-center">
+          <div className="flex items-center justify-center gap-3 mb-6">
+            <div className="h-px w-12 bg-gold" />
+            <span className="text-[10px] tracking-[0.3em] uppercase text-gold font-semibold">
+              Pronto
+            </span>
+            <div className="h-px w-12 bg-gold" />
           </div>
-          <h2 className="text-2xl font-bold">DNA da Marca completo!</h2>
-          <p className="text-muted-foreground">
-            A IA agora usa essas informações para gerar conteúdo personalizado para sua marca.
+          <h2 className="font-serif text-4xl leading-tight mb-4">
+            DNA da marca <span className="italic text-gold">completo</span>
+          </h2>
+          <p className="text-muted-foreground mb-10 leading-relaxed">
+            A IA agora conhece sua marca. Vamos gerar seu primeiro conteúdo.
           </p>
           <button
             onClick={() => router.push(`/workspaces/${workspace.slug}/generate`)}
-            className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-5 py-2.5 rounded-lg font-medium hover:bg-primary/90 transition-colors"
+            className="inline-flex items-center gap-2 bg-gold text-ink px-8 py-4 text-xs tracking-[0.2em] uppercase font-bold hover:bg-gold-soft transition-colors"
           >
-            <Sparkles className="h-4 w-4" />
-            Gerar primeiro conteúdo
+            <Sparkles className="h-4 w-4" /> Gerar primeiro conteúdo
           </button>
         </div>
       </div>

@@ -9,18 +9,20 @@ import {
 } from '@/lib/utils'
 import { PautaModal } from './pauta-modal'
 import { createClient } from '@/lib/supabase/client'
+import { DnaIncompleteBanner } from '@/components/shared/dna-incomplete-banner'
 
 interface Props {
   pautas: Pauta[]
   workspace: Workspace
   categories: string[]
   filters: { [key: string]: string | undefined }
+  dnaIncomplete?: boolean
 }
 
 const PLATFORMS = ['instagram', 'linkedin', 'ambos'] as const
 const FORMATS = ['carrossel', 'post', 'artigo', 'reels'] as const
 
-export function PautasClient({ pautas, workspace, categories, filters }: Props) {
+export function PautasClient({ pautas, workspace, categories, filters, dnaIncomplete }: Props) {
   const router = useRouter()
   const [showModal, setShowModal] = useState(false)
   const [editingPauta, setEditingPauta] = useState<Pauta | null>(null)
@@ -89,6 +91,9 @@ export function PautasClient({ pautas, workspace, categories, filters }: Props) 
 
   return (
     <div className="min-h-screen bg-background">
+
+      {/* DNA pendente */}
+      {dnaIncomplete && <DnaIncompleteBanner workspaceSlug={workspace.slug} variant="sticky" />}
 
       {/* ── Page header ─────────────────────────────────────────────────── */}
       <header className="border-b border-border bg-background/80 backdrop-blur-md sticky top-0 z-30">

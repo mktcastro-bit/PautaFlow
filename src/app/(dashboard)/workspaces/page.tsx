@@ -104,6 +104,23 @@ export default async function WorkspacesPage() {
     firstSlug = ws.slug
   }
 
-  // 5. Redireciona
+  // 5. Buscar o ID do workspace que vamos abrir
+  const { data: ws } = await admin
+    .from('workspaces')
+    .select('id')
+    .eq('slug', firstSlug)
+    .single()
+
+  // 6. Verificar se o DNA do workspace está completo
+  const { data: dna } = await admin
+    .from('brand_dna')
+    .select('completed')
+    .eq('workspace_id', ws?.id)
+    .maybeSingle()
+
+  // 7. Redireciona — DNA pendente → brand-dna; já configurado → pautas
+  if (!dna?.completed) {
+    redirect(`/workspaces/${firstSlug}/brand-dna?welcome=1`)
+  }
   redirect(`/workspaces/${firstSlug}/pautas`)
 }

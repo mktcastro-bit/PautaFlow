@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { anthropic } from '@/lib/anthropic'
+import { mapAnthropicError } from '@/lib/anthropic/errors'
 import { BrandDNA } from '@/types'
 import { getFormula } from '@/lib/viral-formulas'
+import { checkGenerationLimit } from '@/lib/usage-limits'
 
 const DEMO_SLIDES = {
   slides: [
@@ -139,6 +141,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'title e workspace_id são obrigatórios' }, { status: 400 })
   }
 
+  // Limite de uso por workspace/plano
+  const limit = await checkGenerationLimit(workspace_id)
+  if (!limit.ok) {
+    return NextResponse.json({
+      error: `Limite mensal de ${limit.limit} gerações atingido no plano ${limit.plan}.`,
+      hint: 'Aguarde o próximo ciclo ou faça upgrade do plano.',
+      type: 'limit',
+      usage: limit,
+    }, { status: 402 })
+  }
+
   const prompt = buildSlidesPrompt(title, subtitle, pilar, platform, format, publicationFormat, variant, formula, brand_dna || {})
 
   try {
@@ -172,8 +185,12 @@ export async function POST(req: NextRequest) {
     })
 
     return NextResponse.json(result)
-  } catch (err) {
-    console.error('Slides generation error:', err)
-    return NextResponse.json({ error: 'Erro ao gerar slides' }, { status: 500 })
+  } catch (err: any) {
+    console.error('[slides] generation error:', err?.status, err?.message)
+    const friendly = mapAnthropicError(err)
+    return NextResponse.json(
+      { error: friendly.message, hint: friendly.hint, type: friendly.type },
+      { status: friendly.status }
+    )
   }
 }

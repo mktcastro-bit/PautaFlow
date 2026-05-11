@@ -5,6 +5,7 @@ import { Sparkles, ChevronLeft, Edit2, X, Copy, Check, Plus, BookmarkPlus } from
 import { BrandDNA, Workspace } from '@/types'
 import { cn } from '@/lib/utils'
 import { ArtCanvas } from './art-canvas'
+import { UsageBadge } from '@/components/shared/usage-badge'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -296,18 +297,42 @@ function ConfigPanel({
 // ─── Idea Grid ────────────────────────────────────────────────────────────────
 
 function IdeaGrid({
-  ideas, onSelect, loading,
+  ideas, onSelect, loading, genError, onRetry,
 }: {
   ideas: Idea[]
   onSelect: (idea: Idea) => void
   loading: LoadingState
+  genError?: string | null
+  onRetry?: () => void
 }) {
   if (loading === 'ideas') {
     return (
       <div className="flex-1 flex items-center justify-center">
-        <div className="text-center space-y-3">
+        <div className="text-center space-y-3 max-w-sm">
           <div className="h-10 w-10 border-2 border-gold border-t-transparent rounded-full animate-spin mx-auto" />
-          <p className="text-zinc-400 text-sm">Gerando ideias com IA...</p>
+          <p className="text-zinc-400 text-sm">Aplicando 5 fórmulas virais à sua marca…</p>
+          <p className="text-[10px] tracking-[0.2em] uppercase text-zinc-600">Pode levar até 30 segundos</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (genError) {
+    return (
+      <div className="flex-1 flex items-center justify-center p-8">
+        <div className="text-center max-w-md space-y-4 bg-red-500/5 border border-red-500/20 rounded-xl p-6">
+          <div className="h-10 w-10 rounded-full bg-red-500/10 border border-red-500/30 flex items-center justify-center mx-auto">
+            <X className="h-5 w-5 text-red-400" />
+          </div>
+          <p className="text-sm text-red-400 font-medium leading-relaxed">{genError}</p>
+          {onRetry && (
+            <button
+              onClick={onRetry}
+              className="inline-flex items-center gap-1.5 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-white px-4 py-2 text-xs tracking-[0.2em] uppercase font-semibold transition-colors"
+            >
+              Tentar novamente
+            </button>
+          )}
         </div>
       </div>
     )
@@ -666,6 +691,7 @@ export function GenerateFlow({ workspace, brandDna, pilars, initialPauta }: Prop
   const [slides, setSlides] = useState<Slide[]>(initialPauta?.slides || [])
   const [caption, setCaption] = useState<string>(initialPauta?.caption || initialPauta?.description || '')
   const [savedPautaId, setSavedPautaId] = useState<string | null>(initialPauta?.id || null)
+  const [genError, setGenError] = useState<string | null>(null)
 
   async function handleGenerateIdeas() {
     setLoading('ideas')
@@ -674,23 +700,29 @@ export function GenerateFlow({ workspace, brandDna, pilars, initialPauta }: Prop
     setSlides([])
     setCaption('')
     setSavedPautaId(null)
+    setGenError(null)
 
-    const res = await fetch('/api/generate/ideas', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        workspace_id: workspace.id,
-        pilar: config.pilar,
-        platform: config.platform,
-        format: config.format,
-        suggestion: config.suggestion || undefined,
-        brand_dna: brandDna,
-      }),
-    })
-
-    const data = await res.json()
-    setIdeas(data.ideas || [])
-    setLoading(null)
+    try {
+      const res = await fetch('/api/generate/ideas', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          workspace_id: workspace.id,
+          pilar: config.pilar,
+          platform: config.platform,
+          format: config.format,
+          suggestion: config.suggestion || undefined,
+          brand_dna: brandDna,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.hint ? `${data.error} ${data.hint}` : (data.error || 'Erro ao gerar ideias'))
+      setIdeas(data.ideas || [])
+    } catch (err: any) {
+      setGenError(err.message || 'Erro inesperado ao gerar ideias.')
+    } finally {
+      setLoading(null)
+    }
   }
 
   async function handleSelectIdea(idea: Idea) {
@@ -699,28 +731,35 @@ export function GenerateFlow({ workspace, brandDna, pilars, initialPauta }: Prop
     setSlides([])
     setCaption('')
     setSavedPautaId(null)
+    setGenError(null)
 
-    const res = await fetch('/api/generate/slides', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        workspace_id: workspace.id,
-        title: idea.title,
-        subtitle: idea.subtitle,
-        pilar: config.pilar,
-        platform: config.platform,
-        format: config.format,
-        publicationFormat: config.publicationFormat,
-        variant: config.variant,
-        formula: idea.formula,
-        brand_dna: brandDna,
-      }),
-    })
-
-    const data = await res.json()
-    setSlides(data.slides || [])
-    setCaption(data.caption || '')
-    setLoading(null)
+    try {
+      const res = await fetch('/api/generate/slides', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          workspace_id: workspace.id,
+          title: idea.title,
+          subtitle: idea.subtitle,
+          pilar: config.pilar,
+          platform: config.platform,
+          format: config.format,
+          publicationFormat: config.publicationFormat,
+          variant: config.variant,
+          formula: idea.formula,
+          brand_dna: brandDna,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.hint ? `${data.error} ${data.hint}` : (data.error || 'Erro ao gerar slides'))
+      setSlides(data.slides || [])
+      setCaption(data.caption || '')
+    } catch (err: any) {
+      setGenError(err.message || 'Erro inesperado ao gerar slides.')
+      setSelectedIdea(null)
+    } finally {
+      setLoading(null)
+    }
   }
 
   function handleBack() {
@@ -739,6 +778,7 @@ export function GenerateFlow({ workspace, brandDna, pilars, initialPauta }: Prop
         <div className="flex items-center gap-3">
           <Sparkles className="h-4 w-4 text-amber-400" />
           <span className="font-bold text-sm">Gerar Conteúdo</span>
+          <UsageBadge workspaceId={workspace.id} refreshKey={slides.length} />
         </div>
         <div className="flex items-center gap-3">
           {/* Steps */}
@@ -806,7 +846,13 @@ export function GenerateFlow({ workspace, brandDna, pilars, initialPauta }: Prop
               onCopyCaption={() => navigator.clipboard.writeText(caption)}
             />
           ) : (
-            <IdeaGrid ideas={ideas} onSelect={handleSelectIdea} loading={loading} />
+            <IdeaGrid
+              ideas={ideas}
+              onSelect={handleSelectIdea}
+              loading={loading}
+              genError={genError}
+              onRetry={handleGenerateIdeas}
+            />
           )}
         </div>
       ) : (

@@ -44,5 +44,21 @@ export default async function PautasPage({ params, searchParams }: Props) {
   const { data: categories } = await admin.from('pautas').select('category').eq('workspace_id', workspace.id)
   const uniqueCategories = [...new Set(categories?.map(p => p.category) || [])]
 
-  return <PautasClient pautas={pautas || []} workspace={workspace} categories={uniqueCategories} filters={searchParams} />
+  // DNA pendente?
+  const { data: dna } = await admin
+    .from('brand_dna')
+    .select('completed')
+    .eq('workspace_id', workspace.id)
+    .maybeSingle()
+  const dnaIncomplete = !dna?.completed
+
+  return (
+    <PautasClient
+      pautas={pautas || []}
+      workspace={workspace}
+      categories={uniqueCategories}
+      filters={searchParams}
+      dnaIncomplete={dnaIncomplete}
+    />
+  )
 }
