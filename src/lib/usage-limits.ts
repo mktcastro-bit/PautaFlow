@@ -8,8 +8,8 @@ import { createAdminClient } from '@/lib/supabase/server'
 export type Plan = 'trial' | 'starter' | 'pro' | 'agency'
 
 export const LIMITS: Record<Plan, { generationsPerMonth: number; workspaces: number }> = {
-  trial:   { generationsPerMonth: 20,  workspaces: 1 },
-  starter: { generationsPerMonth: 50,  workspaces: 3 },
+  trial:   { generationsPerMonth: 30,  workspaces: 1 },
+  starter: { generationsPerMonth: 60,  workspaces: 3 },
   pro:     { generationsPerMonth: 200, workspaces: 10 },
   agency:  { generationsPerMonth: 999, workspaces: 30 },
 }
@@ -35,21 +35,33 @@ export async function getMonthlyUsage(workspaceId: string): Promise<number> {
   return count || 0
 }
 
-/** Busca o plano do workspace via organization */
-export async function getWorkspacePlan(workspaceId: string): Promise<Plan> {
+/** Busca o plano + override do workspace via organization */
+export async function getWorkspaceLimits(workspaceId: string): Promise<{ plan: Plan; effectiveLimit: number }> {
   const admin = await createAdminClient()
   const { data: ws } = await admin
     .from('workspaces')
     .select('organization_id')
     .eq('id', workspaceId)
     .single()
-  if (!ws) return 'trial'
+  if (!ws) return { plan: 'trial', effectiveLimit: LIMITS.trial.generationsPerMonth }
+
   const { data: org } = await admin
     .from('organizations')
-    .select('plan')
+    .select('plan, generation_limit_override')
     .eq('id', ws.organization_id)
     .single()
-  return (org?.plan as Plan) || 'trial'
+
+  const plan = (org?.plan as Plan) || 'trial'
+  const base = LIMITS[plan].generationsPerMonth
+  // Override TEM PRIORIDADE quando definido — useful para conceder créditos extras
+  const effectiveLimit = org?.generation_limit_override ?? base
+  return { plan, effectiveLimit }
+}
+
+/** Legacy — mantido para compatibilidade */
+export async function getWorkspacePlan(workspaceId: string): Promise<Plan> {
+  const { plan } = await getWorkspaceLimits(workspaceId)
+  return plan
 }
 
 /**
@@ -64,14 +76,13 @@ export interface LimitCheck {
 }
 
 export async function checkGenerationLimit(workspaceId: string): Promise<LimitCheck> {
-  const plan = await getWorkspacePlan(workspaceId)
-  const limit = LIMITS[plan].generationsPerMonth
+  const { plan, effectiveLimit } = await getWorkspaceLimits(workspaceId)
   const used = await getMonthlyUsage(workspaceId)
   return {
-    ok: used < limit,
+    ok: used < effectiveLimit,
     used,
-    limit,
+    limit: effectiveLimit,
     plan,
-    remaining: Math.max(0, limit - used),
+    remaining: Math.max(0, effectiveLimit - used),
   }
 }
