@@ -5,6 +5,7 @@ import { mapAnthropicError } from '@/lib/anthropic/errors'
 import { BrandDNA } from '@/types'
 import { getFormula } from '@/lib/viral-formulas'
 import { checkGenerationLimit } from '@/lib/usage-limits'
+import { buildSlidesInstructions, type SuggestionMode } from '@/lib/suggestion-mode'
 
 const DEMO_SLIDES = {
   slides: [
@@ -43,6 +44,8 @@ function buildSlidesPrompt(
   publicationFormat: string,
   variant: string,
   formula: string | undefined,
+  suggestion: string | undefined,
+  suggestionMode: SuggestionMode,
   dna: Partial<BrandDNA>
 ): string {
   const tone = dna.step3_tone?.join(', ') || 'direto'
@@ -54,11 +57,19 @@ function buildSlidesPrompt(
   const fmt = format.toLowerCase()
   const plat = platform.toLowerCase()
 
-  const slideCount =
+  let slideCount =
     fmt === 'carrossel' ? 8 :
     fmt === 'thread'    ? 10 :
     fmt === 'artigo'    ? 6 :
     1
+
+  // Em modo literal, ajusta o número de slides ao tamanho do texto
+  if (suggestionMode === 'literal' && suggestion) {
+    const words = suggestion.trim().split(/\s+/).length
+    // ~25-40 palavras por slide é confortável de ler
+    const ideal = Math.max(2, Math.min(10, Math.round(words / 30)))
+    slideCount = ideal
+  }
 
   const platformGuide = plat === 'linkedin'
     ? 'LinkedIn — mais texto, mais profundidade, storytelling corporativo'
@@ -76,12 +87,16 @@ ${formulaSpec.description}
 Aplique essa estrutura ao desenvolver os slides. O slide 1 reflete o título com a abordagem desta fórmula.
 Exemplo de aplicação: ${formulaSpec.example}` : ''
 
+  // Bloco de instruções baseado no modo de sugestão
+  const suggestionBlock = buildSlidesInstructions(suggestion, suggestionMode, slideCount)
+
   return `Você é o copywriter de ${brand}.
 
 ## Ideia selecionada
 - **Título**: ${title}
 - **Subtítulo**: ${subtitle}
 ${formulaBlock}
+${suggestionBlock}
 
 ## Configuração
 ${offerings ? `- O que a marca oferece: ${offerings}` : ''}
@@ -137,7 +152,10 @@ export async function POST(req: NextRequest) {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const body = await req.json()
-  const { title, subtitle, pilar, platform, format, publicationFormat, variant, brand_dna, workspace_id, formula } = body
+  const {
+    title, subtitle, pilar, platform, format, publicationFormat,
+    variant, brand_dna, workspace_id, formula, suggestion, suggestion_mode,
+  } = body
 
   if (!title || !workspace_id) {
     return NextResponse.json({ error: 'title e workspace_id são obrigatórios' }, { status: 400 })
@@ -154,7 +172,8 @@ export async function POST(req: NextRequest) {
     }, { status: 402 })
   }
 
-  const prompt = buildSlidesPrompt(title, subtitle, pilar, platform, format, publicationFormat, variant, formula, brand_dna || {})
+  const mode: SuggestionMode = (suggestion_mode as SuggestionMode) || 'hint'
+  const prompt = buildSlidesPrompt(title, subtitle, pilar, platform, format, publicationFormat, variant, formula, suggestion, mode, brand_dna || {})
 
   try {
     const message = await anthropic.messages.create({

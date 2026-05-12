@@ -180,7 +180,11 @@ export function ArtCanvas({ slides, caption, idea, config, brandDna, workspace, 
           tags: [],
           slides,
           caption,
-          editor_state: editor,
+          editor_state: {
+            ...editor,
+            __suggestion: (config as any).suggestion || null,
+            __suggestion_mode: (config as any).suggestionMode || 'hint',
+          },
         }),
       })
       const json = await res.json()

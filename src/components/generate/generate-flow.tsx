@@ -26,6 +26,8 @@ interface Slide {
 type Step = 'texto' | 'arte'
 type LoadingState = null | 'ideas' | 'slides'
 
+export type SuggestionMode = 'hint' | 'news' | 'adapt' | 'literal'
+
 interface Config {
   pilar: string
   platform: string
@@ -33,6 +35,7 @@ interface Config {
   variant: 'dark' | 'light'
   publicationFormat: 'feed' | 'story' | 'reels'
   suggestion: string
+  suggestionMode: SuggestionMode
 }
 
 interface Props {
@@ -142,6 +145,105 @@ function PilarEditor({ pilars, onChange }: { pilars: string[]; onChange: (p: str
           <Plus className="h-3.5 w-3.5 text-ink" />
         </button>
       </div>
+    </div>
+  )
+}
+
+// ─── Suggestion Block ────────────────────────────────────────────────────────
+
+const MODE_SPECS: Record<SuggestionMode, {
+  icon: string
+  label: string
+  placeholder: string
+  hint: string
+}> = {
+  hint: {
+    icon: '💡',
+    label: 'Sugestão',
+    placeholder: 'Ex: fale sobre IA na produtividade, com exemplos do varejo brasileiro',
+    hint: 'A IA usa como inspiração e cria do zero.',
+  },
+  news: {
+    icon: '📰',
+    label: 'Notícia',
+    placeholder: 'Cole aqui a notícia. A IA vai trazer o ângulo da sua marca sobre o fato e citar a fonte quando possível.',
+    hint: 'A IA comenta a notícia com a voz da marca + cita a fonte.',
+  },
+  adapt: {
+    icon: '📚',
+    label: 'Adaptar',
+    placeholder: 'Cole o artigo, post antigo ou material. A IA vai extrair os pontos principais e reformular ao tom da marca.',
+    hint: 'A IA extrai os pontos principais e adapta ao tom da marca.',
+  },
+  literal: {
+    icon: '📋',
+    label: 'Literal',
+    placeholder: 'Cole o texto pronto. A IA preserva suas palavras e apenas divide em slides com destaques visuais.',
+    hint: 'A IA preserva o texto quase intacto, apenas estruturando em slides.',
+  },
+}
+
+function SuggestionBlock({
+  value, mode, onChange, onChangeMode,
+}: {
+  value: string
+  mode: SuggestionMode
+  onChange: (v: string) => void
+  onChangeMode: (m: SuggestionMode) => void
+}) {
+  const spec = MODE_SPECS[mode]
+  const wordCount = value.trim() ? value.trim().split(/\s+/).length : 0
+
+  return (
+    <div className="space-y-2 border border-gold/20 bg-gold/[0.02] p-3 rounded">
+      <div className="flex items-center justify-between">
+        <label className="text-[10px] text-gold font-bold uppercase tracking-[0.2em]">
+          Conteúdo base <span className="text-zinc-500 font-normal">(opcional)</span>
+        </label>
+        {wordCount > 0 && (
+          <span className="text-[9px] text-zinc-500 tracking-wide">
+            {wordCount} {wordCount === 1 ? 'palavra' : 'palavras'}
+          </span>
+        )}
+      </div>
+
+      {/* Mode picker */}
+      <div className="grid grid-cols-4 gap-1">
+        {(['hint', 'news', 'adapt', 'literal'] as SuggestionMode[]).map(m => {
+          const s = MODE_SPECS[m]
+          const active = mode === m
+          return (
+            <button
+              key={m}
+              type="button"
+              onClick={() => onChangeMode(m)}
+              className={cn(
+                'flex flex-col items-center gap-0.5 py-2 rounded text-[9px] tracking-wider uppercase font-semibold border transition-all',
+                active
+                  ? 'bg-gold/15 border-gold/50 text-gold'
+                  : 'bg-zinc-800/30 border-zinc-800 text-zinc-500 hover:border-zinc-700 hover:text-zinc-300'
+              )}
+              title={s.hint}
+            >
+              <span className="text-sm">{s.icon}</span>
+              {s.label}
+            </button>
+          )
+        })}
+      </div>
+
+      {/* Textarea */}
+      <textarea
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        placeholder={spec.placeholder}
+        rows={mode === 'hint' ? 3 : 5}
+        className="w-full bg-zinc-900 border border-zinc-700 rounded px-2.5 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-gold/50 resize-none"
+      />
+
+      <p className="text-[10px] text-zinc-400 leading-relaxed">
+        <span className="text-gold">✓</span> {spec.hint}
+      </p>
     </div>
   )
 }
@@ -264,28 +366,24 @@ function ConfigPanel({
           </div>
         </div>
 
-        <div className="space-y-1">
-          <label className="text-[11px] text-zinc-400 font-medium uppercase tracking-wider">
-            Sugestão <span className="text-zinc-600">(opcional)</span>
-          </label>
-          <textarea
-            value={config.suggestion}
-            onChange={e => set('suggestion')(e.target.value)}
-            placeholder="Ex: algo sobre empresas que usam IA mas não veem resultado..."
-            rows={3}
-            className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-2.5 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-gold/50 resize-none"
-          />
-        </div>
+        <SuggestionBlock
+          value={config.suggestion}
+          mode={config.suggestionMode}
+          onChange={set('suggestion')}
+          onChangeMode={(m) => setConfig({ ...config, suggestionMode: m })}
+        />
       </div>
 
       <div className="p-4 border-t border-zinc-800">
         <button
           onClick={onGenerate}
           disabled={loading === 'ideas'}
-          className="w-full flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-black font-bold py-2.5 rounded-xl text-sm transition-colors"
+          className="w-full flex items-center justify-center gap-2 bg-gold hover:bg-gold-soft disabled:opacity-50 text-ink font-bold py-2.5 rounded text-sm transition-colors"
         >
           {loading === 'ideas' ? (
             <><div className="h-4 w-4 border-2 border-black/30 border-t-black rounded-full animate-spin" /> Gerando...</>
+          ) : config.suggestionMode === 'literal' ? (
+            <><Sparkles className="h-4 w-4" /> Estruturar em slides</>
           ) : (
             <><Sparkles className="h-4 w-4" /> + Sugerir Ideias</>
           )}
@@ -454,6 +552,10 @@ function SlidePreview({
           tags: idea.formula ? [idea.formula] : [],
           slides,
           caption,
+          editor_state: {
+            __suggestion: config.suggestion || null,
+            __suggestion_mode: config.suggestionMode || 'hint',
+          },
         }),
       })
       const json = await res.json()
@@ -689,7 +791,8 @@ export function GenerateFlow({ workspace, brandDna, pilars, initialPauta }: Prop
     format: cap(initialPauta?.format) || 'Carrossel',
     variant: 'dark',
     publicationFormat: 'feed',
-    suggestion: '',
+    suggestion: initialPauta?.editor_state?.__suggestion || '',
+    suggestionMode: (initialPauta?.editor_state?.__suggestion_mode as SuggestionMode) || 'hint',
   })
   const [ideas, setIdeas] = useState<Idea[]>([])
   const [selectedIdea, setSelectedIdea] = useState<Idea | null>(
@@ -703,6 +806,19 @@ export function GenerateFlow({ workspace, brandDna, pilars, initialPauta }: Prop
   const [genError, setGenError] = useState<string | null>(null)
 
   async function handleGenerateIdeas() {
+    // Modo literal pula a etapa de ideias e vai direto pra slides
+    if (config.suggestionMode === 'literal') {
+      if (!config.suggestion.trim()) {
+        setGenError('Cole o texto que será estruturado em slides.')
+        return
+      }
+      // Primeira linha do texto vira "título" da ideia, resto é o subtítulo
+      const lines = config.suggestion.trim().split('\n').filter(Boolean)
+      const title = lines[0]?.slice(0, 120) || 'Conteúdo estruturado'
+      const subtitle = lines.slice(1).join(' ').slice(0, 200) || ''
+      return handleSelectIdea({ title, subtitle })
+    }
+
     setLoading('ideas')
     setIdeas([])
     setSelectedIdea(null)
@@ -721,6 +837,7 @@ export function GenerateFlow({ workspace, brandDna, pilars, initialPauta }: Prop
           platform: config.platform,
           format: config.format,
           suggestion: config.suggestion || undefined,
+          suggestion_mode: config.suggestionMode,
           brand_dna: brandDna,
         }),
       })
@@ -756,6 +873,8 @@ export function GenerateFlow({ workspace, brandDna, pilars, initialPauta }: Prop
           publicationFormat: config.publicationFormat,
           variant: config.variant,
           formula: idea.formula,
+          suggestion: config.suggestion || undefined,
+          suggestion_mode: config.suggestionMode,
           brand_dna: brandDna,
         }),
       })

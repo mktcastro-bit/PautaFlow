@@ -4,6 +4,7 @@ import { anthropic } from '@/lib/anthropic'
 import { mapAnthropicError } from '@/lib/anthropic/errors'
 import { BrandDNA } from '@/types'
 import { FORMULAS, FORMULA_ORDER } from '@/lib/viral-formulas'
+import { buildSuggestionBlock, type SuggestionMode } from '@/lib/suggestion-mode'
 
 const DEMO_IDEAS = FORMULA_ORDER.map((key, i) => ({
   formula: key,
@@ -28,6 +29,7 @@ function buildIdeasPrompt(
   platform: string,
   format: string,
   suggestion: string | undefined,
+  suggestionMode: SuggestionMode,
   dna: Partial<BrandDNA>
 ): string {
   const tone = dna.step3_tone?.join(', ') || 'direto e estratégico'
@@ -62,7 +64,8 @@ ${preferred ? `- Vocabulário preferido: ${preferred}` : ''}
 - Pilar: ${pilar}
 - Plataforma: ${platform}
 - Formato: ${format}
-${suggestion ? `- Sugestão do usuário: ${suggestion}` : ''}
+
+${buildSuggestionBlock(suggestion, suggestionMode)}
 
 ## Fórmulas virais comprovadas
 Você vai gerar EXATAMENTE 5 ideias, UMA para cada fórmula abaixo:
@@ -70,7 +73,7 @@ Você vai gerar EXATAMENTE 5 ideias, UMA para cada fórmula abaixo:
 ${formulasBlock}
 
 ## Tarefa
-Para cada uma das 5 fórmulas, gere uma ideia de conteúdo APLICANDO a estrutura da fórmula ao pilar "${pilar}".
+Para cada uma das 5 fórmulas, gere uma ideia de conteúdo APLICANDO a estrutura da fórmula ao pilar "${pilar}"${suggestion && suggestionMode !== 'hint' ? ', usando o CONTEÚDO BASE acima como fonte/ponto de partida' : ''}.
 
 Cada ideia deve ter:
 - **formula**: chave da fórmula (atalho, guia, conselho, case, marco)
@@ -104,13 +107,14 @@ export async function POST(req: NextRequest) {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const body = await req.json()
-  const { workspace_id, pilar, platform, format, suggestion, brand_dna } = body
+  const { workspace_id, pilar, platform, format, suggestion, suggestion_mode, brand_dna } = body
 
   if (!workspace_id || !pilar) {
     return NextResponse.json({ error: 'workspace_id e pilar são obrigatórios' }, { status: 400 })
   }
 
-  const prompt = buildIdeasPrompt(pilar, platform, format, suggestion, brand_dna || {})
+  const mode: SuggestionMode = (suggestion_mode as SuggestionMode) || 'hint'
+  const prompt = buildIdeasPrompt(pilar, platform, format, suggestion, mode, brand_dna || {})
 
   try {
     const message = await anthropic.messages.create({
