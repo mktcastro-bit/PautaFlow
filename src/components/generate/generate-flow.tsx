@@ -152,110 +152,243 @@ function PilarEditor({ pilars, onChange }: { pilars: string[]; onChange: (p: str
 // ─── Suggestion Block ────────────────────────────────────────────────────────
 
 const MODE_SPECS: Record<SuggestionMode, {
-  icon: string
   label: string
+  subtitle: string
   placeholder: string
-  hint: string
+  description: string
 }> = {
   hint: {
-    icon: '💡',
     label: 'Sugestão',
-    placeholder: 'Ex: fale sobre IA na produtividade, com exemplos do varejo brasileiro',
-    hint: 'A IA usa como inspiração e cria do zero.',
+    subtitle: 'inspiração livre',
+    placeholder: 'Ex: fale sobre IA na produtividade, com exemplos do varejo brasileiro…',
+    description: 'A IA usa como inspiração e cria do zero. Ideal pra quando você tem apenas uma ideia geral do que postar.',
   },
   news: {
-    icon: '📰',
     label: 'Notícia',
+    subtitle: 'atualidade',
     placeholder: 'Cole aqui a notícia. A IA vai trazer o ângulo da sua marca sobre o fato e citar a fonte quando possível.',
-    hint: 'A IA comenta a notícia com a voz da marca + cita a fonte.',
+    description: 'Comente uma notícia atual. A IA aproveita o gancho jornalístico, traz o ângulo da sua marca e cita a fonte.',
   },
   adapt: {
-    icon: '📚',
     label: 'Adaptar',
+    subtitle: 'artigo / post',
     placeholder: 'Cole o artigo, post antigo ou material. A IA vai extrair os pontos principais e reformular ao tom da marca.',
-    hint: 'A IA extrai os pontos principais e adapta ao tom da marca.',
+    description: 'Reaproveite um artigo, post antigo ou material da empresa. A IA extrai os pontos e reformula com o tom da marca.',
   },
   literal: {
-    icon: '📋',
     label: 'Literal',
+    subtitle: 'texto pronto',
     placeholder: 'Cole o texto pronto. A IA preserva suas palavras e apenas divide em slides com destaques visuais.',
-    hint: 'A IA preserva o texto quase intacto, apenas estruturando em slides.',
+    description: 'Use seu texto exatamente como está. A IA só estrutura em slides e marca palavras-chave em dourado. Sem reescrita.',
   },
 }
 
-function SuggestionBlock({
-  value, mode, onChange, onChangeMode,
+// Sub-modo do Notícia: colar texto OU pedir pra IA comentar tendências do pilar
+type NewsSubMode = 'paste' | 'trends'
+
+function ContentBaseHero({
+  config, setConfig, onGenerate, loading, genError,
 }: {
-  value: string
-  mode: SuggestionMode
-  onChange: (v: string) => void
-  onChangeMode: (m: SuggestionMode) => void
+  config: Config
+  setConfig: (c: Config) => void
+  onGenerate: () => void
+  loading: LoadingState
+  genError: string | null
 }) {
-  const spec = MODE_SPECS[mode]
-  const wordCount = value.trim() ? value.trim().split(/\s+/).length : 0
+  const [newsSubMode, setNewsSubMode] = useState<NewsSubMode>('paste')
+  const spec = MODE_SPECS[config.suggestionMode]
+  const wordCount = config.suggestion.trim() ? config.suggestion.trim().split(/\s+/).length : 0
+
+  function setMode(m: SuggestionMode) {
+    setConfig({ ...config, suggestionMode: m })
+    if (m !== 'news') setNewsSubMode('paste')
+  }
+
+  function setSuggestion(v: string) {
+    setConfig({ ...config, suggestion: v })
+  }
+
+  // No sub-modo "trends" do Notícia, preenche automaticamente
+  const effectivePlaceholder = config.suggestionMode === 'news' && newsSubMode === 'trends'
+    ? `Vou comentar tendências e debates atuais sobre "${config.pilar}". Você pode adicionar um ângulo opcional aqui…`
+    : spec.placeholder
+
+  async function handleGenerateClick() {
+    // No sub-modo "trends", força um prompt sintético antes de gerar
+    if (config.suggestionMode === 'news' && newsSubMode === 'trends') {
+      const synthetic = config.suggestion.trim()
+        ? `Comente as tendências, debates e movimentos atuais mais relevantes sobre "${config.pilar}". Foco adicional: ${config.suggestion.trim()}`
+        : `Comente as tendências, debates e movimentos atuais mais relevantes sobre "${config.pilar}".`
+      setConfig({ ...config, suggestion: synthetic })
+      // pequeno delay pra react atualizar antes de gerar
+      setTimeout(() => onGenerate(), 50)
+      return
+    }
+    onGenerate()
+  }
 
   return (
-    <div className="space-y-2 border border-gold/20 bg-gold/[0.02] p-3 rounded">
-      <div className="flex items-center justify-between">
-        <label className="text-[10px] text-gold font-bold uppercase tracking-[0.2em]">
-          Conteúdo base <span className="text-zinc-500 font-normal">(opcional)</span>
-        </label>
-        {wordCount > 0 && (
-          <span className="text-[9px] text-zinc-500 tracking-wide">
-            {wordCount} {wordCount === 1 ? 'palavra' : 'palavras'}
+    <div className="flex-1 overflow-y-auto p-6 md:p-10">
+      <div className="max-w-3xl mx-auto">
+
+        {/* Header */}
+        <div className="flex items-center gap-3 mb-6">
+          <div className="h-px w-12 bg-gold" />
+          <span className="text-[10px] tracking-[0.3em] uppercase text-gold font-semibold">
+            Conteúdo base · opcional
           </span>
-        )}
-      </div>
+        </div>
+        <h1 className="font-serif text-3xl md:text-4xl tracking-tight leading-tight mb-3">
+          Como a IA deve <span className="italic text-gold">trabalhar</span>?
+        </h1>
+        <p className="text-zinc-400 text-sm leading-relaxed mb-8 max-w-xl">
+          Escolha o modo abaixo conforme o que você tem em mãos.
+          Sem nada selecionado? A IA cria do zero com base no DNA da marca.
+        </p>
 
-      {/* Mode picker */}
-      <div className="grid grid-cols-4 gap-1">
-        {(['hint', 'news', 'adapt', 'literal'] as SuggestionMode[]).map(m => {
-          const s = MODE_SPECS[m]
-          const active = mode === m
-          return (
+        {/* 4 cards */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+          {(['hint', 'news', 'adapt', 'literal'] as SuggestionMode[]).map(m => {
+            const s = MODE_SPECS[m]
+            const active = config.suggestionMode === m
+            return (
+              <button
+                key={m}
+                type="button"
+                onClick={() => setMode(m)}
+                className={cn(
+                  'group relative text-left p-4 border transition-all min-h-[88px] flex flex-col justify-between',
+                  active
+                    ? 'bg-gold/[0.08] border-gold/60'
+                    : 'bg-zinc-900/60 border-zinc-800 hover:border-zinc-700'
+                )}
+              >
+                {active && (
+                  <span className="absolute top-2 right-2 text-[9px] tracking-[0.2em] uppercase text-gold font-bold">
+                    ✓
+                  </span>
+                )}
+                <p className={cn(
+                  'text-sm tracking-wide uppercase font-bold',
+                  active ? 'text-gold' : 'text-zinc-200'
+                )}>
+                  {s.label}
+                </p>
+                <p className={cn(
+                  'text-[10px] tracking-wide mt-1',
+                  active ? 'text-gold/70' : 'text-zinc-500'
+                )}>
+                  {s.subtitle}
+                </p>
+              </button>
+            )
+          })}
+        </div>
+
+        {/* Descrição do modo selecionado */}
+        <p className="text-sm text-zinc-300 leading-relaxed mb-5 px-1">
+          <span className="text-gold">→</span> {spec.description}
+        </p>
+
+        {/* Sub-tabs Notícia */}
+        {config.suggestionMode === 'news' && (
+          <div className="flex items-center gap-1 mb-3 border-b border-zinc-800">
             <button
-              key={m}
-              type="button"
-              onClick={() => onChangeMode(m)}
+              onClick={() => setNewsSubMode('paste')}
               className={cn(
-                'flex flex-col items-center gap-0.5 py-2 rounded text-[9px] tracking-wider uppercase font-semibold border transition-all',
-                active
-                  ? 'bg-gold/15 border-gold/50 text-gold'
-                  : 'bg-zinc-800/30 border-zinc-800 text-zinc-500 hover:border-zinc-700 hover:text-zinc-300'
+                'px-4 py-2.5 text-[10px] tracking-[0.2em] uppercase font-semibold transition-all border-b-2 -mb-px',
+                newsSubMode === 'paste' ? 'border-gold text-gold' : 'border-transparent text-zinc-500 hover:text-zinc-300'
               )}
-              title={s.hint}
             >
-              <span className="text-sm">{s.icon}</span>
-              {s.label}
+              Colar notícia
             </button>
-          )
-        })}
+            <button
+              onClick={() => setNewsSubMode('trends')}
+              className={cn(
+                'px-4 py-2.5 text-[10px] tracking-[0.2em] uppercase font-semibold transition-all border-b-2 -mb-px',
+                newsSubMode === 'trends' ? 'border-gold text-gold' : 'border-transparent text-zinc-500 hover:text-zinc-300'
+              )}
+            >
+              Comentar tendências
+            </button>
+          </div>
+        )}
+
+        {/* Textarea ou tela "tendências" */}
+        {config.suggestionMode === 'news' && newsSubMode === 'trends' ? (
+          <div className="bg-zinc-900/60 border border-zinc-800 p-5 mb-4">
+            <p className="text-sm text-zinc-300 mb-3">
+              A IA vai comentar <strong className="text-gold">tendências e debates atuais</strong> sobre o pilar
+              <strong className="text-foreground"> {config.pilar}</strong>, com o ângulo da sua marca.
+            </p>
+            <p className="text-[10px] tracking-[0.18em] uppercase text-zinc-500 mb-3">
+              Foco adicional (opcional)
+            </p>
+            <textarea
+              value={config.suggestion}
+              onChange={e => setSuggestion(e.target.value)}
+              placeholder="Ex: foque em PMEs · evite cases de big tech · ângulo crítico…"
+              rows={3}
+              className="w-full bg-background border border-zinc-700 px-3 py-2.5 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-gold/50 resize-none"
+            />
+            <p className="text-[10px] text-zinc-500 mt-3">
+              ⚠ A IA usa conhecimento próprio (não busca em tempo real). Funciona como
+              "comentário de mercado", não como notícia do dia.
+            </p>
+          </div>
+        ) : (
+          <div className="relative mb-4">
+            <textarea
+              value={config.suggestion}
+              onChange={e => setSuggestion(e.target.value)}
+              placeholder={effectivePlaceholder}
+              rows={config.suggestionMode === 'hint' ? 4 : 7}
+              className="w-full bg-zinc-900/60 border border-zinc-800 px-4 py-3 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-gold/50 resize-none"
+            />
+            {wordCount > 0 && (
+              <span className="absolute bottom-2 right-3 text-[10px] tracking-wide text-zinc-600">
+                {wordCount} {wordCount === 1 ? 'palavra' : 'palavras'}
+              </span>
+            )}
+          </div>
+        )}
+
+        {/* Erro */}
+        {genError && (
+          <div className="bg-red-500/5 border border-red-500/20 p-4 mb-4">
+            <p className="text-xs text-red-400">✗ {genError}</p>
+          </div>
+        )}
+
+        {/* CTA */}
+        <button
+          onClick={handleGenerateClick}
+          disabled={loading === 'ideas' || loading === 'slides'}
+          className="w-full md:w-auto flex items-center justify-center gap-2 bg-gold hover:bg-gold-soft disabled:opacity-50 text-ink font-bold py-3.5 px-8 text-xs tracking-[0.2em] uppercase transition-colors"
+        >
+          {loading === 'ideas' || loading === 'slides' ? (
+            <><div className="h-3.5 w-3.5 border-2 border-black/30 border-t-black rounded-full animate-spin" /> Gerando…</>
+          ) : config.suggestionMode === 'literal' ? (
+            <><Sparkles className="h-4 w-4" /> Estruturar em slides</>
+          ) : (
+            <><Sparkles className="h-4 w-4" /> Sugerir ideias</>
+          )}
+        </button>
+
+        <p className="text-[10px] tracking-[0.2em] uppercase text-zinc-600 mt-4">
+          Pode levar até 30 segundos
+        </p>
       </div>
-
-      {/* Textarea */}
-      <textarea
-        value={value}
-        onChange={e => onChange(e.target.value)}
-        placeholder={spec.placeholder}
-        rows={mode === 'hint' ? 3 : 5}
-        className="w-full bg-zinc-900 border border-zinc-700 rounded px-2.5 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-gold/50 resize-none"
-      />
-
-      <p className="text-[10px] text-zinc-400 leading-relaxed">
-        <span className="text-gold">✓</span> {spec.hint}
-      </p>
     </div>
   )
 }
 
 function ConfigPanel({
-  config, setConfig, pilars, onGenerate, loading,
+  config, setConfig, pilars,
 }: {
   config: Config
   setConfig: (c: Config) => void
   pilars: string[]
-  onGenerate: () => void
-  loading: LoadingState
 }) {
   const set = (key: keyof Config) => (val: string) =>
     setConfig({ ...config, [key]: val })
@@ -366,28 +499,6 @@ function ConfigPanel({
           </div>
         </div>
 
-        <SuggestionBlock
-          value={config.suggestion}
-          mode={config.suggestionMode}
-          onChange={set('suggestion')}
-          onChangeMode={(m) => setConfig({ ...config, suggestionMode: m })}
-        />
-      </div>
-
-      <div className="p-4 border-t border-zinc-800">
-        <button
-          onClick={onGenerate}
-          disabled={loading === 'ideas'}
-          className="w-full flex items-center justify-center gap-2 bg-gold hover:bg-gold-soft disabled:opacity-50 text-ink font-bold py-2.5 rounded text-sm transition-colors"
-        >
-          {loading === 'ideas' ? (
-            <><div className="h-4 w-4 border-2 border-black/30 border-t-black rounded-full animate-spin" /> Gerando...</>
-          ) : config.suggestionMode === 'literal' ? (
-            <><Sparkles className="h-4 w-4" /> Estruturar em slides</>
-          ) : (
-            <><Sparkles className="h-4 w-4" /> + Sugerir Ideias</>
-          )}
-        </button>
       </div>
     </div>
   )
@@ -953,8 +1064,6 @@ export function GenerateFlow({ workspace, brandDna, pilars, initialPauta }: Prop
               : (brandDna?.step5_content_pillars?.length ?? 0) > 0 ? brandDna!.step5_content_pillars!
               : ['Estratégia', 'Cases', 'Educação', 'Bastidores', 'Tendências']
             }
-            onGenerate={handleGenerateIdeas}
-            loading={loading}
           />
 
           {showSlides ? (
@@ -973,13 +1082,21 @@ export function GenerateFlow({ workspace, brandDna, pilars, initialPauta }: Prop
               onApprove={() => setStep('arte')}
               onCopyCaption={() => navigator.clipboard.writeText(caption)}
             />
-          ) : (
+          ) : ideas.length > 0 || loading === 'ideas' || genError ? (
             <IdeaGrid
               ideas={ideas}
               onSelect={handleSelectIdea}
               loading={loading}
               genError={genError}
               onRetry={handleGenerateIdeas}
+            />
+          ) : (
+            <ContentBaseHero
+              config={config}
+              setConfig={setConfig}
+              onGenerate={handleGenerateIdeas}
+              loading={loading}
+              genError={genError}
             />
           )}
         </div>
