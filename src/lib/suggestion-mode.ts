@@ -17,6 +17,23 @@ ${suggestion.trim()}`
   }
 
   if (mode === 'news') {
+    // Detecta se é o sub-modo "trends" (prompt sintético criado pelo frontend)
+    const isTrends = /Comente as tendências.+sobre/i.test(suggestion)
+
+    if (isTrends) {
+      return `## Conteúdo base — NOTÍCIA / atualidade (busca real-time)
+
+${suggestion.trim()}
+
+INSTRUÇÕES PARA A IA:
+1. Use a ferramenta web_search para encontrar notícias RECENTES (últimos 30 dias quando possível)
+2. Faça 1-2 buscas relevantes sobre o tema
+3. Identifique 3-5 notícias/tendências DIFERENTES sobre o assunto
+4. Para cada ideia, escolha UMA notícia/ângulo específico
+5. As ideias devem REFERENCIAR a notícia (manchete, fonte, data) no subtítulo
+6. NÃO invente notícias — use apenas o que encontrar nas buscas`
+    }
+
     return `## Conteúdo base — NOTÍCIA / atualidade
 O usuário colou esta notícia para você comentar com a voz da marca:
 
@@ -59,6 +76,24 @@ export function buildSlidesInstructions(
   }
 
   if (mode === 'news') {
+    const isTrends = /Comente as tendências.+sobre/i.test(suggestion)
+
+    if (isTrends) {
+      return `## Modo NOTÍCIA · TENDÊNCIAS REAIS (web search)
+
+${suggestion.trim()}
+
+INSTRUÇÕES PARA OS SLIDES:
+1. Use a ferramenta web_search para encontrar a notícia/tendência mais relevante e ATUAL
+2. Faça 1-2 buscas focadas
+3. Use os FATOS encontrados (manchete, fonte, data) — NÃO invente nada
+4. ESTRUTURA dos slides:
+   - Slide 1: gancho da notícia/tendência (manchete + impacto)
+   - Slides intermediários: ângulo da marca sobre o fato, contexto, dados
+   - Slide final: CTA + cite a fonte (nome do veículo, data)
+5. Mantenha o tom da marca, mas seja factual no que veio da busca`
+    }
+
     return `## Modo NOTÍCIA — comente esta atualidade com a voz da marca
 
 O usuário colou esta notícia:

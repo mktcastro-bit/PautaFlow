@@ -107,7 +107,7 @@ export async function POST(req: NextRequest) {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const body = await req.json()
-  const { workspace_id, pilar, platform, format, suggestion, suggestion_mode, brand_dna } = body
+  const { workspace_id, pilar, platform, format, suggestion, suggestion_mode, brand_dna, use_web_search } = body
 
   if (!workspace_id || !pilar) {
     return NextResponse.json({ error: 'workspace_id e pilar são obrigatórios' }, { status: 400 })
@@ -119,11 +119,23 @@ export async function POST(req: NextRequest) {
   try {
     const message = await anthropic.messages.create({
       model: 'claude-sonnet-4-6',
-      max_tokens: 1200,
+      max_tokens: use_web_search ? 4000 : 1200,
       messages: [{ role: 'user', content: prompt }],
+      ...(use_web_search && {
+        tools: [{
+          type: 'web_search_20250305',
+          name: 'web_search',
+          max_uses: 3,
+        }] as any,
+      }),
     })
 
-    const raw = message.content[0].type === 'text' ? message.content[0].text : '[]'
+    // Quando usa web search, Claude pode emitir múltiplos blocos.
+    // Extrai o último bloco de texto que tem o JSON final.
+    let raw = ''
+    for (const block of message.content) {
+      if (block.type === 'text') raw = block.text
+    }
     const jsonMatch = raw.match(/\[[\s\S]*\]/)
     const ideas = jsonMatch ? JSON.parse(jsonMatch[0]) : []
 

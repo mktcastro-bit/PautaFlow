@@ -317,9 +317,15 @@ function ContentBaseHero({
         {/* Textarea ou tela "tendências" */}
         {config.suggestionMode === 'news' && newsSubMode === 'trends' ? (
           <div className="bg-zinc-900/60 border border-zinc-800 p-5 mb-4">
-            <p className="text-sm text-zinc-300 mb-3">
-              A IA vai comentar <strong className="text-gold">tendências e debates atuais</strong> sobre o pilar
-              <strong className="text-foreground"> {config.pilar}</strong>, com o ângulo da sua marca.
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-[10px] tracking-[0.25em] uppercase text-gold font-bold bg-gold/10 border border-gold/30 px-2 py-0.5">
+                ⚡ Busca em tempo real
+              </span>
+            </div>
+            <p className="text-sm text-zinc-300 mb-3 leading-relaxed">
+              A IA vai <strong className="text-gold">buscar notícias atuais</strong> sobre o pilar
+              <strong className="text-foreground"> {config.pilar}</strong>, escolher a mais relevante
+              e estruturar o conteúdo com o ângulo da sua marca, citando a fonte.
             </p>
             <p className="text-[10px] tracking-[0.18em] uppercase text-zinc-500 mb-3">
               Foco adicional (opcional)
@@ -331,9 +337,8 @@ function ContentBaseHero({
               rows={3}
               className="w-full bg-background border border-zinc-700 px-3 py-2.5 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-gold/50 resize-none"
             />
-            <p className="text-[10px] text-zinc-500 mt-3">
-              ⚠ A IA usa conhecimento próprio (não busca em tempo real). Funciona como
-              "comentário de mercado", não como notícia do dia.
+            <p className="text-[10px] text-zinc-500 mt-3 leading-relaxed">
+              ✓ Busca real-time via Claude · pode levar mais tempo · consome 1 geração do plano
             </p>
           </div>
         ) : (
@@ -939,6 +944,10 @@ export function GenerateFlow({ workspace, brandDna, pilars, initialPauta }: Prop
     setGenError(null)
 
     try {
+      // Detecta sub-modo "trends" pelo prompt sintético (gerado pelo ContentBaseHero)
+      const useWebSearch = config.suggestionMode === 'news'
+        && /^Comente as tendências/i.test(config.suggestion.trim())
+
       const res = await fetch('/api/generate/ideas', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -949,6 +958,7 @@ export function GenerateFlow({ workspace, brandDna, pilars, initialPauta }: Prop
           format: config.format,
           suggestion: config.suggestion || undefined,
           suggestion_mode: config.suggestionMode,
+          use_web_search: useWebSearch,
           brand_dna: brandDna,
         }),
       })
@@ -971,6 +981,9 @@ export function GenerateFlow({ workspace, brandDna, pilars, initialPauta }: Prop
     setGenError(null)
 
     try {
+      const useWebSearch = config.suggestionMode === 'news'
+        && /^Comente as tendências/i.test(config.suggestion.trim())
+
       const res = await fetch('/api/generate/slides', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -986,6 +999,7 @@ export function GenerateFlow({ workspace, brandDna, pilars, initialPauta }: Prop
           formula: idea.formula,
           suggestion: config.suggestion || undefined,
           suggestion_mode: config.suggestionMode,
+          use_web_search: useWebSearch,
           brand_dna: brandDna,
         }),
       })

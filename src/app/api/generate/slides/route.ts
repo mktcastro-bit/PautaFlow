@@ -155,6 +155,7 @@ export async function POST(req: NextRequest) {
   const {
     title, subtitle, pilar, platform, format, publicationFormat,
     variant, brand_dna, workspace_id, formula, suggestion, suggestion_mode,
+    use_web_search,
   } = body
 
   if (!title || !workspace_id) {
@@ -178,11 +179,22 @@ export async function POST(req: NextRequest) {
   try {
     const message = await anthropic.messages.create({
       model: 'claude-sonnet-4-6',
-      max_tokens: 2400,
+      max_tokens: use_web_search ? 4500 : 2400,
       messages: [{ role: 'user', content: prompt }],
+      ...(use_web_search && {
+        tools: [{
+          type: 'web_search_20250305',
+          name: 'web_search',
+          max_uses: 3,
+        }] as any,
+      }),
     })
 
-    const raw = message.content[0].type === 'text' ? message.content[0].text : '{}'
+    // Extrai o último bloco de texto (depois de eventuais tool_use blocks)
+    let raw = '{}'
+    for (const block of message.content) {
+      if (block.type === 'text') raw = block.text
+    }
     const jsonMatch = raw.match(/\{[\s\S]*\}/)
     const result = jsonMatch ? JSON.parse(jsonMatch[0]) : { slides: [], caption: '' }
 
