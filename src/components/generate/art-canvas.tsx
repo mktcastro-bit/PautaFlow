@@ -10,6 +10,7 @@ import { ArtCard, Slide } from './art-card'
 import { ArtEditor } from './art-editor'
 import { EditorState, DEFAULT_EDITOR } from './editor-types'
 import { getBrandPalette, getBrandTypography } from '@/lib/brand-style'
+import { SlideOverridesPanel } from './slide-overrides-panel'
 
 interface Idea { title: string; subtitle: string }
 
@@ -24,6 +25,7 @@ interface Config {
 
 interface Props {
   slides: Slide[]
+  setSlides?: (slides: Slide[]) => void
   caption: string
   idea: Idea
   config: Config
@@ -48,7 +50,7 @@ function parseParts(text: string) {
   return parts
 }
 
-export function ArtCanvas({ slides, caption, idea, config, brandDna, workspace, savedPautaId, setSavedPautaId, initialEditorState }: Props) {
+export function ArtCanvas({ slides, setSlides, caption, idea, config, brandDna, workspace, savedPautaId, setSavedPautaId, initialEditorState }: Props) {
   const [current, setCurrent] = useState(0)
   const [copied, setCopied] = useState(false)
   const [exporting, setExporting] = useState(false)
@@ -207,7 +209,17 @@ export function ArtCanvas({ slides, caption, idea, config, brandDna, workspace, 
     <div className="flex flex-1 overflow-hidden">
 
       {/* ── Left: visual editor ───────────────────────────────────────── */}
-      <ArtEditor editor={editor} onChange={setEditor} />
+      <ArtEditor
+        editor={editor}
+        onChange={setEditor}
+        currentSlide={slide}
+        currentSlideNumber={current + 1}
+        totalSlides={total}
+        onUpdateSlide={(overrides) => {
+          if (!setSlides) return
+          setSlides(slides.map((s, i) => i === current ? { ...s, overrides } : s))
+        }}
+      />
 
       {/* ── Center: card preview ──────────────────────────────────────── */}
       <div className="flex-1 flex flex-col items-center justify-between bg-zinc-900/40 py-4 px-6 overflow-hidden">

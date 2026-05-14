@@ -1117,6 +1117,7 @@ export function GenerateFlow({ workspace, brandDna, pilars, initialPauta }: Prop
       ) : (
         <ArtCanvas
           slides={slides}
+          setSlides={setSlides}
           caption={caption}
           idea={selectedIdea!}
           config={config}

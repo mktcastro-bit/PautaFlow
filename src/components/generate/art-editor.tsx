@@ -6,10 +6,17 @@ import { cn } from '@/lib/utils'
 import {
   EditorState, DEFAULT_EDITOR, GRADIENT_DIRECTIONS,
 } from './editor-types'
+import { SlideOverridesPanel } from './slide-overrides-panel'
+import type { Slide } from './art-card'
 
 interface Props {
   editor: EditorState
   onChange: (next: EditorState) => void
+  // Para painel de overrides do slide atual (opcional)
+  currentSlide?: Slide
+  currentSlideNumber?: number
+  totalSlides?: number
+  onUpdateSlide?: (overrides: NonNullable<Slide['overrides']>) => void
 }
 
 type Tab = 'fundo' | 'texto' | 'elementos'
@@ -427,7 +434,10 @@ const TABS: { id: Tab; label: string; icon: React.ElementType }[] = [
   { id: 'elementos', label: 'Elementos', icon: Layers },
 ]
 
-export function ArtEditor({ editor, onChange }: Props) {
+export function ArtEditor({
+  editor, onChange,
+  currentSlide, currentSlideNumber, totalSlides, onUpdateSlide,
+}: Props) {
   const [tab, setTab] = useState<Tab>('fundo')
 
   return (
@@ -457,6 +467,18 @@ export function ArtEditor({ editor, onChange }: Props) {
         {tab === 'texto' && <TextoTab editor={editor} onChange={onChange} />}
         {tab === 'elementos' && <ElementosTab editor={editor} onChange={onChange} />}
       </div>
+
+      {/* Painel do slide atual — fixo no rodapé */}
+      {currentSlide && currentSlideNumber && totalSlides && onUpdateSlide && (
+        <div className="border-t border-zinc-800 p-3 bg-zinc-950/80">
+          <SlideOverridesPanel
+            slide={currentSlide}
+            slideNumber={currentSlideNumber}
+            total={totalSlides}
+            onChange={onUpdateSlide}
+          />
+        </div>
+      )}
     </div>
   )
 }

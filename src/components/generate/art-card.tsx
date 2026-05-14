@@ -5,6 +5,27 @@ import { BrandDNA } from '@/types'
 import { EditorState, FONT_SIZES } from './editor-types'
 import { TypographyPreset, getBrandTypography } from '@/lib/brand-style'
 
+export type LayoutKey = 'hero' | 'rule' | 'numbered' | 'quote' | 'statement' | 'cta' | 'auto'
+
+/** Elementos decorativos que podem ser escondidos por slide */
+export type SlideElement =
+  | 'topRule'        // hero — linha dourada superior
+  | 'chapterTag'     // rule — "Capítulo XX" + linha
+  | 'bigNumber'      // numbered — número gigante serif
+  | 'numberDivider'  // numbered — linha dourada sob título
+  | 'quoteMarks'     // quote — aspas grandes "
+  | 'quoteBorder'    // quote — borda lateral dourada
+  | 'insightTag'     // statement — rules laterais + "INSIGHT"
+  | 'ctaArrow'       // cta — "E agora?"
+  | 'ctaBox'         // cta — caixa com bordas
+  | 'subtitle'       // qualquer layout
+  | 'callout'        // qualquer layout
+
+export interface SlideOverrides {
+  layout?: LayoutKey
+  hide?: SlideElement[]
+}
+
 export interface Slide {
   number: number
   /** Texto principal — mantido para backward compat */
@@ -15,6 +36,8 @@ export interface Slide {
   subtitle?: string
   /** Callout — frase curta de destaque (CTA, conclusão) */
   callout?: string
+  /** Overrides por slide (layout custom, elementos escondidos) */
+  overrides?: SlideOverrides
 }
 
 interface Props {
@@ -99,12 +122,20 @@ export const ArtCard = React.forwardRef<HTMLDivElement, Props>(
     const brandUrl = brandName.toLowerCase().replace(/\s+/g, '') + '.com.br'
     const categoryTag = (pilar || brandDna?.step5_content_pillars?.[0] || 'estratégia').toUpperCase()
 
-    const layout = pickLayout(slide.number, total)
+    // Layout: override do slide tem prioridade; 'auto' ou ausência cai no pickLayout
+    const overrideLayout = slide.overrides?.layout
+    const layout: Layout = (overrideLayout && overrideLayout !== 'auto')
+      ? overrideLayout as Layout
+      : pickLayout(slide.number, total)
+
+    // Elementos escondidos para este slide
+    const hidden = new Set(slide.overrides?.hide || [])
+    const isHidden = (el: SlideElement) => hidden.has(el)
 
     // ── Extrai title/subtitle/callout, com fallback do antigo "text" ──
     const titleText = slide.title || slide.text || ''
-    const subtitleText = slide.subtitle || ''
-    const calloutText = slide.callout || ''
+    const subtitleText = isHidden('subtitle') ? '' : (slide.subtitle || '')
+    const calloutText = isHidden('callout') ? '' : (slide.callout || '')
 
     const titleParts = parseParts(titleText)
     const subtitleParts = subtitleText ? parseParts(subtitleText) : []
@@ -273,7 +304,9 @@ export const ArtCard = React.forwardRef<HTMLDivElement, Props>(
           top: '28%',
           zIndex: 4,
         }}>
-          <div style={{ display: 'flex', justifyContent: justify }}>{TopRule}</div>
+          {!isHidden('topRule') && (
+            <div style={{ display: 'flex', justifyContent: justify }}>{TopRule}</div>
+          )}
           {renderTitle({ sizeMul: 1.25 })}
           {renderSubtitle()}
           {renderCallout()}
@@ -289,24 +322,26 @@ export const ArtCard = React.forwardRef<HTMLDivElement, Props>(
           top: '32%',
           zIndex: 4,
         }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 24 * scale,
-            marginBottom: 28 * scale,
-            justifyContent: justify,
-          }}>
-            <div style={{ width: 120 * scale, height: 1, backgroundColor: goldColor }} />
-            <span style={{
-              fontSize: metaFont,
-              color: goldColor,
-              letterSpacing: '0.25em',
-              textTransform: 'uppercase',
-              fontWeight: 600,
+          {!isHidden('chapterTag') && (
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 24 * scale,
+              marginBottom: 28 * scale,
+              justifyContent: justify,
             }}>
-              Capítulo {String(slide.number - 1).padStart(2, '0')}
-            </span>
-          </div>
+              <div style={{ width: 120 * scale, height: 1, backgroundColor: goldColor }} />
+              <span style={{
+                fontSize: metaFont,
+                color: goldColor,
+                letterSpacing: '0.25em',
+                textTransform: 'uppercase',
+                fontWeight: 600,
+              }}>
+                Capítulo {String(slide.number - 1).padStart(2, '0')}
+              </span>
+            </div>
+          )}
           {renderTitle({ sizeMul: 1.05 })}
           {renderSubtitle()}
           {renderCallout()}
@@ -336,7 +371,9 @@ export const ArtCard = React.forwardRef<HTMLDivElement, Props>(
 
       const contentEl = (
         <div style={{ flex: 1, paddingTop: 20 * scale }}>
-          <div style={{ width: 60 * scale, height: 1, backgroundColor: goldColor, marginBottom: 24 * scale, marginLeft: justify === 'flex-end' ? 'auto' : justify === 'center' ? 'auto' : 0, marginRight: justify === 'flex-end' ? 0 : justify === 'center' ? 'auto' : undefined }} />
+          {!isHidden('numberDivider') && (
+            <div style={{ width: 60 * scale, height: 1, backgroundColor: goldColor, marginBottom: 24 * scale, marginLeft: justify === 'flex-end' ? 'auto' : justify === 'center' ? 'auto' : 0, marginRight: justify === 'flex-end' ? 0 : justify === 'center' ? 'auto' : undefined }} />
+          )}
           {renderTitle({ sizeMul: 0.92 })}
           {renderSubtitle()}
           {renderCallout()}
@@ -355,13 +392,14 @@ export const ArtCard = React.forwardRef<HTMLDivElement, Props>(
           flexDirection: isCenter ? 'column' : (isRight ? 'row-reverse' : 'row'),
           textAlign: align,
         }}>
-          {numberEl}
+          {!isHidden('bigNumber') && numberEl}
           {contentEl}
         </div>
       )
     }
 
     function renderQuote() {
+      const showBorder = !isHidden('quoteBorder')
       return (
         <div style={{
           position: 'absolute',
@@ -369,21 +407,23 @@ export const ArtCard = React.forwardRef<HTMLDivElement, Props>(
           top: '30%',
           zIndex: 4,
         }}>
+          {!isHidden('quoteMarks') && (
+            <div style={{
+              fontFamily: TITLE_FONT,
+              fontSize: titleSize * 3.5,
+              color: goldColor,
+              lineHeight: 0.6,
+              opacity: 0.85,
+              marginBottom: -50 * scale,
+              fontWeight: 700,
+              fontStyle: 'italic',
+            }}>
+              “
+            </div>
+          )}
           <div style={{
-            fontFamily: TITLE_FONT,
-            fontSize: titleSize * 3.5,
-            color: goldColor,
-            lineHeight: 0.6,
-            opacity: 0.85,
-            marginBottom: -50 * scale,
-            fontWeight: 700,
-            fontStyle: 'italic',
-          }}>
-            “
-          </div>
-          <div style={{
-            paddingLeft: 30 * scale,
-            borderLeft: `${2 * scale}px solid ${goldColor}`,
+            paddingLeft: showBorder ? 30 * scale : 0,
+            borderLeft: showBorder ? `${2 * scale}px solid ${goldColor}` : undefined,
           }}>
             <h2 style={{
               fontFamily: TITLE_FONT,
@@ -432,22 +472,24 @@ export const ArtCard = React.forwardRef<HTMLDivElement, Props>(
           alignItems: align === 'center' ? 'center' : align === 'right' ? 'flex-end' : 'flex-start',
           zIndex: 4,
         }}>
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: 16 * scale,
-            marginBottom: 36 * scale,
-          }}>
-            <div style={{ width: 50 * scale, height: 1, backgroundColor: goldColor }} />
-            <span style={{
-              fontSize: metaFont * 0.9,
-              color: goldColor,
-              letterSpacing: '0.3em',
-              textTransform: 'uppercase',
-              fontWeight: 600,
+          {!isHidden('insightTag') && (
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 16 * scale,
+              marginBottom: 36 * scale,
             }}>
-              Insight
-            </span>
-            <div style={{ width: 50 * scale, height: 1, backgroundColor: goldColor }} />
-          </div>
+              <div style={{ width: 50 * scale, height: 1, backgroundColor: goldColor }} />
+              <span style={{
+                fontSize: metaFont * 0.9,
+                color: goldColor,
+                letterSpacing: '0.3em',
+                textTransform: 'uppercase',
+                fontWeight: 600,
+              }}>
+                Insight
+              </span>
+              <div style={{ width: 50 * scale, height: 1, backgroundColor: goldColor }} />
+            </div>
+          )}
           <div style={{ maxWidth: '85%' }}>
             {renderTitle({ sizeMul: 1.15 })}
             {renderSubtitle()}
@@ -465,35 +507,39 @@ export const ArtCard = React.forwardRef<HTMLDivElement, Props>(
           top: '24%',
           zIndex: 4,
         }}>
-          <div style={{
-            fontSize: metaFont,
-            color: goldColor,
-            letterSpacing: '0.3em',
-            textTransform: 'uppercase',
-            fontWeight: 600,
-            marginBottom: 28 * scale,
-          }}>
-            E agora?
-          </div>
+          {!isHidden('ctaArrow') && (
+            <div style={{
+              fontSize: metaFont,
+              color: goldColor,
+              letterSpacing: '0.3em',
+              textTransform: 'uppercase',
+              fontWeight: 600,
+              marginBottom: 28 * scale,
+            }}>
+              E agora?
+            </div>
+          )}
           {renderTitle({ sizeMul: 1.2 })}
           {renderSubtitle()}
-          <div style={{
-            display: 'inline-flex', alignItems: 'center', gap: 16 * scale,
-            padding: `${20 * scale}px ${36 * scale}px`,
-            border: `${2 * scale}px solid ${goldColor}`,
-            backgroundColor: 'transparent',
-            marginTop: 40 * scale,
-          }}>
-            <span style={{
-              fontSize: metaFont * 0.95,
-              color: goldColor,
-              letterSpacing: '0.25em',
-              textTransform: 'uppercase',
-              fontWeight: 700,
+          {!isHidden('ctaBox') && (
+            <div style={{
+              display: 'inline-flex', alignItems: 'center', gap: 16 * scale,
+              padding: `${20 * scale}px ${36 * scale}px`,
+              border: `${2 * scale}px solid ${goldColor}`,
+              backgroundColor: 'transparent',
+              marginTop: 40 * scale,
             }}>
-              {calloutText || 'Salve · Compartilhe · Comente'}
-            </span>
-          </div>
+              <span style={{
+                fontSize: metaFont * 0.95,
+                color: goldColor,
+                letterSpacing: '0.25em',
+                textTransform: 'uppercase',
+                fontWeight: 700,
+              }}>
+                {calloutText || 'Salve · Compartilhe · Comente'}
+              </span>
+            </div>
+          )}
         </div>
       )
     }
