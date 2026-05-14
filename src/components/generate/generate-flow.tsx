@@ -62,7 +62,7 @@ function parseSlideParts(text: string) {
 }
 
 const FORMATS = ['Carrossel', 'Post', 'Reels', 'Stories', 'Thread', 'Artigo']
-const PLATFORMS = ['Instagram', 'LinkedIn', 'Ambos']
+const PLATFORMS = ['Instagram', 'LinkedIn', 'TikTok', 'WhatsApp', 'Ambos']
 
 // ─── DNA Banner ──────────────────────────────────────────────────────────────
 

@@ -61,6 +61,8 @@ function buildSlidesPrompt(
     fmt === 'carrossel' ? 8 :
     fmt === 'thread'    ? 10 :
     fmt === 'artigo'    ? 6 :
+    fmt === 'reels'     ? (plat === 'tiktok' ? 5 : 1) :  // TikTok = 5 cenas; Reels Instagram = 1 roteiro
+    fmt === 'stories'   ? (plat === 'whatsapp' ? 3 : 4) : // WhatsApp Status ideal = 3 cards
     1
 
   // Em modo literal, ajusta o número de slides ao tamanho do texto
@@ -71,11 +73,21 @@ function buildSlidesPrompt(
     slideCount = ideal
   }
 
-  const platformGuide = plat === 'linkedin'
-    ? 'LinkedIn — mais texto, mais profundidade, storytelling corporativo'
-    : plat === 'instagram'
-    ? 'Instagram — direto, visual, impacto em poucos segundos'
-    : 'Instagram e LinkedIn — equilibre profundidade e impacto visual'
+  const platformGuide =
+    plat === 'linkedin' ?
+      'LinkedIn — mais texto, mais profundidade, storytelling corporativo. Parágrafos curtos. Sem emojis excessivos. Hashtags 3-5. Tom: profissional mas humano. Pode ser mais longo (1300-3000 chars na legenda).'
+
+    : plat === 'instagram' ?
+      'Instagram — direto, visual, impacto em poucos segundos. Hook forte no slide 1. Tom: visual, emocional, autoral. Hashtags 5-10. Legenda 500-2200 chars. Use emojis com moderação.'
+
+    : plat === 'tiktok' ?
+      'TikTok — pense em ROTEIRO DE VÍDEO vertical 15-60s. Os "slides" são CENAS sequenciais que serão filmadas. Slide 1 = gancho dos 3 primeiros segundos (frase que SEGURA o scroll). Tom coloquial, jovem, direto. Sem hashtag-spam (3-5 hashtags relevantes na legenda, foco em descobrabilidade). Cada slide deve representar uma cena/transição. Inclua microcopy do texto que aparece NA TELA do vídeo. CTA forte no último slide (siga, comente, compartilhe).'
+
+    : plat === 'whatsapp' ?
+      'WhatsApp Status / Canal — pessoal, íntimo, direto. NÃO use hashtags. Tom: como se estivesse mandando uma mensagem pra um amigo. Textos curtos (cada slide é um Status que dura 24h). Sem CTA agressivo de venda — foque em valor. Legenda mínima ou ausente. Slide final pode pedir reação/resposta privada.'
+
+    :
+      'Geral (Instagram e LinkedIn) — equilibre profundidade e impacto visual. Hashtags 5-7. Tom: profissional acessível.'
 
   // Bloco da fórmula viral (se selecionada)
   const formulaSpec = formula ? getFormula(formula) : null
