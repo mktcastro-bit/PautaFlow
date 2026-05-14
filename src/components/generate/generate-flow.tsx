@@ -195,13 +195,13 @@ function ContentBaseHero({
   loading: LoadingState
   genError: string | null
 }) {
-  const [newsSubMode, setNewsSubMode] = useState<NewsSubMode>('paste')
+  const [newsSubMode, setNewsSubMode] = useState<NewsSubMode>('trends')
   const spec = MODE_SPECS[config.suggestionMode]
   const wordCount = config.suggestion.trim() ? config.suggestion.trim().split(/\s+/).length : 0
 
   function setMode(m: SuggestionMode) {
     setConfig({ ...config, suggestionMode: m })
-    if (m !== 'news') setNewsSubMode('paste')
+    if (m !== 'news') setNewsSubMode('trends')
   }
 
   function setSuggestion(v: string) {
@@ -294,6 +294,15 @@ function ContentBaseHero({
         {config.suggestionMode === 'news' && (
           <div className="flex items-center gap-1 mb-3 border-b border-zinc-800">
             <button
+              onClick={() => setNewsSubMode('trends')}
+              className={cn(
+                'px-4 py-2.5 text-[10px] tracking-[0.2em] uppercase font-semibold transition-all border-b-2 -mb-px',
+                newsSubMode === 'trends' ? 'border-gold text-gold' : 'border-transparent text-zinc-500 hover:text-zinc-300'
+              )}
+            >
+              Buscar notícia em tempo real
+            </button>
+            <button
               onClick={() => setNewsSubMode('paste')}
               className={cn(
                 'px-4 py-2.5 text-[10px] tracking-[0.2em] uppercase font-semibold transition-all border-b-2 -mb-px',
@@ -301,15 +310,6 @@ function ContentBaseHero({
               )}
             >
               Colar notícia
-            </button>
-            <button
-              onClick={() => setNewsSubMode('trends')}
-              className={cn(
-                'px-4 py-2.5 text-[10px] tracking-[0.2em] uppercase font-semibold transition-all border-b-2 -mb-px',
-                newsSubMode === 'trends' ? 'border-gold text-gold' : 'border-transparent text-zinc-500 hover:text-zinc-300'
-              )}
-            >
-              Comentar tendências
             </button>
           </div>
         )}
