@@ -1152,9 +1152,10 @@ export function GenerateFlow({ workspace, brandDna, pilars, initialPauta }: Prop
         ) : step === 'arte' ? (
           <button
             onClick={() => setStep('texto')}
-            className="flex items-center gap-1.5 text-sm text-zinc-400 hover:text-white transition-colors"
+            className="group flex items-center gap-2 border border-gold/40 hover:border-gold bg-gold/5 hover:bg-gold/15 text-gold px-5 py-2.5 text-xs tracking-[0.2em] uppercase font-bold transition-all"
           >
-            <ChevronLeft className="h-4 w-4" /> Voltar ao texto
+            <ChevronLeft className="h-3.5 w-3.5 group-hover:-translate-x-0.5 transition-transform" />
+            Voltar ao texto
           </button>
         ) : (
           <div />
