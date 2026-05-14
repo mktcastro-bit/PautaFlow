@@ -441,9 +441,9 @@ export function ArtEditor({
   const [tab, setTab] = useState<Tab>('fundo')
 
   return (
-    <div className="w-64 flex-shrink-0 border-r border-zinc-800 flex flex-col bg-zinc-950">
-      {/* Tab bar */}
-      <div className="flex border-b border-zinc-800">
+    <div className="w-64 flex-shrink-0 border-r border-zinc-800 flex flex-col bg-zinc-950 h-screen">
+      {/* Tab bar — fixa no topo */}
+      <div className="flex border-b border-zinc-800 flex-shrink-0">
         {TABS.map(t => (
           <button
             key={t.id}
@@ -461,24 +461,26 @@ export function ArtEditor({
         ))}
       </div>
 
-      {/* Tab content */}
-      <div className="flex-1 overflow-y-auto p-4">
-        {tab === 'fundo' && <FundoTab editor={editor} onChange={onChange} />}
-        {tab === 'texto' && <TextoTab editor={editor} onChange={onChange} />}
-        {tab === 'elementos' && <ElementosTab editor={editor} onChange={onChange} />}
-      </div>
-
-      {/* Painel do slide atual — fixo no rodapé */}
-      {currentSlide && currentSlideNumber && totalSlides && onUpdateSlide && (
-        <div className="border-t border-zinc-800 p-3 bg-zinc-950/80">
-          <SlideOverridesPanel
-            slide={currentSlide}
-            slideNumber={currentSlideNumber}
-            total={totalSlides}
-            onChange={onUpdateSlide}
-          />
+      {/* Conteúdo (tab + slide overrides) — scroll único, sem flex-1 que cria gap */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="p-4">
+          {tab === 'fundo' && <FundoTab editor={editor} onChange={onChange} />}
+          {tab === 'texto' && <TextoTab editor={editor} onChange={onChange} />}
+          {tab === 'elementos' && <ElementosTab editor={editor} onChange={onChange} />}
         </div>
-      )}
+
+        {/* Painel do slide atual — vem direto após o conteúdo da aba, sem gap */}
+        {currentSlide && currentSlideNumber && totalSlides && onUpdateSlide && (
+          <div className="border-t border-zinc-800 p-3 bg-zinc-950/80">
+            <SlideOverridesPanel
+              slide={currentSlide}
+              slideNumber={currentSlideNumber}
+              total={totalSlides}
+              onChange={onUpdateSlide}
+            />
+          </div>
+        )}
+      </div>
     </div>
   )
 }
