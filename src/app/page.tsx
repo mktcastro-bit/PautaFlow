@@ -72,7 +72,7 @@ export default function LandingPage() {
             <div className="h-px w-12 bg-[#c9a86a]" />
           </div>
 
-          <h1 className="font-instrument text-6xl md:text-8xl lg:text-[110px] leading-[0.95] tracking-tight text-zinc-950">
+          <h1 className="font-display-serif text-5xl md:text-7xl lg:text-[96px] leading-[0.95] tracking-tight text-zinc-950">
             Da ideia à publicação,
             <br />
             com <span className="italic text-[#c9a86a]">inteligência</span> de marca.
