@@ -125,7 +125,7 @@ export default function LandingPage() {
                   O que está dentro
                 </span>
               </div>
-              <h2 className="font-grotesque text-4xl md:text-5xl leading-[1.05] tracking-tight max-w-2xl">
+              <h2 className="font-display-serif text-4xl md:text-5xl leading-[1.05] tracking-tight max-w-2xl">
                 Tudo que sua equipe precisa para criar conteúdo de marca, <span className="italic text-[#c9a86a]">com método</span>.
               </h2>
             </div>
@@ -147,9 +147,9 @@ export default function LandingPage() {
               <div key={i} className="bg-[#0a0a0a] p-10 hover:bg-[#0e0e0e] transition-colors group">
                 <div className="flex items-start justify-between mb-8">
                   <f.icon className="h-6 w-6 text-[#c9a86a]" />
-                  <span className="font-grotesque text-2xl text-[#c9a86a]/40 italic">{f.n}</span>
+                  <span className="font-display-serif text-2xl text-[#c9a86a]/40 italic">{f.n}</span>
                 </div>
-                <h3 className="font-grotesque text-2xl mb-3 leading-tight">{f.title}</h3>
+                <h3 className="font-display-serif text-2xl mb-3 leading-tight">{f.title}</h3>
                 <p className="text-sm text-zinc-400 leading-relaxed">{f.description}</p>
               </div>
             ))}
@@ -166,7 +166,7 @@ export default function LandingPage() {
               Como funciona
             </span>
           </div>
-          <h2 className="font-grotesque text-4xl md:text-5xl leading-[1.05] tracking-tight max-w-3xl mb-20">
+          <h2 className="font-display-serif text-4xl md:text-5xl leading-[1.05] tracking-tight max-w-3xl mb-20">
             Três passos para sua marca falar <span className="italic text-[#c9a86a]">sozinha</span>.
           </h2>
 
@@ -189,8 +189,8 @@ export default function LandingPage() {
               },
             ].map((step, i) => (
               <div key={i} className="relative">
-                <div className="font-grotesque text-7xl text-[#c9a86a] italic leading-none mb-6">{step.n}</div>
-                <h3 className="font-grotesque text-2xl mb-3">{step.title}</h3>
+                <div className="font-display-serif text-7xl text-[#c9a86a] italic leading-none mb-6">{step.n}</div>
+                <h3 className="font-display-serif text-2xl mb-3">{step.title}</h3>
                 <p className="text-zinc-700 leading-relaxed">{step.description}</p>
                 {i < 2 && (
                   <ChevronRight className="hidden lg:block absolute -right-4 top-8 h-6 w-6 text-[#c9a86a]/40" />
@@ -205,7 +205,7 @@ export default function LandingPage() {
       <section className="bg-zinc-100 py-24 border-y border-zinc-200">
         <div className="max-w-4xl mx-auto px-6 lg:px-10 text-center">
           <Quote className="h-10 w-10 text-[#c9a86a] mx-auto mb-8" />
-          <blockquote className="font-grotesque text-3xl md:text-4xl leading-[1.2] tracking-tight text-zinc-950">
+          <blockquote className="font-display-serif text-3xl md:text-4xl leading-[1.2] tracking-tight text-zinc-950">
             "Conteúdo bem feito não nasce de fórmula.
             Nasce de <span className="italic text-[#c9a86a]">marca clara</span> + estratégia + execução."
           </blockquote>
@@ -228,7 +228,7 @@ export default function LandingPage() {
               </span>
               <div className="h-px w-12 bg-[#c9a86a]" />
             </div>
-            <h2 className="font-grotesque text-4xl md:text-5xl tracking-tight">
+            <h2 className="font-display-serif text-4xl md:text-5xl tracking-tight">
               Simples e <span className="italic text-[#c9a86a]">transparente</span>.
             </h2>
             <p className="text-zinc-700 mt-4">14 dias grátis. Cancele quando quiser.</p>
@@ -252,13 +252,13 @@ export default function LandingPage() {
                       ★ Recomendado
                     </div>
                   )}
-                  <h3 className="font-grotesque text-2xl mb-2">{details.name}</h3>
+                  <h3 className="font-display-serif text-2xl mb-2">{details.name}</h3>
                   <p className={`text-xs ${isPopular ? 'text-zinc-400' : 'text-zinc-600'} mb-8`}>
                     {details.description}
                   </p>
                   <div className="flex items-baseline gap-1 mb-8">
                     <span className={`text-xs ${isPopular ? 'text-[#c9a86a]' : 'text-zinc-500'}`}>R$</span>
-                    <span className="font-grotesque text-6xl tracking-tight">{details.price}</span>
+                    <span className="font-display-serif text-6xl tracking-tight">{details.price}</span>
                     <span className={`text-xs ml-1 ${isPopular ? 'text-zinc-400' : 'text-zinc-500'}`}>/mês</span>
                   </div>
                   <ul className="space-y-3 mb-10 flex-1">
@@ -298,7 +298,7 @@ export default function LandingPage() {
               É hora
             </span>
           </div>
-          <h2 className="font-grotesque text-5xl md:text-7xl leading-[1.0] tracking-tight mb-8">
+          <h2 className="font-display-serif text-5xl md:text-7xl leading-[1.0] tracking-tight mb-8">
             Sua marca, <span className="italic text-[#c9a86a]">no comando</span>.
             <br />
             A IA, na execução.
