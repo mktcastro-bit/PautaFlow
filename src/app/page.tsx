@@ -4,6 +4,7 @@ import {
   ChevronRight, Quote
 } from 'lucide-react'
 import { PLAN_DETAILS } from '@/types'
+import { HeroCarouselMockup } from '@/components/landing/hero-carousel-mockup'
 
 export default function LandingPage() {
   const plans = ['starter', 'pro', 'agency'] as const
@@ -36,50 +37,55 @@ export default function LandingPage() {
         </div>
       </nav>
 
-      {/* ── HERO (light) ────────────────────────────────────────────── */}
-      <section className="relative max-w-7xl mx-auto px-6 lg:px-10 pt-24 pb-32">
-        {/* Decorative gold rule */}
-        <div className="flex items-center gap-3 mb-10">
-          <div className="h-px w-12 bg-[#c9a86a]" />
-          <span className="text-[10px] tracking-[0.3em] uppercase text-[#9a7d4a] font-semibold">
-            Estratégia · Marca · Inteligência
-          </span>
-        </div>
+      {/* ── HERO (light, 2 colunas no desktop) ──────────────────────── */}
+      <section className="relative max-w-7xl mx-auto px-6 lg:px-10 pt-20 lg:pt-24 pb-24 lg:pb-32">
+        <div className="grid lg:grid-cols-[1.1fr_1fr] gap-12 lg:gap-16 items-center">
 
-        <h1 className="font-grotesque text-5xl md:text-7xl lg:text-[88px] leading-[0.95] tracking-tight text-zinc-950 max-w-5xl">
-          Da ideia à publicação,
-          <br />
-          com <span className="italic text-[#c9a86a]">inteligência</span> de marca.
-        </h1>
+          {/* Coluna esquerda — texto */}
+          <div>
+            <div className="flex items-center gap-3 mb-8">
+              <div className="h-px w-12 bg-[#c9a86a]" />
+              <span className="text-[10px] tracking-[0.3em] uppercase text-[#9a7d4a] font-semibold">
+                Estratégia · Marca · Inteligência
+              </span>
+            </div>
 
-        <p className="mt-10 max-w-xl text-lg text-zinc-700 leading-relaxed">
-          Pauta une <strong className="font-medium text-zinc-950">DNA da marca</strong>, repositório de ideias e
-          geração visual com IA — para times de marketing produzirem conteúdo coerente, em escala.
-        </p>
+            <h1 className="font-grotesque text-5xl md:text-6xl lg:text-7xl xl:text-[76px] leading-[0.95] tracking-tight text-zinc-950">
+              Da ideia à publicação,
+              <br />
+              com <span className="italic text-[#c9a86a]">inteligência</span> de marca.
+            </h1>
 
-        <div className="mt-10 flex items-center gap-3 flex-wrap">
-          <Link
-            href="/register"
-            className="group inline-flex items-center gap-2 bg-zinc-950 text-[#faf8f3] px-8 py-4 text-xs tracking-[0.2em] uppercase font-semibold hover:bg-[#1a1a1a] transition-colors"
-          >
-            Criar conta grátis
-            <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-1 transition-transform" />
-          </Link>
-          <Link
-            href="/login"
-            className="inline-flex items-center gap-2 border border-zinc-300 hover:border-zinc-950 px-8 py-4 text-xs tracking-[0.2em] uppercase font-medium transition-colors"
-          >
-            Ver demonstração
-          </Link>
-        </div>
+            <p className="mt-8 max-w-xl text-lg text-zinc-700 leading-relaxed">
+              Pauta une <strong className="font-medium text-zinc-950">DNA da marca</strong>, repositório de ideias e
+              geração visual com IA — para times de marketing produzirem conteúdo coerente, em escala.
+            </p>
 
-        <p className="mt-6 text-[10px] tracking-[0.2em] uppercase text-zinc-500">
-          14 dias grátis · sem cartão de crédito · cancele quando quiser
-        </p>
+            <div className="mt-10 flex items-center gap-3 flex-wrap">
+              <Link
+                href="/register"
+                className="group inline-flex items-center gap-2 bg-zinc-950 text-[#faf8f3] px-8 py-4 text-xs tracking-[0.2em] uppercase font-semibold hover:bg-[#1a1a1a] transition-colors"
+              >
+                Criar conta grátis
+                <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-1 transition-transform" />
+              </Link>
+              <Link
+                href="/login"
+                className="inline-flex items-center gap-2 border border-zinc-300 hover:border-zinc-950 px-8 py-4 text-xs tracking-[0.2em] uppercase font-medium transition-colors"
+              >
+                Ver demonstração
+              </Link>
+            </div>
 
-        {/* Decorative big serif watermark */}
-        <div className="absolute -right-10 top-32 font-grotesque text-[280px] text-[#c9a86a] opacity-[0.06] leading-none italic pointer-events-none select-none hidden lg:block">
-          P
+            <p className="mt-6 text-[10px] tracking-[0.2em] uppercase text-zinc-500">
+              14 dias grátis · sem cartão de crédito · cancele quando quiser
+            </p>
+          </div>
+
+          {/* Coluna direita — banner com 3 cards em leque */}
+          <div className="relative hidden lg:flex items-center justify-center min-h-[520px]">
+            <HeroCarouselMockup />
+          </div>
         </div>
       </section>
 
