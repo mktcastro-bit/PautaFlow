@@ -95,7 +95,7 @@ export default function LandingPage() {
               href="/login"
               className="inline-flex items-center gap-2 border border-zinc-400 hover:border-zinc-950 bg-[#faf8f3]/40 backdrop-blur-sm px-8 py-4 text-xs tracking-[0.2em] uppercase font-medium transition-colors"
             >
-              Ver demonstração
+              Já tenho conta
             </Link>
           </div>
 
