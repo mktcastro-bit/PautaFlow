@@ -25,7 +25,7 @@ function effectiveLayout(slide: Slide, slideNumber: number, total: number): Layo
 // Elementos disponíveis por layout
 const LAYOUT_ELEMENTS: Record<LayoutKey, Array<{ id: SlideElement; label: string }>> = {
   hero: [
-    { id: 'topRule',  label: 'Linha dourada superior' },
+    { id: 'topRule',  label: 'Linha colorida superior' },
     { id: 'subtitle', label: 'Subtítulo' },
     { id: 'callout',  label: 'Callout' },
   ],
@@ -42,7 +42,7 @@ const LAYOUT_ELEMENTS: Record<LayoutKey, Array<{ id: SlideElement; label: string
   ],
   quote: [
     { id: 'quoteMarks',  label: 'Aspas grandes "' },
-    { id: 'quoteBorder', label: 'Borda lateral dourada' },
+    { id: 'quoteBorder', label: 'Borda lateral colorida' },
     { id: 'subtitle',    label: 'Atribuição (— autor)' },
     { id: 'callout',     label: 'Callout' },
   ],

@@ -181,7 +181,7 @@ const MODE_SPECS: Record<SuggestionMode, {
     label: 'Literal',
     subtitle: 'texto pronto',
     placeholder: 'Cole o texto pronto. A IA preserva suas palavras e apenas divide em slides com destaques visuais.',
-    description: 'Use seu texto exatamente como está. A IA só estrutura em slides e marca palavras-chave em dourado. Sem reescrita.',
+    description: 'Use seu texto exatamente como está. A IA só estrutura em slides e marca palavras-chave na cor de destaque da sua marca. Sem reescrita.',
   },
 }
 
@@ -747,7 +747,7 @@ function SlidePreview({
                         value={titleText}
                         onChange={e => updateSlide(slide.number, { title: e.target.value, text: e.target.value })}
                         className="w-full bg-zinc-900 border border-zinc-700 rounded px-2 py-1.5 text-sm text-zinc-100 focus:outline-none focus:border-gold/50 mt-0.5"
-                        placeholder="Texto principal · use _palavra_ para destaque dourado"
+                        placeholder="Texto principal · use _palavra_ para destaque na cor da marca"
                         autoFocus
                       />
                     </div>

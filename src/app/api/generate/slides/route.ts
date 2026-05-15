@@ -126,7 +126,7 @@ Gere EXATAMENTE ${slideCount} slides para este ${format}.
 
 ### Estrutura de cada slide
 Cada slide tem 3 campos:
-- **title**: frase de impacto (4-10 palavras). Use _underscore_ em UMA palavra-chave para destaque visual (vira itálico dourado no card).
+- **title**: frase de impacto (4-10 palavras). Use _underscore_ em UMA palavra-chave para destaque visual (vira itálico colorido no card, na cor de destaque da marca).
 - **subtitle**: frase explicativa que aprofunda (5-15 palavras). Pode ser omitida em slides muito impactantes.
 - **callout** (opcional): frase curta de destaque em negrito (2-6 palavras), tipo "A escolha é agora.", "E aí?", "Você vê isso?". Use com moderação — só quando reforça.
 
