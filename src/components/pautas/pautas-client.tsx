@@ -119,16 +119,19 @@ export function PautasClient({ pautas, workspace, categories, filters, dnaIncomp
               <Download className="h-3 w-3" /> Exportar
             </button>
             <button
-              onClick={() => router.push(`/workspaces/${workspace.slug}/generate`)}
+              onClick={() => { setEditingPauta(null); setShowModal(true) }}
               className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs tracking-wide uppercase border border-border hover:border-gold/40 hover:text-gold transition-all"
             >
-              <Zap className="h-3 w-3" /> Gerar
+              <Plus className="h-3 w-3" /> Nova Pauta
             </button>
             <button
-              onClick={() => { setEditingPauta(null); setShowModal(true) }}
-              className="flex items-center gap-1.5 bg-gold text-ink px-4 py-2 rounded-lg text-xs tracking-wide uppercase font-semibold hover:bg-gold-soft transition-all"
+              onClick={() => router.push(`/workspaces/${workspace.slug}/generate`)}
+              className="group relative flex items-center gap-2 bg-gold text-ink px-5 py-2.5 text-xs tracking-[0.2em] uppercase font-bold hover:bg-gold-soft transition-all shadow-lg shadow-gold/20"
             >
-              <Plus className="h-3 w-3" /> Nova Pauta
+              <Sparkles className="h-3.5 w-3.5" />
+              Gerar conteúdo
+              <span className="absolute -top-1 -right-1 h-2 w-2 bg-gold rounded-full animate-ping opacity-60" />
+              <span className="absolute -top-1 -right-1 h-2 w-2 bg-gold rounded-full" />
             </button>
           </div>
         </div>
