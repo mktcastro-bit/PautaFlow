@@ -166,18 +166,48 @@ export function HeroCarouselMockup() {
         </div>
       </div>
 
-      {/* Floating "gerado em 12s" badge */}
-      <div className="absolute -left-6 top-1/3 bg-[#faf8f3] border border-[#c9a86a]/30 px-3 py-2 shadow-lg rotate-[-4deg] hidden xl:block">
-        <p className="text-[8px] tracking-[0.2em] uppercase text-[#9a7d4a] font-bold">Gerado em</p>
-        <p className="font-grotesque text-2xl text-zinc-950 leading-none mt-0.5">
-          12<span className="text-[#c9a86a] italic">s</span>
-        </p>
+      {/* Floating "velocidade" — esquerda */}
+      <div className="absolute -left-16 top-[28%] hidden xl:flex items-start gap-4">
+        <div className="h-12 w-px bg-[#c9a86a]/40 mt-2" />
+        <div>
+          <p className="text-[9px] tracking-[0.25em] uppercase text-[#9a7d4a] font-bold mb-1">
+            Velocidade
+          </p>
+          <p className="font-grotesque text-4xl text-zinc-950 leading-none tracking-tight">
+            12<span className="text-[#c9a86a] italic font-normal text-2xl ml-0.5">s</span>
+          </p>
+          <p className="text-[10px] text-zinc-500 mt-1.5 leading-snug max-w-[120px]">
+            do briefing à arte<br />pronta pra postar
+          </p>
+        </div>
       </div>
 
-      {/* Floating "DNA aplicado" badge */}
-      <div className="absolute -right-4 bottom-1/4 bg-[#0a0a0a] border border-[#c9a86a]/40 px-3 py-2 shadow-lg rotate-[3deg] hidden xl:block">
-        <p className="text-[8px] tracking-[0.2em] uppercase text-[#c9a86a] font-bold">DNA da marca</p>
-        <p className="text-[10px] text-zinc-300 mt-0.5">aplicado</p>
+      {/* Floating "DNA aplicado" — direita */}
+      <div className="absolute -right-20 bottom-[22%] hidden xl:flex items-start gap-4">
+        <div>
+          <p className="text-[9px] tracking-[0.25em] uppercase text-[#9a7d4a] font-bold mb-1 text-right">
+            DNA aplicado
+          </p>
+          <ul className="space-y-1 text-[10px] text-zinc-700 text-right">
+            <li className="flex items-center gap-2 justify-end">
+              <span>voz da marca</span>
+              <span className="h-1 w-1 rounded-full bg-[#c9a86a]" />
+            </li>
+            <li className="flex items-center gap-2 justify-end">
+              <span>paleta de cores</span>
+              <span className="h-1 w-1 rounded-full bg-[#c9a86a]" />
+            </li>
+            <li className="flex items-center gap-2 justify-end">
+              <span>tipografia</span>
+              <span className="h-1 w-1 rounded-full bg-[#c9a86a]" />
+            </li>
+            <li className="flex items-center gap-2 justify-end">
+              <span>posicionamento</span>
+              <span className="h-1 w-1 rounded-full bg-[#c9a86a]" />
+            </li>
+          </ul>
+        </div>
+        <div className="h-20 w-px bg-[#c9a86a]/40 mt-2" />
       </div>
     </div>
   )
