@@ -59,7 +59,7 @@ export function Sidebar({ organization, workspaces, currentWorkspace }: SidebarP
       <div className="px-5 py-6 border-b border-border flex items-center justify-between">
         <div>
           <h1 className="font-serif text-2xl tracking-tight leading-none">
-            <span className="text-foreground">nexum</span><span className="text-gold">360</span>
+            <span className="text-foreground">pauta</span><span className="text-gold italic">.</span>
           </h1>
           <p className="text-[9px] text-muted-foreground tracking-luxe uppercase mt-1.5">
             {organization.name} · {organization.plan}
@@ -175,7 +175,7 @@ export function Sidebar({ organization, workspaces, currentWorkspace }: SidebarP
           <Menu className="h-5 w-5" />
         </button>
         <h1 className="font-serif text-lg tracking-tight leading-none">
-          <span className="text-foreground">nexum</span><span className="text-gold">360</span>
+          <span className="text-foreground">pauta</span><span className="text-gold italic">.</span>
         </h1>
         <div className="w-9" />
       </div>

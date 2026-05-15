@@ -228,6 +228,7 @@ export function PautasClient({ pautas, workspace, categories, filters, dnaIncomp
                 key={pauta.id}
                 pauta={pauta}
                 workspaceSlug={workspace.slug}
+                workspaceName={workspace.name}
                 onEdit={() => { setEditingPauta(pauta); setShowModal(true) }}
                 onDelete={() => handleDelete(pauta.id)}
               />
@@ -297,10 +298,11 @@ function FilterRow({
 
 // ─── PautaCard ─────────────────────────────────────────────────────────────
 function PautaCard({
-  pauta, workspaceSlug, onEdit, onDelete
+  pauta, workspaceSlug, workspaceName, onEdit, onDelete
 }: {
   pauta: Pauta
   workspaceSlug: string
+  workspaceName: string
   onEdit: () => void
   onDelete: () => void
 }) {
@@ -335,7 +337,10 @@ function PautaCard({
           <span className="text-[10px] font-serif italic text-gold-soft">{pauta.category}</span>
         </div>
         <div className="absolute bottom-4 left-4 z-10">
-          <span className="font-serif text-2xl text-foreground/70">nexum<span className="text-gold">360</span></span>
+          <span className="font-serif text-2xl text-foreground/70 italic">
+            {workspaceName}
+            <span className="text-gold not-italic">.</span>
+          </span>
         </div>
         {/* Hover overlay com indicador de ação */}
         <div className="absolute inset-0 bg-background/0 group-hover:bg-background/40 backdrop-blur-0 group-hover:backdrop-blur-[2px] transition-all flex items-center justify-center pointer-events-none">

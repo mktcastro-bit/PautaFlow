@@ -10,7 +10,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
 
         <div className="relative z-10">
           <h1 className="font-serif text-3xl tracking-tight">
-            <span className="text-foreground">nexum</span><span className="text-gold">360</span>
+            <span className="text-foreground">pauta</span><span className="text-gold italic">.</span>
           </h1>
           <p className="text-[10px] text-muted-foreground tracking-luxe uppercase mt-1.5">
             Gestão Inteligente de Conteúdo
@@ -38,7 +38,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         <div className="w-full max-w-sm">
           <div className="flex flex-col items-start mb-10 lg:hidden">
             <h1 className="font-serif text-2xl tracking-tight">
-              <span className="text-foreground">nexum</span><span className="text-gold">360</span>
+              <span className="text-foreground">pauta</span><span className="text-gold italic">.</span>
             </h1>
           </div>
           {children}
