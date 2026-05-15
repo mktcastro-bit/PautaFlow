@@ -56,7 +56,7 @@ const fontVariables = [
 ].join(' ')
 
 export const metadata: Metadata = {
-  title: 'PautaFlow — Gestão de Conteúdo com IA',
+  title: 'Pauta — Gestão de Conteúdo com IA',
   description: 'Plataforma inteligente para gestão de pautas, DNA da marca e geração de conteúdo com IA',
 }
 

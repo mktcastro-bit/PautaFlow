@@ -1,8 +1,8 @@
 import { LegalLayout } from '@/components/legal/legal-layout'
 
 export const metadata = {
-  title: 'Política de Privacidade · PautaFlow',
-  description: 'Como o PautaFlow coleta, usa e protege seus dados.',
+  title: 'Política de Privacidade · Pauta',
+  description: 'Como o Pauta coleta, usa e protege seus dados.',
 }
 
 export default function PrivacidadePage() {
@@ -14,7 +14,7 @@ export default function PrivacidadePage() {
     >
       <h2>1. Quem somos</h2>
       <p>
-        O PautaFlow é operado em conformidade com a Lei Geral de Proteção de Dados (LGPD — Lei 13.709/2018).
+        O Pauta é operado em conformidade com a Lei Geral de Proteção de Dados (LGPD — Lei 13.709/2018).
         Esta política explica quais dados coletamos, por quê, e o que você pode fazer sobre eles.
       </p>
 

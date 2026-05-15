@@ -1,27 +1,27 @@
 import { LegalLayout } from '@/components/legal/legal-layout'
 
 export const metadata = {
-  title: 'Termos de Uso · PautaFlow',
-  description: 'Termos de uso da plataforma PautaFlow.',
+  title: 'Termos de Uso · Pauta',
+  description: 'Termos de uso da plataforma Pauta.',
 }
 
 export default function TermosPage() {
   return (
     <LegalLayout
       title="Termos de Uso"
-      subtitle="As regras do jogo entre você e o PautaFlow. Leia com atenção antes de usar nossos serviços."
+      subtitle="As regras do jogo entre você e o Pauta. Leia com atenção antes de usar nossos serviços."
       updatedAt="08 de maio de 2026"
     >
       <h2>1. Aceitação dos termos</h2>
       <p>
-        Ao criar uma conta ou usar o PautaFlow (a "plataforma"), você concorda com estes Termos de Uso.
+        Ao criar uma conta ou usar o Pauta (a "plataforma"), você concorda com estes Termos de Uso.
         Se você não concorda, não use a plataforma. Os termos podem ser atualizados a qualquer momento,
         e o uso continuado após mudanças significa aceitação das novas condições.
       </p>
 
-      <h2>2. O que é o PautaFlow</h2>
+      <h2>2. O que é o Pauta</h2>
       <p>
-        O PautaFlow é uma ferramenta de gestão de pautas e geração de conteúdo assistida por
+        O Pauta é uma ferramenta de gestão de pautas e geração de conteúdo assistida por
         inteligência artificial. Ele organiza ideias, configura a identidade da sua marca e gera
         rascunhos de texto e arte para publicações em redes sociais.
       </p>
@@ -39,7 +39,7 @@ export default function TermosPage() {
       </ul>
 
       <h2>4. Uso aceitável</h2>
-      <p>Você concorda em <strong>não</strong> usar o PautaFlow para:</p>
+      <p>Você concorda em <strong>não</strong> usar o Pauta para:</p>
       <ul>
         <li>Gerar conteúdo ilegal, difamatório, discriminatório, violento ou que viole direitos autorais.</li>
         <li>Disseminar desinformação, golpes ou conteúdo enganoso.</li>
@@ -50,7 +50,7 @@ export default function TermosPage() {
 
       <h2>5. Conteúdo gerado</h2>
       <p>
-        Todo conteúdo que você cria, edita ou gera no PautaFlow pertence a você. Concedemos uso da
+        Todo conteúdo que você cria, edita ou gera no Pauta pertence a você. Concedemos uso da
         plataforma apenas como ferramenta — não reivindicamos direitos sobre suas pautas, textos
         ou artes.
       </p>
@@ -65,14 +65,14 @@ export default function TermosPage() {
         probabilísticas — podem conter erros, vieses ou imprecisões. Você reconhece que:
       </p>
       <ul>
-        <li>O PautaFlow não garante exatidão, originalidade ou adequação do conteúdo gerado.</li>
+        <li>O Pauta não garante exatidão, originalidade ou adequação do conteúdo gerado.</li>
         <li>Você deve revisar todo material antes de publicar.</li>
         <li>Não somos responsáveis por consequências de conteúdo publicado sem revisão.</li>
       </ul>
 
       <h2>7. Planos, pagamentos e cancelamento</h2>
       <p>
-        O PautaFlow oferece um plano gratuito de teste com limites de uso. Planos pagos podem ser
+        O Pauta oferece um plano gratuito de teste com limites de uso. Planos pagos podem ser
         oferecidos com cobrança mensal ou anual.
       </p>
       <ul>
@@ -83,7 +83,7 @@ export default function TermosPage() {
 
       <h2>8. Limitação de responsabilidade</h2>
       <p>
-        O PautaFlow é fornecido "como está", sem garantias explícitas ou implícitas. Não nos
+        O Pauta é fornecido "como está", sem garantias explícitas ou implícitas. Não nos
         responsabilizamos por lucros cessantes, perda de dados, indisponibilidade temporária ou
         danos indiretos decorrentes do uso (ou impossibilidade de uso) da plataforma.
       </p>
@@ -98,7 +98,7 @@ export default function TermosPage() {
       <h2>10. Foro e legislação</h2>
       <p>
         Estes termos são regidos pelas leis brasileiras. Eventuais disputas serão resolvidas no
-        foro da cidade da sede do PautaFlow.
+        foro da cidade da sede do Pauta.
       </p>
 
       <h2>11. Contato</h2>

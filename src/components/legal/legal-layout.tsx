@@ -18,10 +18,10 @@ export function LegalLayout({ title, subtitle, updatedAt, children }: Props) {
       {/* Nav minimal */}
       <nav className="border-b border-zinc-200 bg-[#faf8f3]/85 backdrop-blur-md sticky top-0 z-30">
         <div className="max-w-4xl mx-auto px-6 lg:px-10 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-baseline gap-1 group">
+          <Link href="/" className="flex items-baseline group">
             <ArrowLeft className="h-3 w-3 mr-2 opacity-50 group-hover:opacity-100 transition-opacity" />
             <span className="font-grotesque text-2xl tracking-tight text-zinc-950">pauta</span>
-            <span className="font-grotesque text-2xl text-[#c9a86a] italic">flow</span>
+            <span className="font-grotesque text-2xl text-[#c9a86a] italic">.</span>
           </Link>
           <div className="flex items-center gap-4 text-xs tracking-[0.18em] uppercase">
             <Link href="/termos" className="text-zinc-600 hover:text-zinc-950 transition-colors">Termos</Link>
@@ -56,9 +56,9 @@ export function LegalLayout({ title, subtitle, updatedAt, children }: Props) {
       {/* Footer */}
       <footer className="bg-[#0a0a0a] text-zinc-500 py-10">
         <div className="max-w-4xl mx-auto px-6 lg:px-10 flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-baseline gap-1">
+          <div className="flex items-baseline">
             <span className="font-grotesque text-xl tracking-tight text-zinc-300">pauta</span>
-            <span className="font-grotesque text-xl text-[#c9a86a] italic">flow</span>
+            <span className="font-grotesque text-xl text-[#c9a86a] italic">.</span>
           </div>
           <p className="text-[10px] tracking-[0.2em] uppercase">
             © {new Date().getFullYear()} · Todos os direitos reservados

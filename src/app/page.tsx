@@ -18,9 +18,9 @@ export default function LandingPage() {
       {/* ── NAV (light) ─────────────────────────────────────────────── */}
       <nav className="sticky top-0 z-40 bg-[#faf8f3]/85 backdrop-blur-md border-b border-zinc-200">
         <div className="max-w-7xl mx-auto px-6 lg:px-10 h-16 flex items-center justify-between">
-          <div className="flex items-baseline gap-1">
+          <div className="flex items-baseline">
             <span className="font-grotesque text-2xl tracking-tight text-zinc-950">pauta</span>
-            <span className="font-grotesque text-2xl text-[#c9a86a] italic">flow</span>
+            <span className="font-grotesque text-2xl text-[#c9a86a] italic">.</span>
           </div>
           <div className="flex items-center gap-1">
             <Link href="/login" className="text-xs tracking-[0.18em] uppercase text-zinc-700 hover:text-zinc-950 transition-colors px-4 py-2">
@@ -53,7 +53,7 @@ export default function LandingPage() {
         </h1>
 
         <p className="mt-10 max-w-xl text-lg text-zinc-700 leading-relaxed">
-          PautaFlow une <strong className="font-medium text-zinc-950">DNA da marca</strong>, repositório de pautas e
+          Pauta une <strong className="font-medium text-zinc-950">DNA da marca</strong>, repositório de ideias e
           geração visual com IA — para times de marketing produzirem conteúdo coerente, em escala.
         </p>
 
@@ -297,9 +297,9 @@ export default function LandingPage() {
       {/* ── FOOTER (dark) ──────────────────────────────────────────── */}
       <footer className="bg-[#0a0a0a] text-zinc-500 border-t border-zinc-900 py-10">
         <div className="max-w-7xl mx-auto px-6 lg:px-10 flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-baseline gap-1">
+          <div className="flex items-baseline">
             <span className="font-grotesque text-xl tracking-tight text-zinc-300">pauta</span>
-            <span className="font-grotesque text-xl text-[#c9a86a] italic">flow</span>
+            <span className="font-grotesque text-xl text-[#c9a86a] italic">.</span>
           </div>
           <p className="text-[10px] tracking-[0.2em] uppercase">
             © {new Date().getFullYear()} · Todos os direitos reservados
