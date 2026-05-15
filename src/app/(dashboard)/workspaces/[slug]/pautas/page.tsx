@@ -3,6 +3,10 @@ import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { PautasClient } from '@/components/pautas/pautas-client'
 import { DEMO_MODE, demoWorkspaces, demoPautas } from '@/lib/demo-data'
 
+// Sempre buscar dados frescos — pautas mudam frequentemente
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 interface Props {
   params: { slug: string }
   searchParams: { [key: string]: string | undefined }

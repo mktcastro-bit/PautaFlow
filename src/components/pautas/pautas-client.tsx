@@ -49,8 +49,7 @@ export function PautasClient({ pautas, workspace, categories, filters, dnaIncomp
 
   async function handleDelete(pautaId: string) {
     if (!confirm('Tem certeza que deseja excluir esta pauta?')) return
-    const supabase = createClient()
-    await supabase.from('pautas').delete().eq('id', pautaId)
+    await fetch(`/api/pautas?id=${pautaId}`, { method: 'DELETE' })
     router.refresh()
   }
 

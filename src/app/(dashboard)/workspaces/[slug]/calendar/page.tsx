@@ -3,6 +3,9 @@ import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { CalendarClient } from '@/components/calendar/calendar-client'
 import { DEMO_MODE, demoWorkspaces, demoCalendarEvents, demoPautas } from '@/lib/demo-data'
 
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 interface Props {
   params: { slug: string }
 }

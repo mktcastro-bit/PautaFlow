@@ -1,5 +1,19 @@
 import { NextResponse } from 'next/server'
+import { revalidatePath } from 'next/cache'
 import { createClient, createAdminClient } from '@/lib/supabase/server'
+
+/** Revalida as rotas que listam pautas para esse workspace */
+async function revalidateWorkspaceRoutes(admin: any, workspaceId: string) {
+  try {
+    const { data: ws } = await admin.from('workspaces').select('slug').eq('id', workspaceId).single()
+    if (ws?.slug) {
+      revalidatePath(`/workspaces/${ws.slug}/pautas`)
+      revalidatePath(`/workspaces/${ws.slug}/calendar`)
+    }
+  } catch {
+    // silenciar — revalidação é "best effort"
+  }
+}
 
 export async function POST(request: Request) {
   try {
@@ -44,6 +58,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
+    await revalidateWorkspaceRoutes(admin, workspace_id)
     return NextResponse.json({ ok: true, pauta: data })
   } catch (err: any) {
     console.error('[pautas] unexpected error:', err)
@@ -83,7 +98,7 @@ export async function PATCH(request: Request) {
       .from('pautas')
       .update(updates)
       .eq('id', id)
-      .select('id, title')
+      .select('id, title, workspace_id')
       .single()
 
     if (error) {
@@ -91,7 +106,41 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
+    if (data?.workspace_id) {
+      await revalidateWorkspaceRoutes(admin, data.workspace_id)
+    }
     return NextResponse.json({ ok: true, pauta: data })
+  } catch (err: any) {
+    return NextResponse.json({ error: err?.message || 'Erro desconhecido' }, { status: 500 })
+  }
+}
+
+export async function DELETE(request: Request) {
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
+
+    const url = new URL(request.url)
+    const id = url.searchParams.get('id')
+    if (!id) return NextResponse.json({ error: 'id obrigatório' }, { status: 400 })
+
+    const admin = await createAdminClient()
+
+    // Buscar workspace_id antes de deletar pra poder revalidar
+    const { data: existing } = await admin
+      .from('pautas')
+      .select('workspace_id')
+      .eq('id', id)
+      .single()
+
+    const { error } = await admin.from('pautas').delete().eq('id', id)
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+    if (existing?.workspace_id) {
+      await revalidateWorkspaceRoutes(admin, existing.workspace_id)
+    }
+    return NextResponse.json({ ok: true })
   } catch (err: any) {
     return NextResponse.json({ error: err?.message || 'Erro desconhecido' }, { status: 500 })
   }
