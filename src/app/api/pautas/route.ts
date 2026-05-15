@@ -24,7 +24,7 @@ export async function POST(request: Request) {
     const body = await request.json()
     const {
       workspace_id, title, description, category, platform, format, tags,
-      slides, editor_state, caption,
+      slides, editor_state, caption, media, priority, status, scheduled_date,
     } = body
 
     if (!workspace_id || !title) {
@@ -42,13 +42,15 @@ export async function POST(request: Request) {
         category: category || 'Geral',
         platform: Array.isArray(platform) ? platform : [platform].filter(Boolean),
         format: format || 'post',
-        status: 'ideia',
+        status: status || 'ideia',
         tags: tags || [],
-        priority: 'media',
+        priority: priority || 'media',
         created_by: user.id,
         slides: slides || null,
         editor_state: editor_state || null,
         caption: caption || null,
+        media: media || [],
+        scheduled_date: scheduled_date || null,
       })
       .select('id, title')
       .single()
@@ -75,7 +77,7 @@ export async function PATCH(request: Request) {
     const body = await request.json()
     const {
       id, title, description, category, platform, format, tags,
-      slides, editor_state, caption, status,
+      slides, editor_state, caption, status, media, priority, scheduled_date,
     } = body
 
     if (!id) return NextResponse.json({ error: 'id obrigatório' }, { status: 400 })
@@ -93,6 +95,9 @@ export async function PATCH(request: Request) {
     if (slides !== undefined)       updates.slides = slides
     if (editor_state !== undefined) updates.editor_state = editor_state
     if (caption !== undefined)      updates.caption = caption
+    if (media !== undefined)        updates.media = media
+    if (priority !== undefined)     updates.priority = priority
+    if (scheduled_date !== undefined) updates.scheduled_date = scheduled_date || null
 
     const { data, error } = await admin
       .from('pautas')

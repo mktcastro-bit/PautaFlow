@@ -328,8 +328,38 @@ function PautaCard({
       className="group relative bg-card border border-border rounded-xl overflow-hidden hover:border-gold/30 transition-all duration-300 flex flex-col cursor-pointer"
     >
 
-      {/* Header art zone — gold gradient placeholder */}
+      {/* Header art zone — preview da primeira mídia (ou placeholder se vazio) */}
       <div className="relative h-44 bg-gradient-to-br from-zinc-950 via-zinc-900 to-black border-b border-border overflow-hidden">
+        {/* Preview da primeira mídia (se houver) */}
+        {pauta.media && pauta.media.length > 0 && pauta.media[0] && (
+          <>
+            {pauta.media[0].type === 'image' ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={pauta.media[0].url}
+                alt={pauta.media[0].name}
+                className="absolute inset-0 w-full h-full object-cover"
+                loading="lazy"
+              />
+            ) : (
+              <video
+                src={pauta.media[0].url}
+                className="absolute inset-0 w-full h-full object-cover"
+                muted
+                playsInline
+                preload="metadata"
+              />
+            )}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-black/60" />
+            {/* Contador se tiver mais de 1 mídia */}
+            {pauta.media.length > 1 && (
+              <span className="absolute top-3 right-3 text-[9px] tracking-luxe uppercase text-foreground bg-background/80 backdrop-blur-sm border border-border px-2 py-1 z-20">
+                +{pauta.media.length - 1}
+              </span>
+            )}
+          </>
+        )}
+
         <div className="absolute inset-0 grain-overlay" />
         <div className="absolute top-4 left-4 flex items-center gap-1.5 z-10">
           <div className="h-1 w-1 rounded-full bg-gold" />

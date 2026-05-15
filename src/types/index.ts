@@ -99,6 +99,15 @@ export interface Pauta {
   slides?: Array<{ number: number; text: string }> | null
   editor_state?: Record<string, any> | null
   caption?: string | null
+  // Mídias enviadas pelo usuário (opção C — post manual)
+  media?: MediaItem[] | null
+}
+
+export interface MediaItem {
+  url: string
+  type: 'image' | 'video'
+  name: string
+  size: number
 }
 
 export interface GeneratedContent {
