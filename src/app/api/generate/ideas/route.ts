@@ -30,6 +30,7 @@ function buildIdeasPrompt(
   format: string,
   suggestion: string | undefined,
   suggestionMode: SuggestionMode,
+  isTrends: boolean,
   dna: Partial<BrandDNA>
 ): string {
   const tone = dna.step3_tone?.join(', ') || 'direto e estratégico'
@@ -65,7 +66,7 @@ ${preferred ? `- Vocabulário preferido: ${preferred}` : ''}
 - Plataforma: ${platform}
 - Formato: ${format}
 
-${buildSuggestionBlock(suggestion, suggestionMode)}
+${buildSuggestionBlock(suggestion, suggestionMode, isTrends)}
 
 ## Fórmulas virais comprovadas
 Você vai gerar EXATAMENTE 5 ideias, UMA para cada fórmula abaixo:
@@ -114,7 +115,8 @@ export async function POST(req: NextRequest) {
   }
 
   const mode: SuggestionMode = (suggestion_mode as SuggestionMode) || 'hint'
-  const prompt = buildIdeasPrompt(pilar, platform, format, suggestion, mode, brand_dna || {})
+  const isTrends = !!use_web_search && mode === 'news'
+  const prompt = buildIdeasPrompt(pilar, platform, format, suggestion, mode, isTrends, brand_dna || {})
 
   try {
     const message = await anthropic.messages.create({

@@ -8,7 +8,11 @@ export type SuggestionMode = 'hint' | 'news' | 'adapt' | 'literal'
 /**
  * Bloco a ser inserido no prompt de geração de IDEIAS.
  */
-export function buildSuggestionBlock(suggestion: string | undefined, mode: SuggestionMode): string {
+export function buildSuggestionBlock(
+  suggestion: string | undefined,
+  mode: SuggestionMode,
+  isTrends = false,
+): string {
   if (!suggestion?.trim()) return ''
 
   if (mode === 'hint') {
@@ -17,21 +21,32 @@ ${suggestion.trim()}`
   }
 
   if (mode === 'news') {
-    // Detecta se é o sub-modo "trends" (prompt sintético criado pelo frontend)
-    const isTrends = /Comente as tendências.+sobre/i.test(suggestion)
-
     if (isTrends) {
-      return `## Conteúdo base — NOTÍCIA / atualidade (busca real-time)
+      return `## Conteúdo base — NOTÍCIA / atualidade (BUSCA REAL-TIME OBRIGATÓRIA)
 
+Briefing do usuário:
 ${suggestion.trim()}
 
-INSTRUÇÕES PARA A IA:
-1. Use a ferramenta web_search para encontrar notícias RECENTES (últimos 30 dias quando possível)
-2. Faça 1-2 buscas relevantes sobre o tema
-3. Identifique 3-5 notícias/tendências DIFERENTES sobre o assunto
-4. Para cada ideia, escolha UMA notícia/ângulo específico
-5. As ideias devem REFERENCIAR a notícia (manchete, fonte, data) no subtítulo
-6. NÃO invente notícias — use apenas o que encontrar nas buscas`
+⚠️ INSTRUÇÕES CRÍTICAS:
+
+1. **OBRIGATÓRIO:** ANTES de responder, faça PELO MENOS 1 busca usando a ferramenta web_search.
+   Não responda sem fazer a busca primeiro.
+
+2. **Queries sugeridas:** termos relacionados ao pilar do usuário + "notícia" / "novidade" /
+   "tendência" / "recente" / mês corrente / ano corrente.
+
+3. **Use os resultados:** identifique 3-5 notícias/manchetes DIFERENTES e RECENTES
+   (últimos 30-60 dias quando possível).
+
+4. **Para cada ideia gerada:**
+   - O TÍTULO deve refletir a manchete da notícia encontrada (não inventar)
+   - O SUBTÍTULO deve mencionar a FONTE (nome do veículo) e a DATA (mês/ano)
+   - Exemplo de subtítulo: "Fonte: Folha de S.Paulo · Maio 2026"
+
+5. **NUNCA invente notícias.** Se não encontrar nada relevante, retorne array vazio []
+   em vez de fabricar.
+
+6. As 5 ideias devem ser sobre 5 notícias diferentes (ou 5 ângulos do mesmo fato relevante).`
     }
 
     return `## Conteúdo base — NOTÍCIA / atualidade
@@ -70,28 +85,44 @@ export function buildSlidesInstructions(
   suggestion: string | undefined,
   mode: SuggestionMode,
   slideCount: number,
+  isTrends = false,
 ): string {
   if (!suggestion?.trim() || mode === 'hint') {
     return ''  // sem conteúdo base, segue tarefa padrão
   }
 
   if (mode === 'news') {
-    const isTrends = /Comente as tendências.+sobre/i.test(suggestion)
-
     if (isTrends) {
-      return `## Modo NOTÍCIA · TENDÊNCIAS REAIS (web search)
+      return `## Modo NOTÍCIA · BUSCA REAL-TIME (web search OBRIGATÓRIO)
 
+Briefing do usuário:
 ${suggestion.trim()}
 
-INSTRUÇÕES PARA OS SLIDES:
-1. Use a ferramenta web_search para encontrar a notícia/tendência mais relevante e ATUAL
-2. Faça 1-2 buscas focadas
-3. Use os FATOS encontrados (manchete, fonte, data) — NÃO invente nada
-4. ESTRUTURA dos slides:
-   - Slide 1: gancho da notícia/tendência (manchete + impacto)
-   - Slides intermediários: ângulo da marca sobre o fato, contexto, dados
-   - Slide final: CTA + cite a fonte (nome do veículo, data)
-5. Mantenha o tom da marca, mas seja factual no que veio da busca`
+⚠️ INSTRUÇÕES CRÍTICAS:
+
+1. **OBRIGATÓRIO:** ANTES de gerar os slides, faça PELO MENOS 1 busca usando web_search.
+   Use queries que combinem o pilar do usuário + termos como "notícia recente",
+   "tendência ${new Date().getFullYear()}", "lançamento", etc.
+
+2. **Escolha 1 notícia/fato encontrado** que seja realmente relevante para o pilar e marca.
+
+3. **ESTRUTURA dos slides (OBRIGATÓRIO):**
+   - **Slide 1:** manchete adaptada da notícia (curta e impactante) + subtítulo que
+     diz "Segundo [VEÍCULO], [DATA]" ou similar
+   - **Slides 2 a ${slideCount - 1}:** desenvolvimento da notícia (dados, números, contexto)
+     + ângulo da marca (o que isso significa para o público da marca)
+   - **Slide ${slideCount}:** Callout com link/fonte + CTA (ex: "Fonte: [veículo] · [data]")
+
+4. **NA LEGENDA:** OBRIGATORIAMENTE termine com:
+   "📰 Fonte: [Nome do veículo] · [Data da publicação]"
+   E se possível, o URL da matéria.
+
+5. **NUNCA invente fatos, dados, declarações ou números.** Use APENAS o que encontrar
+   na busca. Se a busca não trouxer informações concretas, peça desculpas no slide 1
+   e retorne uma resposta indicando que não conseguiu encontrar notícia relevante.
+
+6. **NÃO faça conteúdo genérico** "sobre o tema X" como se fosse um post comum.
+   Este é um post REATIVO a uma notícia específica.`
     }
 
     return `## Modo NOTÍCIA — comente esta atualidade com a voz da marca

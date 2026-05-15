@@ -186,6 +186,7 @@ export function ArtCanvas({ slides, setSlides, caption, idea, config, brandDna, 
             ...editor,
             __suggestion: (config as any).suggestion || null,
             __suggestion_mode: (config as any).suggestionMode || 'hint',
+            __news_sub_mode: (config as any).newsSubMode || 'trends',
           },
         }),
       })

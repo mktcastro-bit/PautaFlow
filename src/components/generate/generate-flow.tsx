@@ -27,6 +27,7 @@ type Step = 'texto' | 'arte'
 type LoadingState = null | 'ideas' | 'slides'
 
 export type SuggestionMode = 'hint' | 'news' | 'adapt' | 'literal'
+export type NewsSubMode = 'paste' | 'trends'
 
 interface Config {
   pilar: string
@@ -36,6 +37,7 @@ interface Config {
   publicationFormat: 'feed' | 'story' | 'reels'
   suggestion: string
   suggestionMode: SuggestionMode
+  newsSubMode: NewsSubMode
 }
 
 interface Props {
@@ -184,8 +186,6 @@ const MODE_SPECS: Record<SuggestionMode, {
 }
 
 // Sub-modo do Notícia: colar texto OU pedir pra IA comentar tendências do pilar
-type NewsSubMode = 'paste' | 'trends'
-
 function ContentBaseHero({
   config, setConfig, onGenerate, loading, genError,
 }: {
@@ -195,13 +195,16 @@ function ContentBaseHero({
   loading: LoadingState
   genError: string | null
 }) {
-  const [newsSubMode, setNewsSubMode] = useState<NewsSubMode>('trends')
+  const newsSubMode = config.newsSubMode
   const spec = MODE_SPECS[config.suggestionMode]
   const wordCount = config.suggestion.trim() ? config.suggestion.trim().split(/\s+/).length : 0
 
   function setMode(m: SuggestionMode) {
-    setConfig({ ...config, suggestionMode: m })
-    if (m !== 'news') setNewsSubMode('trends')
+    setConfig({ ...config, suggestionMode: m, newsSubMode: 'trends' })
+  }
+
+  function setNewsSubMode(s: NewsSubMode) {
+    setConfig({ ...config, newsSubMode: s })
   }
 
   function setSuggestion(v: string) {
@@ -210,20 +213,12 @@ function ContentBaseHero({
 
   // No sub-modo "trends" do Notícia, preenche automaticamente
   const effectivePlaceholder = config.suggestionMode === 'news' && newsSubMode === 'trends'
-    ? `Vou comentar tendências e debates atuais sobre "${config.pilar}". Você pode adicionar um ângulo opcional aqui…`
+    ? `Vou buscar notícias atuais sobre "${config.pilar}". Você pode adicionar um ângulo opcional aqui…`
     : spec.placeholder
 
-  async function handleGenerateClick() {
-    // No sub-modo "trends", força um prompt sintético antes de gerar
-    if (config.suggestionMode === 'news' && newsSubMode === 'trends') {
-      const synthetic = config.suggestion.trim()
-        ? `Comente as tendências, debates e movimentos atuais mais relevantes sobre "${config.pilar}". Foco adicional: ${config.suggestion.trim()}`
-        : `Comente as tendências, debates e movimentos atuais mais relevantes sobre "${config.pilar}".`
-      setConfig({ ...config, suggestion: synthetic })
-      // pequeno delay pra react atualizar antes de gerar
-      setTimeout(() => onGenerate(), 50)
-      return
-    }
+  // O handler agora apenas dispara o gerador — a lógica do prompt sintético
+  // está no handleGenerateIdeas (no pai), evitando race condition do setConfig.
+  function handleGenerateClick() {
     onGenerate()
   }
 
@@ -671,6 +666,7 @@ function SlidePreview({
           editor_state: {
             __suggestion: config.suggestion || null,
             __suggestion_mode: config.suggestionMode || 'hint',
+            __news_sub_mode: config.newsSubMode || 'trends',
           },
         }),
       })
@@ -909,6 +905,7 @@ export function GenerateFlow({ workspace, brandDna, pilars, initialPauta }: Prop
     publicationFormat: 'feed',
     suggestion: initialPauta?.editor_state?.__suggestion || '',
     suggestionMode: (initialPauta?.editor_state?.__suggestion_mode as SuggestionMode) || 'hint',
+    newsSubMode: (initialPauta?.editor_state?.__news_sub_mode as NewsSubMode) || 'trends',
   })
   const [ideas, setIdeas] = useState<Idea[]>([])
   const [selectedIdea, setSelectedIdea] = useState<Idea | null>(
@@ -944,9 +941,15 @@ export function GenerateFlow({ workspace, brandDna, pilars, initialPauta }: Prop
     setGenError(null)
 
     try {
-      // Detecta sub-modo "trends" pelo prompt sintético (gerado pelo ContentBaseHero)
-      const useWebSearch = config.suggestionMode === 'news'
-        && /^Comente as tendências/i.test(config.suggestion.trim())
+      // Sub-modo "trends" do Notícia ativa web search real-time
+      const isTrends = config.suggestionMode === 'news' && config.newsSubMode === 'trends'
+
+      // Constrói prompt sintético se for trends (sem race condition do setConfig)
+      const effectiveSuggestion = isTrends
+        ? (config.suggestion.trim()
+            ? `Comente as tendências, debates e notícias atuais mais relevantes sobre "${config.pilar}". Foco adicional: ${config.suggestion.trim()}`
+            : `Comente as tendências, debates e notícias atuais mais relevantes sobre "${config.pilar}".`)
+        : (config.suggestion || undefined)
 
       const res = await fetch('/api/generate/ideas', {
         method: 'POST',
@@ -956,9 +959,9 @@ export function GenerateFlow({ workspace, brandDna, pilars, initialPauta }: Prop
           pilar: config.pilar,
           platform: config.platform,
           format: config.format,
-          suggestion: config.suggestion || undefined,
+          suggestion: effectiveSuggestion,
           suggestion_mode: config.suggestionMode,
-          use_web_search: useWebSearch,
+          use_web_search: isTrends,
           brand_dna: brandDna,
         }),
       })
@@ -981,8 +984,13 @@ export function GenerateFlow({ workspace, brandDna, pilars, initialPauta }: Prop
     setGenError(null)
 
     try {
-      const useWebSearch = config.suggestionMode === 'news'
-        && /^Comente as tendências/i.test(config.suggestion.trim())
+      const isTrends = config.suggestionMode === 'news' && config.newsSubMode === 'trends'
+
+      const effectiveSuggestion = isTrends
+        ? (config.suggestion.trim()
+            ? `Comente as tendências, debates e notícias atuais mais relevantes sobre "${config.pilar}". Foco adicional: ${config.suggestion.trim()}`
+            : `Comente as tendências, debates e notícias atuais mais relevantes sobre "${config.pilar}".`)
+        : (config.suggestion || undefined)
 
       const res = await fetch('/api/generate/slides', {
         method: 'POST',
@@ -997,9 +1005,9 @@ export function GenerateFlow({ workspace, brandDna, pilars, initialPauta }: Prop
           publicationFormat: config.publicationFormat,
           variant: config.variant,
           formula: idea.formula,
-          suggestion: config.suggestion || undefined,
+          suggestion: effectiveSuggestion,
           suggestion_mode: config.suggestionMode,
-          use_web_search: useWebSearch,
+          use_web_search: isTrends,
           brand_dna: brandDna,
         }),
       })

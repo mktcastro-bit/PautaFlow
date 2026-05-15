@@ -46,6 +46,7 @@ function buildSlidesPrompt(
   formula: string | undefined,
   suggestion: string | undefined,
   suggestionMode: SuggestionMode,
+  isTrends: boolean,
   dna: Partial<BrandDNA>
 ): string {
   const tone = dna.step3_tone?.join(', ') || 'direto'
@@ -100,7 +101,7 @@ Aplique essa estrutura ao desenvolver os slides. O slide 1 reflete o título com
 Exemplo de aplicação: ${formulaSpec.example}` : ''
 
   // Bloco de instruções baseado no modo de sugestão
-  const suggestionBlock = buildSlidesInstructions(suggestion, suggestionMode, slideCount)
+  const suggestionBlock = buildSlidesInstructions(suggestion, suggestionMode, slideCount, isTrends)
 
   return `Você é o copywriter de ${brand}.
 
@@ -186,7 +187,8 @@ export async function POST(req: NextRequest) {
   }
 
   const mode: SuggestionMode = (suggestion_mode as SuggestionMode) || 'hint'
-  const prompt = buildSlidesPrompt(title, subtitle, pilar, platform, format, publicationFormat, variant, formula, suggestion, mode, brand_dna || {})
+  const isTrends = !!use_web_search && mode === 'news'
+  const prompt = buildSlidesPrompt(title, subtitle, pilar, platform, format, publicationFormat, variant, formula, suggestion, mode, isTrends, brand_dna || {})
 
   try {
     const message = await anthropic.messages.create({
