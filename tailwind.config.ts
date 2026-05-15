@@ -13,6 +13,7 @@ const config: Config = {
         sans: ['var(--font-sans)', 'Inter', 'system-ui', 'sans-serif'],
         serif: ['var(--font-serif)', '"Playfair Display"', 'Georgia', 'serif'],
         grotesque: ['var(--font-grotesque)', '"Bricolage Grotesque"', 'system-ui', 'sans-serif'],
+        instrument: ['var(--font-instrument)', '"Instrument Serif"', 'Georgia', 'serif'],
         display: ['var(--font-display)', '"Bebas Neue"', 'Impact', 'sans-serif'],
         handwriting: ['var(--font-handwriting)', 'Caveat', 'cursive'],
         tech: ['var(--font-tech)', '"IBM Plex Sans"', 'sans-serif'],

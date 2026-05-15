@@ -37,10 +37,30 @@ export default function LandingPage() {
       </nav>
 
       {/* ── HERO (light) — centralizado, com imagem de fundo limpa ──── */}
-      <section
-        className="relative bg-cover bg-no-repeat bg-center"
-        style={{ backgroundImage: "url('/banner.png')" }}
-      >
+      <section className="relative overflow-hidden">
+        {/* Imagem de fundo com filtro suave */}
+        <div
+          className="absolute inset-0 bg-cover bg-no-repeat bg-center"
+          style={{
+            backgroundImage: "url('/banner.png')",
+            filter: 'brightness(1.06) saturate(0.85)',
+          }}
+        />
+
+        {/* Wash creme uniforme — aumenta contraste sem tirar a textura */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{ backgroundColor: 'rgba(250, 248, 243, 0.22)' }}
+        />
+
+        {/* Vinheta radial sutil — foca o olho no centro */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background: 'radial-gradient(ellipse at center, rgba(250,248,243,0.25) 0%, transparent 60%)',
+          }}
+        />
+
         <div className="relative max-w-5xl mx-auto px-6 lg:px-10 pt-28 pb-32 text-center">
 
           {/* Eyebrow centralizado: rule — texto — rule */}
@@ -52,14 +72,14 @@ export default function LandingPage() {
             <div className="h-px w-12 bg-[#c9a86a]" />
           </div>
 
-          <h1 className="font-grotesque text-5xl md:text-7xl lg:text-[84px] leading-[0.95] tracking-tight text-zinc-950">
+          <h1 className="font-instrument text-6xl md:text-8xl lg:text-[110px] leading-[0.95] tracking-tight text-zinc-950">
             Da ideia à publicação,
             <br />
             com <span className="italic text-[#c9a86a]">inteligência</span> de marca.
           </h1>
 
-          <p className="mt-10 max-w-2xl mx-auto text-lg text-zinc-700 leading-relaxed">
-            Pauta une <strong className="font-medium text-zinc-950">DNA da marca</strong>, repositório de ideias e
+          <p className="mt-10 max-w-2xl mx-auto text-lg text-zinc-800 leading-relaxed">
+            Pauta une <strong className="font-semibold text-zinc-950">DNA da marca</strong>, repositório de ideias e
             geração visual com IA — para times de marketing produzirem conteúdo coerente, em escala.
           </p>
 
@@ -73,13 +93,13 @@ export default function LandingPage() {
             </Link>
             <Link
               href="/login"
-              className="inline-flex items-center gap-2 border border-zinc-300 hover:border-zinc-950 px-8 py-4 text-xs tracking-[0.2em] uppercase font-medium transition-colors"
+              className="inline-flex items-center gap-2 border border-zinc-400 hover:border-zinc-950 bg-[#faf8f3]/40 backdrop-blur-sm px-8 py-4 text-xs tracking-[0.2em] uppercase font-medium transition-colors"
             >
               Ver demonstração
             </Link>
           </div>
 
-          <p className="mt-8 text-[10px] tracking-[0.2em] uppercase text-zinc-500">
+          <p className="mt-8 text-[10px] tracking-[0.2em] uppercase text-zinc-600">
             14 dias grátis · sem cartão de crédito · cancele quando quiser
           </p>
         </div>

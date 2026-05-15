@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { Inter, Playfair_Display, Bebas_Neue, Caveat, IBM_Plex_Sans, Bricolage_Grotesque } from 'next/font/google'
+import { Inter, Playfair_Display, Bebas_Neue, Caveat, IBM_Plex_Sans, Bricolage_Grotesque, Instrument_Serif } from 'next/font/google'
 import './globals.css'
 
 // ─── 5 famílias tipográficas suportadas ────────────────────────────────────
@@ -46,6 +46,15 @@ const bricolage = Bricolage_Grotesque({
   weight: ['400', '500', '600', '700', '800'],
 })
 
+// Editorial premium — usada no hero da landing
+const instrument = Instrument_Serif({
+  subsets: ['latin'],
+  variable: '--font-instrument',
+  display: 'swap',
+  weight: '400',
+  style: ['normal', 'italic'],
+})
+
 const fontVariables = [
   inter.variable,
   playfair.variable,
@@ -53,6 +62,7 @@ const fontVariables = [
   caveat.variable,
   ibmPlex.variable,
   bricolage.variable,
+  instrument.variable,
 ].join(' ')
 
 export const metadata: Metadata = {
