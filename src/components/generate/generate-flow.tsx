@@ -173,7 +173,7 @@ const MODE_SPECS: Record<SuggestionMode, {
     label: 'Sugestão',
     subtitle: 'inspiração livre',
     placeholder: 'Ex: fale sobre IA na produtividade, com exemplos do varejo brasileiro…',
-    description: 'A IA usa como inspiração e cria do zero. Ideal pra quando você tem apenas uma ideia geral do que postar.',
+    description: 'A IA usa o que você escrever como inspiração leve. Se deixar em branco, ela cria do zero com base no DNA da marca.',
   },
   news: {
     label: 'Notícia',
@@ -248,7 +248,6 @@ function ContentBaseHero({
         </h1>
         <p className="text-zinc-400 text-sm leading-relaxed mb-8 max-w-xl">
           Escolha o modo abaixo conforme o que você tem em mãos.
-          Sem nada selecionado? A IA cria do zero com base no DNA da marca.
         </p>
 
         {/* 4 cards */}
