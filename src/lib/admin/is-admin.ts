@@ -4,7 +4,7 @@
  * Pode ser sobrescrita via env ADMIN_EMAILS (CSV) sem precisar redeploy
  * do código, mas o fallback hardcoded garante que o owner sempre tem acesso.
  */
-const HARDCODED_ADMINS = ['mktcastro@gmail.com']
+const HARDCODED_ADMINS = ['mktcastro@gmail.com', 'contatomktcastro21@gmail.com']
 
 export function getAdminEmails(): string[] {
   const fromEnv = (process.env.ADMIN_EMAILS || '')
