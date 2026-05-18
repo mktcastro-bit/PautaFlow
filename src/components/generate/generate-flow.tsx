@@ -173,7 +173,7 @@ const MODE_SPECS: Record<SuggestionMode, {
     label: 'Sugestão',
     subtitle: 'inspiração livre',
     placeholder: 'Ex: fale sobre IA na produtividade, com exemplos do varejo brasileiro…',
-    description: 'A IA usa o que você escrever como inspiração leve. Se deixar em branco, ela cria do zero com base no DNA da marca.',
+    description: 'A IA usa o que você escrever como ponto de partida, sem se prender às suas palavras. Se deixar em branco, cria do zero com base no DNA da marca.',
   },
   news: {
     label: 'Notícia',
