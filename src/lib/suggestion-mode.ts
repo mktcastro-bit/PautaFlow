@@ -32,21 +32,43 @@ ${suggestion.trim()}
 1. **OBRIGATÓRIO:** ANTES de responder, faça PELO MENOS 1 busca usando a ferramenta web_search.
    Não responda sem fazer a busca primeiro.
 
-2. **Queries sugeridas:** termos relacionados ao pilar do usuário + "notícia" / "novidade" /
-   "tendência" / "recente" / mês corrente / ano corrente.
+2. **Escolha UMA notícia específica e recente** que seja realmente relevante para o pilar.
+   Prefira notícias dos últimos 30-60 dias com:
+   - Sujeito claro e NOMEÁVEL (pessoa, empresa, instituição) — ex: "Pedro Silva, fundador da TechX"
+   - Fatos concretos (datas, números, declarações, decisões)
+   - URL real do veículo (NÃO INVENTE slugs)
 
-3. **Use os resultados:** identifique 3-5 notícias/manchetes DIFERENTES e RECENTES
-   (últimos 30-60 dias quando possível).
+3. **VALIDAÇÕES — recuse e retorne vazio se:**
+   - A busca não retornar nada substantivo
+   - As fontes encontradas forem rasas/genéricas
+   - Você precisar usar termos vagos como "esse fundador", "uma empresa", "alguém"
+   - A URL não estiver disponível nos resultados — NUNCA fabrique URLs
 
-4. **Para cada ideia gerada:**
-   - O TÍTULO deve refletir a manchete da notícia encontrada (não inventar)
-   - O SUBTÍTULO deve mencionar a FONTE (nome do veículo) e a DATA (mês/ano)
-   - Exemplo de subtítulo: "Fonte: Folha de S.Paulo · Maio 2026"
+4. **NUNCA generalize.** Se não conseguir nomear sujeitos e citar números/fatos,
+   retorne objeto vazio { "ideas": [], "news": null } — é melhor falhar do que inventar.
 
-5. **NUNCA invente notícias.** Se não encontrar nada relevante, retorne array vazio []
-   em vez de fabricar.
+5. **NUNCA invente fontes/URLs.** Use APENAS os domínios e links que apareceram
+   nos resultados da busca, exatamente como apareceram.
 
-6. As 5 ideias devem ser sobre 5 notícias diferentes (ou 5 ângulos do mesmo fato relevante).`
+## Estrutura da resposta
+
+Retorne JSON com 2 campos:
+{
+  "news": {
+    "headline": "manchete real e completa, exatamente como aparece",
+    "source": "Nome do veículo (ex: Forbes Brasil, Folha de S.Paulo)",
+    "date": "DD de mês de ano (ex: 14 de maio de 2026)",
+    "url": "URL completa exatamente como veio da busca",
+    "snippet": "trecho real de 150-250 chars com FATOS específicos: nomes, números, datas"
+  },
+  "ideas": [
+    {"formula": "atalho", "title": "...", "subtitle": "Fonte: [veículo] · [data]"},
+    ...
+  ]
+}
+
+As 5 ideias devem ser 5 ÂNGULOS DIFERENTES sobre essa MESMA notícia.
+Cada título precisa citar/referenciar o sujeito específico da notícia.`
     }
 
     return `## Conteúdo base — NOTÍCIA / atualidade
@@ -93,36 +115,43 @@ export function buildSlidesInstructions(
 
   if (mode === 'news') {
     if (isTrends) {
-      return `## Modo NOTÍCIA · BUSCA REAL-TIME (web search OBRIGATÓRIO)
+      return `## Modo NOTÍCIA · BUSCA REAL-TIME (notícia já validada pelo usuário)
 
-Briefing do usuário:
+Briefing do usuário (inclui dados da notícia escolhida):
 ${suggestion.trim()}
 
 ⚠️ INSTRUÇÕES CRÍTICAS:
 
-1. **OBRIGATÓRIO:** ANTES de gerar os slides, faça PELO MENOS 1 busca usando web_search.
-   Use queries que combinem o pilar do usuário + termos como "notícia recente",
-   "tendência ${new Date().getFullYear()}", "lançamento", etc.
+1. **A notícia JÁ FOI ENCONTRADA e validada pelo usuário** — você não precisa buscar de novo.
+   Use os dados (headline, fonte, URL, snippet) que estão no briefing acima.
 
-2. **Escolha 1 notícia/fato encontrado** que seja realmente relevante para o pilar e marca.
+2. **NOMEIE explicitamente os sujeitos da notícia.**
+   Se a notícia menciona "Pedro Silva, fundador da TechX", você DEVE escrever
+   "Pedro Silva" ou "fundador da TechX" — NUNCA "esse fundador", "uma pessoa",
+   "alguém", "uma empresa". O leitor precisa entender DE QUEM/DO QUÊ se trata.
 
-3. **ESTRUTURA dos slides (OBRIGATÓRIO):**
-   - **Slide 1:** manchete adaptada da notícia (curta e impactante) + subtítulo que
-     diz "Segundo [VEÍCULO], [DATA]" ou similar
-   - **Slides 2 a ${slideCount - 1}:** desenvolvimento da notícia (dados, números, contexto)
-     + ângulo da marca (o que isso significa para o público da marca)
-   - **Slide ${slideCount}:** Callout com link/fonte + CTA (ex: "Fonte: [veículo] · [data]")
+3. **USE FATOS CONCRETOS:** datas, números, declarações textuais, decisões específicas.
+   Se a notícia diz "TechX cresceu 300% em 2025", escreva "TechX cresceu 300%" —
+   não "uma empresa cresceu muito".
 
-4. **NA LEGENDA:** OBRIGATORIAMENTE termine com:
-   "📰 Fonte: [Nome do veículo] · [Data da publicação]"
-   E se possível, o URL da matéria.
+4. **ESTRUTURA dos slides (OBRIGATÓRIO):**
+   - **Slide 1:** Manchete impactante mencionando o SUJEITO + subtítulo
+     "Segundo [veículo], [data]"
+   - **Slides 2 a ${slideCount - 1}:** Dados concretos da notícia + ângulo da marca
+     (use nomes, números, citações; NUNCA generalize)
+   - **Slide ${slideCount}:** CTA + cite a fonte completa
 
-5. **NUNCA invente fatos, dados, declarações ou números.** Use APENAS o que encontrar
-   na busca. Se a busca não trouxer informações concretas, peça desculpas no slide 1
-   e retorne uma resposta indicando que não conseguiu encontrar notícia relevante.
+5. **NA LEGENDA:** Comece com o sujeito específico ("Pedro Silva mostrou que..."),
+   inclua os fatos centrais, e termine com:
+   "📰 Fonte: [Nome do veículo] · [Data]"
+   Se houver URL na notícia, inclua: [veiculo.com.br/...]
 
-6. **NÃO faça conteúdo genérico** "sobre o tema X" como se fosse um post comum.
-   Este é um post REATIVO a uma notícia específica.`
+6. **NUNCA invente fatos, dados, declarações ou números além do que está no briefing.**
+
+7. **NUNCA use frases vagas como:** "esse fundador", "uma empresa", "alguém fez",
+   "uma marca", "esse executivo". Se a notícia não nomeia, você não pode generalizar.
+
+8. **NUNCA invente URLs.** Use SOMENTE a URL que veio no briefing.`
     }
 
     return `## Modo NOTÍCIA — comente esta atualidade com a voz da marca

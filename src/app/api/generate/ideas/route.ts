@@ -98,6 +98,43 @@ Retorne APENAS JSON válido, sem markdown:
 }
 
 /**
+ * No modo trends, esperamos JSON { ideas: [...], news: {...} }
+ * Extrai esse objeto com fallbacks.
+ */
+function extractTrendsResponse(raw: string): { ideas: any[]; news: any | null } {
+  if (!raw?.trim()) return { ideas: [], news: null }
+
+  // 1) Bloco ```json {...} ```
+  const fenceMatch = raw.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/)
+  if (fenceMatch) {
+    try {
+      const obj = JSON.parse(fenceMatch[1])
+      if (obj && Array.isArray(obj.ideas)) return { ideas: obj.ideas, news: obj.news || null }
+    } catch {}
+  }
+
+  // 2) Último objeto JSON com campo "ideas"
+  const candidates = [...raw.matchAll(/\{[\s\S]*?\}(?=\s|$|,)/g)].map(m => m[0])
+  for (const candidate of candidates.reverse()) {
+    try {
+      const obj = JSON.parse(candidate)
+      if (obj && Array.isArray(obj.ideas)) return { ideas: obj.ideas, news: obj.news || null }
+    } catch {}
+  }
+
+  // 3) Greedy match — primeiro { até último }
+  const greedy = raw.match(/\{[\s\S]*\}/)
+  if (greedy) {
+    try {
+      const obj = JSON.parse(greedy[0])
+      if (obj && Array.isArray(obj.ideas)) return { ideas: obj.ideas, news: obj.news || null }
+    } catch {}
+  }
+
+  return { ideas: [], news: null }
+}
+
+/**
  * Extrai array de ideias da resposta crua (robusto a múltiplos blocks e prosa).
  */
 function extractIdeasArray(raw: string): any[] {
@@ -174,7 +211,26 @@ export async function POST(req: NextRequest) {
       if (block.type === 'text') raw += '\n' + block.text
     }
 
-    const ideas = extractIdeasArray(raw)
+    // No modo trends, esperamos JSON { ideas, news }; nos outros, só array de ideias
+    let ideas: any[] = []
+    let news: any = null
+
+    if (isTrends) {
+      const obj = extractTrendsResponse(raw)
+      ideas = obj.ideas || []
+      news = obj.news || null
+
+      // Validação adicional: news precisa ter campos mínimos
+      if (!news || !news.headline || !news.source) {
+        console.error('[ideas/trends] news inválida ou ausente. Raw (800 chars):', raw.slice(0, 800))
+        return NextResponse.json({
+          error: 'A IA não conseguiu validar uma notícia confiável sobre esse pilar.',
+          hint: 'Tente outro pilar com mais cobertura na mídia, adicione foco no campo abaixo, ou use "Colar notícia" pra fornecer o texto.',
+        }, { status: 502 })
+      }
+    } else {
+      ideas = extractIdeasArray(raw)
+    }
 
     if (!ideas.length) {
       console.error('[ideas] no ideas extracted. Raw response (first 800 chars):', raw.slice(0, 800))
@@ -186,7 +242,7 @@ export async function POST(req: NextRequest) {
       }, { status: 502 })
     }
 
-    return NextResponse.json({ ideas })
+    return NextResponse.json({ ideas, news })
   } catch (err: any) {
     console.error('[ideas] generation error:', err?.status, err?.message)
     const friendly = mapAnthropicError(err)

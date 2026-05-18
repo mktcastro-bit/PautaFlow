@@ -15,6 +15,16 @@ interface Idea {
   subtitle: string
   formula?: string  // chave da fórmula viral (atalho, guia, conselho, case, marco)
 }
+
+/** Notícia encontrada e validada pelo usuário (modo trends) */
+export interface NewsFound {
+  headline: string
+  source: string
+  date: string
+  url: string
+  snippet: string
+}
+
 interface Slide {
   number: number
   text?: string
@@ -507,13 +517,14 @@ function ConfigPanel({
 // ─── Idea Grid ────────────────────────────────────────────────────────────────
 
 function IdeaGrid({
-  ideas, onSelect, loading, genError, onRetry,
+  ideas, onSelect, loading, genError, onRetry, newsFound,
 }: {
   ideas: Idea[]
   onSelect: (idea: Idea) => void
   loading: LoadingState
   genError?: string | null
   onRetry?: () => void
+  newsFound?: NewsFound | null
 }) {
   if (loading === 'ideas') {
     return (
@@ -564,10 +575,69 @@ function IdeaGrid({
 
   return (
     <div className="flex-1 overflow-y-auto p-5">
+
+      {/* Card da notícia encontrada (modo trends) */}
+      {newsFound && (
+        <div className="mb-5 bg-gold/5 border border-gold/30 p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <div className="h-1 w-6 bg-gold" />
+            <span className="text-[10px] tracking-[0.25em] uppercase text-gold font-bold">
+              Notícia encontrada · em tempo real
+            </span>
+          </div>
+
+          <h3 className="font-grotesque text-base md:text-lg text-foreground leading-snug mb-2">
+            "{newsFound.headline}"
+          </h3>
+
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] tracking-wide text-zinc-400 mb-3">
+            <span><strong className="text-gold-soft">Fonte:</strong> {newsFound.source}</span>
+            <span className="text-zinc-600">·</span>
+            <span><strong className="text-gold-soft">Data:</strong> {newsFound.date}</span>
+            {newsFound.url && (
+              <>
+                <span className="text-zinc-600">·</span>
+                <a
+                  href={newsFound.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-gold/80 hover:text-gold underline underline-offset-2 truncate max-w-[260px]"
+                  title={newsFound.url}
+                >
+                  Ver fonte original ↗
+                </a>
+              </>
+            )}
+          </div>
+
+          {newsFound.snippet && (
+            <p className="text-xs text-zinc-300 italic leading-relaxed border-l-2 border-gold/40 pl-3 mb-3">
+              "{newsFound.snippet}"
+            </p>
+          )}
+
+          <div className="flex items-center gap-2 pt-1">
+            <span className="text-[10px] text-zinc-500 italic">
+              Não é essa notícia ou não confere com o link?
+            </span>
+            {onRetry && (
+              <button
+                onClick={onRetry}
+                className="text-[10px] tracking-[0.2em] uppercase text-gold hover:text-gold-soft border border-gold/40 hover:border-gold/70 px-2 py-1 transition-colors"
+              >
+                Buscar outra
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
       <div className="flex items-center justify-between mb-4">
-        <p className="text-[10px] font-semibold text-zinc-500 uppercase tracking-widest">Escolha uma Ideia</p>
+        <p className="text-[10px] font-semibold text-zinc-500 uppercase tracking-widest">
+          {newsFound ? '5 ângulos sobre a notícia · escolha um' : 'Escolha uma Ideia'}
+        </p>
         <p className="text-[9px] tracking-[0.2em] uppercase text-zinc-600">
-          5 fórmulas virais aplicadas
+          {newsFound ? 'Fórmulas virais aplicadas' : '5 fórmulas virais aplicadas'}
         </p>
       </div>
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
@@ -908,6 +978,7 @@ export function GenerateFlow({ workspace, brandDna, pilars, initialPauta }: Prop
     newsSubMode: (initialPauta?.editor_state?.__news_sub_mode as NewsSubMode) || 'trends',
   })
   const [ideas, setIdeas] = useState<Idea[]>([])
+  const [newsFound, setNewsFound] = useState<NewsFound | null>(null)
   const [selectedIdea, setSelectedIdea] = useState<Idea | null>(
     initialPauta?.title
       ? { title: initialPauta.title, subtitle: initialPauta.description || '' }
@@ -934,6 +1005,7 @@ export function GenerateFlow({ workspace, brandDna, pilars, initialPauta }: Prop
 
     setLoading('ideas')
     setIdeas([])
+    setNewsFound(null)
     setSelectedIdea(null)
     setSlides([])
     setCaption('')
@@ -968,6 +1040,7 @@ export function GenerateFlow({ workspace, brandDna, pilars, initialPauta }: Prop
       const data = await res.json()
       if (!res.ok) throw new Error(data.hint ? `${data.error} ${data.hint}` : (data.error || 'Erro ao gerar ideias'))
       setIdeas(data.ideas || [])
+      if (data.news) setNewsFound(data.news as NewsFound)
     } catch (err: any) {
       setGenError(err.message || 'Erro inesperado ao gerar ideias.')
     } finally {
@@ -986,11 +1059,27 @@ export function GenerateFlow({ workspace, brandDna, pilars, initialPauta }: Prop
     try {
       const isTrends = config.suggestionMode === 'news' && config.newsSubMode === 'trends'
 
-      const effectiveSuggestion = isTrends
-        ? (config.suggestion.trim()
-            ? `Comente as tendências, debates e notícias atuais mais relevantes sobre "${config.pilar}". Foco adicional: ${config.suggestion.trim()}`
-            : `Comente as tendências, debates e notícias atuais mais relevantes sobre "${config.pilar}".`)
-        : (config.suggestion || undefined)
+      // No modo trends, anexa a notícia já validada como briefing rico (sem precisar buscar de novo)
+      let effectiveSuggestion: string | undefined
+      if (isTrends && newsFound) {
+        effectiveSuggestion = `NOTÍCIA JÁ VALIDADA (use APENAS estes dados, não invente):
+- Manchete: ${newsFound.headline}
+- Fonte: ${newsFound.source}
+- Data: ${newsFound.date}
+- URL: ${newsFound.url}
+- Trecho: ${newsFound.snippet}
+
+Pilar da marca: ${config.pilar}`
+      } else if (isTrends) {
+        effectiveSuggestion = config.suggestion.trim()
+          ? `Comente as tendências, debates e notícias atuais mais relevantes sobre "${config.pilar}". Foco adicional: ${config.suggestion.trim()}`
+          : `Comente as tendências, debates e notícias atuais mais relevantes sobre "${config.pilar}".`
+      } else {
+        effectiveSuggestion = config.suggestion || undefined
+      }
+
+      // No modo trends, com notícia validada, NÃO precisa rebuscar (economiza tokens e evita alucinação)
+      const stillNeedsSearch = isTrends && !newsFound
 
       const res = await fetch('/api/generate/slides', {
         method: 'POST',
@@ -1007,7 +1096,7 @@ export function GenerateFlow({ workspace, brandDna, pilars, initialPauta }: Prop
           formula: idea.formula,
           suggestion: effectiveSuggestion,
           suggestion_mode: config.suggestionMode,
-          use_web_search: isTrends,
+          use_web_search: stillNeedsSearch,
           brand_dna: brandDna,
         }),
       })
@@ -1111,6 +1200,7 @@ export function GenerateFlow({ workspace, brandDna, pilars, initialPauta }: Prop
               loading={loading}
               genError={genError}
               onRetry={handleGenerateIdeas}
+              newsFound={newsFound}
             />
           ) : (
             <ContentBaseHero
