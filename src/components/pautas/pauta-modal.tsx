@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useRef } from 'react'
-import { X, Upload, Image as ImageIcon, Film, Loader2, AlertCircle } from 'lucide-react'
+import { useState, useRef, useEffect } from 'react'
+import { X, Upload, Image as ImageIcon, Film, Loader2, AlertCircle, Sparkles, Info } from 'lucide-react'
 import { Pauta, Workspace, PautaStatus, PautaFormat, PautaPriority, MediaItem } from '@/types'
 import { PLATFORM_LABELS, FORMAT_LABELS, STATUS_LABELS, PRIORITY_LABELS, cn } from '@/lib/utils'
 
@@ -35,6 +35,12 @@ export function PautaModal({ workspace, pauta, onClose, onSave }: Props) {
   const [uploading, setUploading] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const descTextareaRef = useRef<HTMLTextAreaElement>(null)
+
+  // Detecta se tem vídeo na pauta — habilita UX educativa
+  const hasVideo = media.some(m => m.type === 'video')
+  const videoCount = media.filter(m => m.type === 'video').length
+  const imageCount = media.filter(m => m.type === 'image').length
 
   function togglePlatform(p: string) {
     setForm(prev => ({
@@ -59,6 +65,11 @@ export function PautaModal({ workspace, pauta, onClose, onSave }: Props) {
     if (!files || files.length === 0) return
     setUploadError(null)
     setUploading(true)
+
+    // Detecta se algum dos arquivos novos é vídeo (pra UX educativa)
+    const newVideoUploaded = Array.from(files).some(f => f.type.startsWith('video/'))
+    const hadVideoBefore = hasVideo
+
     try {
       const items: MediaItem[] = []
       for (const file of Array.from(files)) {
@@ -66,6 +77,15 @@ export function PautaModal({ workspace, pauta, onClose, onSave }: Props) {
         items.push(item)
       }
       setMedia(prev => [...prev, ...items])
+
+      // Se acabou de adicionar o PRIMEIRO vídeo, dá foco no campo descrição
+      // depois de breve delay (esperar render)
+      if (newVideoUploaded && !hadVideoBefore) {
+        setTimeout(() => {
+          descTextareaRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+          descTextareaRef.current?.focus()
+        }, 400)
+      }
     } catch (e: any) {
       setUploadError(e.message)
     } finally {
@@ -136,9 +156,12 @@ export function PautaModal({ workspace, pauta, onClose, onSave }: Props) {
             <label className="text-[10px] tracking-luxe uppercase text-muted-foreground font-semibold">
               Mídia do post
             </label>
-            <p className="text-[10px] text-muted-foreground/70 -mt-1">
-              Faça upload das imagens/vídeos que compõem essa pauta.
-              Imagens até 5MB · Vídeos até 20MB.
+            <p className="text-[10px] text-muted-foreground/70 -mt-1 leading-relaxed">
+              Imagens até 5MB · Vídeos até 20MB.{' '}
+              <span className="text-muted-foreground/90">
+                Pra vídeos, descreva o conteúdo no campo abaixo —
+                a IA cria a legenda a partir da sua descrição.
+              </span>
             </p>
 
             {/* Grid de previews */}
@@ -227,15 +250,62 @@ export function PautaModal({ workspace, pauta, onClose, onSave }: Props) {
             />
           </div>
 
-          <div className="space-y-1.5">
-            <label className="text-[10px] tracking-luxe uppercase text-muted-foreground font-semibold">Descrição / Briefing</label>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <label className="text-[10px] tracking-luxe uppercase text-muted-foreground font-semibold">
+                {hasVideo ? 'Descrição do vídeo *' : 'Descrição / Briefing'}
+              </label>
+              {hasVideo && (
+                <span className="flex items-center gap-1 text-[9px] tracking-luxe uppercase text-gold font-bold">
+                  <Sparkles className="h-2.5 w-2.5" />
+                  Crítico para boa legenda
+                </span>
+              )}
+            </div>
+
+            {/* Card educativo quando há vídeo */}
+            {hasVideo && (
+              <div className="bg-gold/[0.06] border border-gold/30 p-3 mb-1 flex items-start gap-3">
+                <div className="flex-shrink-0 mt-0.5">
+                  <Film className="h-4 w-4 text-gold" />
+                </div>
+                <div className="space-y-1.5 text-xs leading-relaxed">
+                  <p className="text-foreground font-medium">
+                    {videoCount === 1 ? 'Vídeo detectado' : `${videoCount} vídeos detectados`}
+                  </p>
+                  <p className="text-muted-foreground">
+                    A IA <strong className="text-foreground">não assiste vídeos ainda</strong> — mas cria a legenda
+                    perfeita a partir da sua descrição abaixo. Conte o que aparece, quem fala, qual o gancho.
+                  </p>
+                  <p className="text-[10px] tracking-luxe uppercase text-gold font-semibold mt-2">
+                    ✦ Quanto mais detalhe, melhor o resultado
+                  </p>
+                </div>
+              </div>
+            )}
+
             <textarea
+              ref={descTextareaRef}
               value={form.description}
               onChange={e => setForm(p => ({ ...p, description: e.target.value }))}
-              placeholder="Texto da legenda, contexto da peça, instruções de copy…"
-              rows={3}
-              className="w-full bg-background border border-border px-3 py-2.5 text-sm focus:outline-none focus:border-gold/50 resize-none"
+              placeholder={hasVideo
+                ? 'Ex: Cliente Pedro contando como triplicou as vendas após implementar nossa estratégia de conteúdo. Tom inspirador, fala em primeira pessoa, menciona o resultado (de 30 pra 90 leads/mês)…'
+                : 'Texto da legenda, contexto da peça, instruções de copy…'}
+              rows={hasVideo ? 5 : 3}
+              className={cn(
+                'w-full bg-background border px-3 py-2.5 text-sm focus:outline-none resize-none transition-colors',
+                hasVideo
+                  ? 'border-gold/40 focus:border-gold/70'
+                  : 'border-border focus:border-gold/50'
+              )}
             />
+
+            {hasVideo && !form.description.trim() && (
+              <p className="flex items-center gap-1.5 text-[10px] text-gold/80">
+                <Info className="h-3 w-3" />
+                Adicione uma descrição pra IA gerar a legenda do vídeo
+              </p>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-3">
