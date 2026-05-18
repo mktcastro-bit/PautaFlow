@@ -200,7 +200,7 @@ export async function POST(req: NextRequest) {
         tools: [{
           type: 'web_search_20250305',
           name: 'web_search',
-          max_uses: 2,
+          max_uses: 4,
         }] as any,
       }),
     })

@@ -29,26 +29,57 @@ ${suggestion.trim()}
 
 ⚠️ INSTRUÇÕES CRÍTICAS:
 
-1. **OBRIGATÓRIO:** ANTES de responder, faça PELO MENOS 1 busca usando a ferramenta web_search.
-   Não responda sem fazer a busca primeiro.
+1. **OBRIGATÓRIO:** Faça PELO MENOS 2 buscas usando web_search com termos diferentes
+   (mais geral + mais específico) antes de escolher uma notícia.
 
-2. **Escolha UMA notícia específica e recente** que seja realmente relevante para o pilar.
-   Prefira notícias dos últimos 30-60 dias com:
-   - Sujeito claro e NOMEÁVEL (pessoa, empresa, instituição) — ex: "Pedro Silva, fundador da TechX"
-   - Fatos concretos (datas, números, declarações, decisões)
-   - URL real do veículo (NÃO INVENTE slugs)
+2. **PRIORIZE FONTES JORNALÍSTICAS RECONHECIDAS** — em ordem de preferência:
 
-3. **VALIDAÇÕES — recuse e retorne vazio se:**
-   - A busca não retornar nada substantivo
-   - As fontes encontradas forem rasas/genéricas
-   - Você precisar usar termos vagos como "esse fundador", "uma empresa", "alguém"
+   🇧🇷 **Brasil — imprensa jornalística:**
+   Folha de S.Paulo, Estadão, O Globo, UOL Notícias, Valor Econômico,
+   Exame, InfoMoney, Forbes Brasil, Neofeed, Olhar Digital, Tilt UOL,
+   Canaltech, MIT Technology Review Brasil, Brazil Journal, Pipeline Valor.
+
+   🇧🇷 **Marketing / Branding / Comunicação:**
+   Meio & Mensagem, ProXXIma, B9, Adnews, PropMark, MKT Esportivo,
+   Mercado e Consumo, NewTrade, Consumidor Moderno.
+
+   🌍 **Internacional respeitada:**
+   Harvard Business Review, MIT Sloan Review, Stratechery, TechCrunch,
+   The Verge, Wired, FT, Bloomberg, Reuters, NYT, BBC, WSJ, Fast Company,
+   Marketing Week, Adweek, Campaign, The Drum.
+
+   ✅ **Outras aceitáveis se publicação tem editorial sério:**
+   Site institucional de associações de classe (CONAR, ABERJE),
+   relatórios de consultorias top (McKinsey, Deloitte, PwC, Accenture,
+   Gartner, Forrester), papers acadêmicos com DOI.
+
+3. **EVITE / RECUSE estas fontes:**
+
+   ❌ Blogs pessoais auto-publicados (Medium genérico, Substack desconhecido)
+   ❌ Sites de empresas falando de si mesmas (press releases disfarçados)
+   ❌ Sites obscuros com domínios estranhos ou poucos conteúdos
+   ❌ Sites que exigem cadastro/login para ler a notícia inteira
+   ❌ Sites com paywall total (sem conteúdo público)
+   ❌ Posts no LinkedIn (não são jornalismo)
+   ❌ "thebrandingjournal.com" e similares (blogs corporativos pequenos)
+   ❌ Agregadores ou sites com matérias copiadas
+
+4. **VALIDAÇÕES — recuse e retorne vazio se:**
+   - A busca não retornar nada substantivo em fontes de qualidade
+   - Você precisar usar termos vagos como "esse fundador", "uma empresa"
    - A URL não estiver disponível nos resultados — NUNCA fabrique URLs
+   - A fonte for um blog corporativo pequeno ou auto-publicado
 
-4. **NUNCA generalize.** Se não conseguir nomear sujeitos e citar números/fatos,
-   retorne objeto vazio { "ideas": [], "news": null } — é melhor falhar do que inventar.
+5. **NUNCA generalize.** Se não conseguir nomear sujeitos e citar números/fatos
+   a partir de uma fonte sólida, retorne { "ideas": [], "news": null }.
 
-5. **NUNCA invente fontes/URLs.** Use APENAS os domínios e links que apareceram
+6. **NUNCA invente fontes/URLs.** Use APENAS domínios e links que apareceram
    nos resultados da busca, exatamente como apareceram.
+
+7. **Escolha UMA notícia específica e recente** (últimos 30-60 dias quando possível) com:
+   - Sujeito claro e NOMEÁVEL (pessoa, empresa, instituição)
+   - Fatos concretos (datas, números, declarações)
+   - URL real e ACESSÍVEL publicamente
 
 ## Estrutura da resposta
 
