@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Plus, Search, Download, Upload, Trash2, Edit, Zap, Calendar, X, Sparkles } from 'lucide-react'
+import { Plus, Search, Trash2, Edit, Zap, Calendar, X, Sparkles } from 'lucide-react'
 import { Pauta, Workspace, PautaStatus } from '@/types'
 import {
   STATUS_LABELS, PLATFORM_LABELS, FORMAT_LABELS, formatDate, cn
@@ -106,18 +106,9 @@ export function PautasClient({ pautas, workspace, categories, filters, dnaIncomp
             </h1>
           </div>
           <div className="flex items-center gap-2">
-            <label className="cursor-pointer">
-              <input type="file" accept=".json" className="hidden" onChange={handleImport} />
-              <span className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs tracking-wide uppercase text-muted-foreground hover:text-foreground hover:bg-accent/40 transition-all">
-                <Upload className="h-3 w-3" /> Importar
-              </span>
-            </label>
-            <button
-              onClick={handleExport}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs tracking-wide uppercase text-muted-foreground hover:text-foreground hover:bg-accent/40 transition-all"
-            >
-              <Download className="h-3 w-3" /> Exportar
-            </button>
+            {/* Botões Importar/Exportar ocultos por enquanto — funções mantidas
+                no código (handleImport, handleExport) para reativar quando
+                quisermos expor essa funcionalidade na UI novamente. */}
             <button
               onClick={() => { setEditingPauta(null); setShowModal(true) }}
               className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs tracking-wide uppercase border border-border hover:border-gold/40 hover:text-gold transition-all"
