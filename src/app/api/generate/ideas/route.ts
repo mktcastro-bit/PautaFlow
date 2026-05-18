@@ -97,6 +97,42 @@ Retorne APENAS JSON válido, sem markdown:
 ]`
 }
 
+/**
+ * Extrai array de ideias da resposta crua (robusto a múltiplos blocks e prosa).
+ */
+function extractIdeasArray(raw: string): any[] {
+  if (!raw?.trim()) return []
+
+  // 1) Bloco ```json [...] ```
+  const fenceMatch = raw.match(/```(?:json)?\s*(\[[\s\S]*?\])\s*```/)
+  if (fenceMatch) {
+    try {
+      const arr = JSON.parse(fenceMatch[1])
+      if (Array.isArray(arr) && arr.length) return arr
+    } catch {}
+  }
+
+  // 2) Último array balanceado (Claude pode falar texto antes)
+  const candidates = [...raw.matchAll(/\[[\s\S]*?\]/g)].map(m => m[0])
+  for (const candidate of candidates.reverse()) {
+    try {
+      const arr = JSON.parse(candidate)
+      if (Array.isArray(arr) && arr.length && arr[0]?.title) return arr
+    } catch {}
+  }
+
+  // 3) Greedy — primeiro [ até último ]
+  const greedy = raw.match(/\[[\s\S]*\]/)
+  if (greedy) {
+    try {
+      const arr = JSON.parse(greedy[0])
+      if (Array.isArray(arr)) return arr
+    } catch {}
+  }
+
+  return []
+}
+
 export async function POST(req: NextRequest) {
   if (process.env.NEXT_PUBLIC_DEMO_MODE === 'true') {
     await new Promise(r => setTimeout(r, 1500))
@@ -121,25 +157,34 @@ export async function POST(req: NextRequest) {
   try {
     const message = await anthropic.messages.create({
       model: 'claude-sonnet-4-6',
-      max_tokens: use_web_search ? 4000 : 1200,
+      max_tokens: use_web_search ? 6000 : 1200,
       messages: [{ role: 'user', content: prompt }],
       ...(use_web_search && {
         tools: [{
           type: 'web_search_20250305',
           name: 'web_search',
-          max_uses: 3,
+          max_uses: 2,
         }] as any,
       }),
     })
 
-    // Quando usa web search, Claude pode emitir múltiplos blocos.
-    // Extrai o último bloco de texto que tem o JSON final.
+    // Concatena todos os text blocks (web_search retorna múltiplos turnos)
     let raw = ''
     for (const block of message.content) {
-      if (block.type === 'text') raw = block.text
+      if (block.type === 'text') raw += '\n' + block.text
     }
-    const jsonMatch = raw.match(/\[[\s\S]*\]/)
-    const ideas = jsonMatch ? JSON.parse(jsonMatch[0]) : []
+
+    const ideas = extractIdeasArray(raw)
+
+    if (!ideas.length) {
+      console.error('[ideas] no ideas extracted. Raw response (first 800 chars):', raw.slice(0, 800))
+      return NextResponse.json({
+        error: 'Não consegui extrair ideias da resposta da IA.',
+        hint: use_web_search
+          ? 'A busca em tempo real pode não ter encontrado notícia relevante. Tente outro pilar.'
+          : 'Tente novamente em alguns segundos.',
+      }, { status: 502 })
+    }
 
     return NextResponse.json({ ideas })
   } catch (err: any) {

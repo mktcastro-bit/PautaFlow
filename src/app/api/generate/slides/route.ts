@@ -154,6 +154,38 @@ Retorne APENAS JSON válido:
 }`
 }
 
+/**
+ * Extrai o JSON dos slides da resposta crua da IA.
+ * Tenta múltiplas estratégias do mais específico ao mais permissivo.
+ */
+function extractSlidesJson(raw: string): { slides?: any[]; caption?: string } {
+  if (!raw?.trim()) return { slides: [], caption: '' }
+
+  // Estratégia 1: bloco ```json ... ```
+  const fenceMatch = raw.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/)
+  if (fenceMatch) {
+    try { return JSON.parse(fenceMatch[1]) } catch {}
+  }
+
+  // Estratégia 2: encontrar o ÚLTIMO objeto JSON que tem campo "slides"
+  // (Claude pode falar texto antes/depois quando usa web_search)
+  const candidates = [...raw.matchAll(/\{[\s\S]*?\}/g)].map(m => m[0])
+  for (const candidate of candidates.reverse()) {
+    try {
+      const parsed = JSON.parse(candidate)
+      if (parsed.slides && Array.isArray(parsed.slides)) return parsed
+    } catch {}
+  }
+
+  // Estratégia 3: greedy — primeiro { até último }
+  const greedy = raw.match(/\{[\s\S]*\}/)
+  if (greedy) {
+    try { return JSON.parse(greedy[0]) } catch {}
+  }
+
+  return { slides: [], caption: '' }
+}
+
 export async function POST(req: NextRequest) {
   if (process.env.NEXT_PUBLIC_DEMO_MODE === 'true') {
     await new Promise(r => setTimeout(r, 2000))
@@ -193,28 +225,39 @@ export async function POST(req: NextRequest) {
   try {
     const message = await anthropic.messages.create({
       model: 'claude-sonnet-4-6',
-      max_tokens: use_web_search ? 4500 : 2400,
+      max_tokens: use_web_search ? 8000 : 2400,
       messages: [{ role: 'user', content: prompt }],
       ...(use_web_search && {
         tools: [{
           type: 'web_search_20250305',
           name: 'web_search',
-          max_uses: 3,
+          max_uses: 2,
         }] as any,
       }),
     })
 
-    // Extrai o último bloco de texto (depois de eventuais tool_use blocks)
-    let raw = '{}'
+    // Concatena todos os text blocks (web_search pode retornar múltiplos)
+    let raw = ''
     for (const block of message.content) {
-      if (block.type === 'text') raw = block.text
+      if (block.type === 'text') raw += '\n' + block.text
     }
-    const jsonMatch = raw.match(/\{[\s\S]*\}/)
-    const result = jsonMatch ? JSON.parse(jsonMatch[0]) : { slides: [], caption: '' }
+
+    // Tenta extrair JSON com várias estratégias (do mais específico ao mais loose)
+    const result = extractSlidesJson(raw)
+
+    if (!result.slides || result.slides.length === 0) {
+      console.error('[slides] no slides extracted. Raw response (first 800 chars):', raw.slice(0, 800))
+      return NextResponse.json({
+        error: 'Não consegui extrair os slides da resposta da IA.',
+        hint: use_web_search
+          ? 'A busca em tempo real pode não ter encontrado notícia relevante. Tente outro pilar ou use "Colar notícia" manualmente.'
+          : 'Tente novamente em alguns segundos.',
+      }, { status: 502 })
+    }
 
     // Backward compat: se vier só "text" antigo, transforma em title
-    result.slides = (result.slides || []).map((s: any) => ({
-      number: s.number,
+    result.slides = (result.slides || []).map((s: any, i: number) => ({
+      number: s.number || i + 1,
       title: s.title || s.text || '',
       subtitle: s.subtitle || '',
       callout: s.callout || '',
