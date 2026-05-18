@@ -316,8 +316,17 @@ function PautaCard({
     : pauta.status === 'arquivado' ? { text: 'ARQUIVADO', className: 'border-zinc-500/30 text-zinc-400 bg-zinc-500/5' }
     : { text: 'IDEIA', className: 'border-zinc-500/30 text-zinc-400 bg-zinc-500/5' }
 
+  // Detecta o tipo de pauta:
+  // - Tem slides gerados pela IA → abre o /generate restaurando o estado
+  // - Apenas dados manuais (sem slides) → abre o modal de edição
+  const hasGeneratedSlides = Array.isArray(pauta.slides) && pauta.slides.length > 0
+
   function openPauta() {
-    router.push(`/workspaces/${workspaceSlug}/generate?pauta_id=${pauta.id}`)
+    if (hasGeneratedSlides) {
+      router.push(`/workspaces/${workspaceSlug}/generate?pauta_id=${pauta.id}`)
+    } else {
+      onEdit()
+    }
   }
 
   // Stops o click do card quando o usuário clica em botões de ação
@@ -369,7 +378,7 @@ function PautaCard({
         {/* Hover overlay com indicador de ação */}
         <div className="absolute inset-0 bg-background/0 group-hover:bg-background/40 backdrop-blur-0 group-hover:backdrop-blur-[2px] transition-all flex items-center justify-center pointer-events-none">
           <span className="opacity-0 group-hover:opacity-100 transition-opacity text-[10px] tracking-luxe uppercase text-gold border border-gold/40 px-3 py-1.5 bg-background/60">
-            Abrir editor
+            {hasGeneratedSlides ? 'Abrir editor' : 'Editar pauta'}
           </span>
         </div>
       </div>
