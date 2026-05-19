@@ -1,8 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { Plus, Search, Trash2, Edit, Zap, Calendar, X, Sparkles } from 'lucide-react'
+import { Plus, Search, Trash2, Edit, Zap, Calendar, X, Sparkles, ChevronDown, Check, Loader2 } from 'lucide-react'
 import { Pauta, Workspace, PautaStatus } from '@/types'
 import {
   STATUS_LABELS, PLATFORM_LABELS, FORMAT_LABELS, formatDate, cn
@@ -51,6 +51,20 @@ export function PautasClient({ pautas, workspace, categories, filters, dnaIncomp
     if (!confirm('Tem certeza que deseja excluir esta pauta?')) return
     await fetch(`/api/pautas?id=${pautaId}`, { method: 'DELETE' })
     router.refresh()
+  }
+
+  /** Atualiza apenas o status (PATCH minimal) e refresca a lista */
+  async function handleStatusChange(pautaId: string, newStatus: PautaStatus) {
+    const res = await fetch('/api/pautas', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: pautaId, status: newStatus }),
+    })
+    if (res.ok) router.refresh()
+    else {
+      const json = await res.json().catch(() => ({}))
+      alert(json.error || 'Não foi possível atualizar o status. Tente novamente.')
+    }
   }
 
   async function handleExport() {
@@ -223,6 +237,7 @@ export function PautasClient({ pautas, workspace, categories, filters, dnaIncomp
                 workspaceSlug={workspace.slug}
                 onEdit={() => { setEditingPauta(pauta); setShowModal(true) }}
                 onDelete={() => handleDelete(pauta.id)}
+                onStatusChange={(newStatus) => handleStatusChange(pauta.id, newStatus)}
               />
             ))}
           </div>
@@ -288,24 +303,68 @@ function FilterRow({
   )
 }
 
+// Opções do seletor rápido de status no card
+const STATUS_OPTIONS: { value: PautaStatus; label: string }[] = [
+  { value: 'ideia', label: 'Ideia' },
+  { value: 'em_desenvolvimento', label: 'Em produção' },
+  { value: 'aprovado', label: 'Aprovado' },
+  { value: 'publicado', label: 'Publicado' },
+  { value: 'arquivado', label: 'Arquivado' },
+]
+
+function statusVisual(status: PautaStatus) {
+  switch (status) {
+    case 'publicado':         return { text: 'PUBLICADO',  className: 'border-emerald-500/30 text-emerald-400 bg-emerald-500/5' }
+    case 'em_desenvolvimento':return { text: 'PRODUÇÃO',   className: 'border-gold/40 text-gold bg-gold/5' }
+    case 'aprovado':          return { text: 'APROVADO',   className: 'border-sky-500/30 text-sky-400 bg-sky-500/5' }
+    case 'arquivado':         return { text: 'ARQUIVADO',  className: 'border-zinc-500/30 text-zinc-400 bg-zinc-500/5' }
+    default:                  return { text: 'IDEIA',      className: 'border-zinc-500/30 text-zinc-400 bg-zinc-500/5' }
+  }
+}
+
 // ─── PautaCard ─────────────────────────────────────────────────────────────
 function PautaCard({
-  pauta, workspaceSlug, onEdit, onDelete
+  pauta, workspaceSlug, onEdit, onDelete, onStatusChange
 }: {
   pauta: Pauta
   workspaceSlug: string
   onEdit: () => void
   onDelete: () => void
+  onStatusChange: (newStatus: PautaStatus) => Promise<void>
 }) {
   const router = useRouter()
   const [expanded, setExpanded] = useState(false)
+  const [statusMenuOpen, setStatusMenuOpen] = useState(false)
+  const [statusSaving, setStatusSaving] = useState(false)
+  const statusMenuRef = useRef<HTMLDivElement>(null)
 
-  const statusBadge =
-    pauta.status === 'publicado' ? { text: 'PUBLICADO', className: 'border-emerald-500/30 text-emerald-400 bg-emerald-500/5' }
-    : pauta.status === 'em_desenvolvimento' ? { text: 'PRODUÇÃO', className: 'border-gold/40 text-gold bg-gold/5' }
-    : pauta.status === 'aprovado' ? { text: 'APROVADO', className: 'border-sky-500/30 text-sky-400 bg-sky-500/5' }
-    : pauta.status === 'arquivado' ? { text: 'ARQUIVADO', className: 'border-zinc-500/30 text-zinc-400 bg-zinc-500/5' }
-    : { text: 'IDEIA', className: 'border-zinc-500/30 text-zinc-400 bg-zinc-500/5' }
+  // Fecha menu ao clicar fora
+  useEffect(() => {
+    if (!statusMenuOpen) return
+    function onClickOutside(e: MouseEvent) {
+      if (statusMenuRef.current && !statusMenuRef.current.contains(e.target as Node)) {
+        setStatusMenuOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', onClickOutside)
+    return () => document.removeEventListener('mousedown', onClickOutside)
+  }, [statusMenuOpen])
+
+  async function changeStatus(newStatus: PautaStatus) {
+    if (newStatus === pauta.status) {
+      setStatusMenuOpen(false)
+      return
+    }
+    setStatusSaving(true)
+    try {
+      await onStatusChange(newStatus)
+    } finally {
+      setStatusSaving(false)
+      setStatusMenuOpen(false)
+    }
+  }
+
+  const statusBadge = statusVisual(pauta.status as PautaStatus)
 
   // Detecta o tipo de pauta:
   // - Tem slides gerados pela IA → abre o /generate restaurando o estado
@@ -378,12 +437,56 @@ function PautaCard({
       <div className="p-5 flex flex-col flex-1">
         <div className="flex items-start justify-between gap-2 mb-3">
           <h3 className="font-semibold text-sm leading-snug line-clamp-2 flex-1">{pauta.title}</h3>
-          <span className={cn(
-            'text-[9px] tracking-luxe uppercase px-2 py-1 rounded-md border font-medium flex-shrink-0',
-            statusBadge.className,
-          )}>
-            {statusBadge.text}
-          </span>
+
+          {/* Seletor rápido de status */}
+          <div ref={statusMenuRef} className="relative flex-shrink-0" onClick={stopProp}>
+            <button
+              type="button"
+              disabled={statusSaving}
+              onClick={(e) => { e.stopPropagation(); setStatusMenuOpen(o => !o) }}
+              className={cn(
+                'flex items-center gap-1 text-[9px] tracking-luxe uppercase px-2 py-1 rounded-md border font-medium transition-all',
+                statusBadge.className,
+                'hover:brightness-125 cursor-pointer',
+                statusSaving && 'opacity-60 cursor-wait',
+              )}
+              title="Clique para mudar o status"
+            >
+              {statusSaving ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
+              {statusBadge.text}
+              <ChevronDown className="h-2.5 w-2.5 opacity-70" />
+            </button>
+
+            {statusMenuOpen && !statusSaving && (
+              <div className="absolute right-0 top-full mt-1 z-30 min-w-[160px] bg-card border border-border rounded-lg shadow-xl overflow-hidden">
+                {STATUS_OPTIONS.map(opt => {
+                  const isCurrent = opt.value === pauta.status
+                  const optVisual = statusVisual(opt.value)
+                  return (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); changeStatus(opt.value) }}
+                      className={cn(
+                        'w-full flex items-center justify-between gap-2 px-3 py-2 text-xs hover:bg-accent transition-colors text-left',
+                        isCurrent && 'bg-accent/40',
+                      )}
+                    >
+                      <span className="flex items-center gap-2">
+                        <span className={cn(
+                          'text-[9px] tracking-luxe uppercase px-1.5 py-0.5 rounded border font-medium',
+                          optVisual.className,
+                        )}>
+                          {optVisual.text}
+                        </span>
+                      </span>
+                      {isCurrent && <Check className="h-3 w-3 text-gold" />}
+                    </button>
+                  )
+                })}
+              </div>
+            )}
+          </div>
         </div>
 
         {pauta.description && (
