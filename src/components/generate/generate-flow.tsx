@@ -830,8 +830,17 @@ function SlidePreview({
       <div className="mb-5">
         <div className="flex items-center justify-between mb-3">
           <p className="text-[10px] font-semibold text-zinc-500 uppercase tracking-widest">Slides</p>
-          <p className="text-[9px] tracking-[0.2em] uppercase text-zinc-600">Clique para editar</p>
         </div>
+
+        {/* Call de descoberta — apresenta as 2 ações possíveis em cada slide */}
+        <div className="flex items-start gap-2 mb-3 px-3 py-2 bg-gold/[0.06] border border-gold/20 rounded-lg">
+          <Wand2 className="h-3.5 w-3.5 text-gold flex-shrink-0 mt-0.5" />
+          <p className="text-[11px] text-zinc-300 leading-relaxed">
+            <span className="text-zinc-100 font-medium">Clique em qualquer slide</span> para editar o texto manualmente ou
+            <span className="text-gold font-medium"> pedir refinamento à IA</span>.
+          </p>
+        </div>
+
         <div className="space-y-2">
           {slides.map(slide => {
             const titleText = slide.title || slide.text || ''
