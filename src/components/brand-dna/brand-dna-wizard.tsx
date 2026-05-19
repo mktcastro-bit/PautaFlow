@@ -67,6 +67,10 @@ export function BrandDnaWizard({ workspace, initialDna, isWelcome = false }: Pro
     step5_competitors: initialDna?.step5_competitors?.join(', ') || '',
     step5_market_position: initialDna?.step5_market_position || '',
     step5_content_pillars: initialDna?.step5_content_pillars?.join(', ') || '',
+
+    // Conteúdo extraído do site da marca (ofertas, cases, tópicos, vocabulário, tom)
+    // Preenchido automaticamente quando o usuário cola URL na etapa 4
+    extracted_content: (initialDna as any)?.extracted_content || null,
   })
 
   function parseArray(str: string): string[] {
@@ -104,6 +108,9 @@ export function BrandDnaWizard({ workspace, initialDna, isWelcome = false }: Pro
       step5_competitors: parseArray(data.step5_competitors),
       step5_market_position: data.step5_market_position || null,
       step5_content_pillars: parseArray(data.step5_content_pillars),
+
+      // Conteúdo extraído do site (jsonb com offerings, cases, topics, etc)
+      extracted_content: data.extracted_content || null,
     }
 
     if (nextStep > 5) {
@@ -660,8 +667,28 @@ function Step4({ data, setData }: any) {
         ...(json.colors?.length && { step4_primary_colors: json.colors.join(', ') }),
         ...(json.fonts?.length && { step4_visual_references: p.step4_visual_references || json.fonts.join(', ') }),
         ...(json.typographyStyle && { step4_typography_style: json.typographyStyle }),
+        // Conteúdo extraído pra alimentar geração futura (offerings, cases, etc)
+        ...(json.content && { extracted_content: json.content }),
       }))
-      setExtractMsg({ type: 'ok', text: `${json.colors?.length || 0} cores e ${json.fonts?.length || 0} fontes detectadas. Revise e ajuste abaixo.` })
+
+      // Monta mensagem de sucesso mostrando tudo que foi capturado
+      const parts: string[] = []
+      if (json.colors?.length) parts.push(`${json.colors.length} cores`)
+      if (json.fonts?.length) parts.push(`${json.fonts.length} fontes`)
+      if (json.content?.cases?.length) parts.push(`${json.content.cases.length} cases`)
+      if (json.content?.topics?.length) parts.push(`${json.content.topics.length} tópicos`)
+      if (json.content?.vocabulary?.length) parts.push(`${json.content.vocabulary.length} termos`)
+
+      const contentNote = json.content
+        ? ' A IA também analisou o conteúdo do site — exemplos reais serão usados nas próximas gerações.'
+        : ''
+
+      setExtractMsg({
+        type: 'ok',
+        text: parts.length
+          ? `Detectados: ${parts.join(', ')}.${contentNote} Revise abaixo.`
+          : 'Análise concluída. Revise os campos abaixo.',
+      })
     } catch (e: any) {
       setExtractMsg({ type: 'error', text: e.message || 'Não foi possível acessar o site.' })
     } finally {

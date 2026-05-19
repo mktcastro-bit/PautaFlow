@@ -6,6 +6,7 @@ import { withRetry } from '@/lib/anthropic/retry'
 import { BrandDNA } from '@/types'
 import { FORMULAS, FORMULA_ORDER } from '@/lib/viral-formulas'
 import { buildSuggestionBlock, type SuggestionMode } from '@/lib/suggestion-mode'
+import { buildExtractedContentBlock } from '@/lib/brand-content'
 
 const DEMO_IDEAS = FORMULA_ORDER.map((key, i) => ({
   formula: key,
@@ -51,6 +52,9 @@ function buildIdeasPrompt(
    - Exemplo: ${f.example}`
   }).join('\n\n')
 
+  // Conteúdo extraído do site da marca — cases, ofertas, tópicos, vocabulário
+  const extractedBlock = buildExtractedContentBlock(dna)
+
   return `Você é o estrategista de conteúdo de ${brand}.
 
 ## Contexto da Marca
@@ -61,6 +65,8 @@ ${pain ? `- Dor principal: ${pain}` : ''}
 - Diferencial: ${differentiator}
 ${avoid ? `- Evitar: ${avoid}` : ''}
 ${preferred ? `- Vocabulário preferido: ${preferred}` : ''}
+
+${extractedBlock}
 
 ## Briefing
 - Pilar: ${pilar}
@@ -85,8 +91,8 @@ Cada ideia deve ter:
 REGRAS CRÍTICAS:
 1. Cada ideia DEVE seguir a estrutura da sua respectiva fórmula
 2. NÃO seja genérico — o título precisa entregar a fórmula claramente
-3. Use o tom e vocabulário da marca
-4. Pense no formato ${format} para ${platform}
+3. Use o tom e vocabulário da marca${extractedBlock ? ' (priorize termos e cases REAIS extraídos do site acima)' : ''}
+4. Pense no formato ${format} para ${platform}${extractedBlock ? '\n5. Quando fizer sentido, ancore o conteúdo em cases/ofertas reais da marca em vez de exemplos genéricos' : ''}
 
 Retorne APENAS JSON válido, sem markdown:
 [

@@ -4,6 +4,7 @@ import { anthropic } from '@/lib/anthropic'
 import { mapAnthropicError } from '@/lib/anthropic/errors'
 import { withRetry } from '@/lib/anthropic/retry'
 import { cleanSlide, cleanCaption } from '@/lib/text-sanitize'
+import { buildExtractedContentBlock } from '@/lib/brand-content'
 import { BrandDNA } from '@/types'
 import { getFormula } from '@/lib/viral-formulas'
 import { checkGenerationLimit } from '@/lib/usage-limits'
@@ -105,6 +106,9 @@ Exemplo de aplicação: ${formulaSpec.example}` : ''
   // Bloco de instruções baseado no modo de sugestão
   const suggestionBlock = buildSlidesInstructions(suggestion, suggestionMode, slideCount, isTrends)
 
+  // Conteúdo extraído do site da marca — cases, ofertas, tópicos, vocabulário
+  const extractedBlock = buildExtractedContentBlock(dna)
+
   return `Você é o copywriter de ${brand}.
 
 ## Ideia selecionada
@@ -122,6 +126,8 @@ ${offerings ? `- O que a marca oferece: ${offerings}` : ''}
 - Tom: ${tone}
 - Público: ${audience}
 ${preferred ? `- Vocabulário: ${preferred}` : ''}
+
+${extractedBlock}
 
 ## Tarefa
 Gere EXATAMENTE ${slideCount} slides para este ${format}.
