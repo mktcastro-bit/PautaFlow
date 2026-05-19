@@ -450,7 +450,7 @@ export function ArtEditor({
   const mode = applyMode ?? 'all'
 
   return (
-    <div className="w-64 flex-shrink-0 border-r border-zinc-800 flex flex-col bg-zinc-950 h-screen">
+    <div className="w-64 flex-shrink-0 border-r border-zinc-800 flex flex-col bg-zinc-950 h-full min-h-0">
       {/* Tab bar — fixa no topo */}
       <div className="flex border-b border-zinc-800 flex-shrink-0">
         {TABS.map(t => (
@@ -524,8 +524,9 @@ export function ArtEditor({
         </div>
       )}
 
-      {/* Conteúdo (tab + slide overrides) — scroll único, sem flex-1 que cria gap */}
-      <div className="flex-1 overflow-y-auto">
+      {/* Conteúdo (tab + slide overrides) — scroll único, min-h-0 garante que
+          o overflow-y-auto respeite a altura do pai flex em vez de crescer */}
+      <div className="flex-1 overflow-y-auto min-h-0">
         <div className="p-4">
           {tab === 'fundo' && <FundoTab editor={editor} onChange={onChange} />}
           {tab === 'texto' && <TextoTab editor={editor} onChange={onChange} />}
