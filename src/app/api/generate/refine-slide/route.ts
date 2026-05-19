@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { anthropic } from '@/lib/anthropic'
 import { mapAnthropicError } from '@/lib/anthropic/errors'
+import { withRetry } from '@/lib/anthropic/retry'
 import { BrandDNA } from '@/types'
 
 /**
@@ -157,11 +158,11 @@ export async function POST(req: NextRequest) {
   )
 
   try {
-    const message = await anthropic.messages.create({
+    const message = await withRetry(() => anthropic.messages.create({
       model: 'claude-sonnet-4-6',
       max_tokens: 600,
       messages: [{ role: 'user', content: prompt }],
-    })
+    }))
 
     let raw = ''
     for (const block of message.content) {

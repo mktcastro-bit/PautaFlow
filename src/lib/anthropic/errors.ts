@@ -40,8 +40,8 @@ export function mapAnthropicError(err: any): FriendlyError {
       }
     }
     return {
-      message: 'Muitas requisições simultâneas.',
-      hint: 'Aguarde alguns segundos e tente de novo.',
+      message: 'Limite de uso da IA atingido temporariamente.',
+      hint: 'Tentamos automaticamente algumas vezes mas o limite continua. Aguarde 30-60 segundos e tente novamente — o limite reseta a cada minuto.',
       status: 429,
       type: 'rate_limit',
     }

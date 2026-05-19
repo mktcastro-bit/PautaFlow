@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { anthropic } from '@/lib/anthropic'
 import { mapAnthropicError } from '@/lib/anthropic/errors'
+import { withRetry } from '@/lib/anthropic/retry'
 import { BrandDNA } from '@/types'
 import { FORMULAS, FORMULA_ORDER } from '@/lib/viral-formulas'
 import { buildSuggestionBlock, type SuggestionMode } from '@/lib/suggestion-mode'
@@ -192,7 +193,7 @@ export async function POST(req: NextRequest) {
   const prompt = buildIdeasPrompt(pilar, platform, format, suggestion, mode, isTrends, brand_dna || {})
 
   try {
-    const message = await anthropic.messages.create({
+    const message = await withRetry(() => anthropic.messages.create({
       model: 'claude-sonnet-4-6',
       max_tokens: use_web_search ? 6000 : 1200,
       messages: [{ role: 'user', content: prompt }],
@@ -203,7 +204,7 @@ export async function POST(req: NextRequest) {
           max_uses: 4,
         }] as any,
       }),
-    })
+    }))
 
     // Concatena todos os text blocks (web_search retorna múltiplos turnos)
     let raw = ''
