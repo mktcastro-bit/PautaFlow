@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { Sparkles, ChevronLeft, Edit2, X, Copy, Check, Plus, BookmarkPlus } from 'lucide-react'
+import { Sparkles, ChevronLeft, Edit2, X, Copy, Check, Plus, BookmarkPlus, Wand2, Loader2 } from 'lucide-react'
 import { BrandDNA, Workspace } from '@/types'
 import { cn } from '@/lib/utils'
 import { ArtCanvas } from './art-canvas'
@@ -677,7 +677,7 @@ const FORMULA_LABELS: Record<string, string> = {
 // ─── Slide Preview ────────────────────────────────────────────────────────────
 
 function SlidePreview({
-  idea, slides, setSlides, caption, setCaption, loading, config, workspace, savedPautaId, setSavedPautaId, onBack, onApprove, onCopyCaption,
+  idea, slides, setSlides, caption, setCaption, loading, config, workspace, brandDna, savedPautaId, setSavedPautaId, onBack, onApprove, onCopyCaption,
 }: {
   idea: Idea
   slides: Slide[]
@@ -687,6 +687,7 @@ function SlidePreview({
   loading: LoadingState
   config: Config
   workspace: Workspace
+  brandDna: BrandDNA | null
   savedPautaId: string | null
   setSavedPautaId: (id: string | null) => void
   onBack: () => void
@@ -696,8 +697,53 @@ function SlidePreview({
   const [editingSlide, setEditingSlide] = useState<number | null>(null)
   const [editingCaption, setEditingCaption] = useState(false)
 
+  // ─── Refinamento por IA (slide a slide) ───
+  const [refiningSlide, setRefiningSlide] = useState<number | null>(null)
+  const [refineInstruction, setRefineInstruction] = useState('')
+  const [refineError, setRefineError] = useState<string | null>(null)
+
   function updateSlide(n: number, patch: Partial<Slide>) {
     setSlides(slides.map(s => s.number === n ? { ...s, ...patch } : s))
+  }
+
+  async function refineSlide(n: number, instruction: string) {
+    const target = slides.find(s => s.number === n)
+    if (!target || !instruction.trim()) return
+
+    setRefiningSlide(n)
+    setRefineError(null)
+    try {
+      const res = await fetch('/api/generate/refine-slide', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          workspace_id: workspace.id,
+          slide: target,
+          instruction,
+          deck_context: {
+            slides,
+            ideaTitle: idea.title,
+            ideaSubtitle: idea.subtitle,
+          },
+          brand_dna: brandDna,
+        }),
+      })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error || 'Falha ao refinar slide')
+      if (json.slide) {
+        updateSlide(n, {
+          title: json.slide.title,
+          text: json.slide.title,
+          subtitle: json.slide.subtitle ?? '',
+          callout: json.slide.callout ?? '',
+        })
+        setRefineInstruction('')
+      }
+    } catch (e: any) {
+      setRefineError(e.message || 'Erro inesperado')
+    } finally {
+      setRefiningSlide(null)
+    }
   }
   const [copied, setCopied] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -840,6 +886,77 @@ function SlidePreview({
                         placeholder="Frase curta de destaque (opcional)"
                       />
                     </div>
+
+                    {/* ─── Refinamento com IA ─── */}
+                    <div className="mt-2 pt-3 border-t border-zinc-800/80">
+                      <div className="flex items-center gap-1.5 mb-2">
+                        <Wand2 className="h-3 w-3 text-gold" />
+                        <span className="text-[9px] tracking-widest uppercase text-gold font-bold">
+                          Refinar com IA
+                        </span>
+                      </div>
+
+                      {/* Chips de atalho */}
+                      <div className="flex flex-wrap gap-1.5 mb-2">
+                        {['Mais curto', 'Mais provocador', 'Menos jargão', 'Mais conciso'].map(preset => (
+                          <button
+                            key={preset}
+                            type="button"
+                            disabled={refiningSlide !== null}
+                            onClick={() => refineSlide(slide.number, preset)}
+                            className={cn(
+                              'text-[10px] tracking-wide px-2 py-1 border rounded transition-all',
+                              refiningSlide !== null
+                                ? 'border-zinc-800 text-zinc-600 cursor-not-allowed'
+                                : 'border-zinc-700 text-zinc-300 hover:border-gold/50 hover:text-gold'
+                            )}
+                          >
+                            {preset}
+                          </button>
+                        ))}
+                      </div>
+
+                      {/* Input livre */}
+                      <div className="flex items-stretch gap-1.5">
+                        <input
+                          type="text"
+                          value={refiningSlide === slide.number ? refineInstruction : refineInstruction}
+                          onChange={e => setRefineInstruction(e.target.value)}
+                          onKeyDown={e => {
+                            if (e.key === 'Enter' && refineInstruction.trim() && refiningSlide === null) {
+                              e.preventDefault()
+                              refineSlide(slide.number, refineInstruction)
+                            }
+                          }}
+                          disabled={refiningSlide !== null}
+                          placeholder='Ex: "adiciona um exemplo concreto"'
+                          className="flex-1 bg-zinc-900 border border-zinc-700 rounded px-2 py-1.5 text-xs text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-gold/50 disabled:opacity-50"
+                        />
+                        <button
+                          type="button"
+                          disabled={!refineInstruction.trim() || refiningSlide !== null}
+                          onClick={() => refineSlide(slide.number, refineInstruction)}
+                          className="flex items-center gap-1 text-[10px] tracking-widest uppercase bg-gold/10 text-gold border border-gold/40 px-2.5 py-1.5 font-semibold hover:bg-gold/20 disabled:opacity-40 disabled:cursor-not-allowed transition-all rounded"
+                        >
+                          {refiningSlide === slide.number ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : (
+                            <Wand2 className="h-3 w-3" />
+                          )}
+                          {refiningSlide === slide.number ? '...' : 'Refinar'}
+                        </button>
+                      </div>
+
+                      {refineError && refiningSlide === null && (
+                        <p className="text-[10px] text-red-400 mt-1.5">{refineError}</p>
+                      )}
+                      {refiningSlide === slide.number && (
+                        <p className="text-[10px] text-zinc-500 mt-1.5 italic">
+                          A IA está reescrevendo este slide…
+                        </p>
+                      )}
+                    </div>
+
                     <div className="flex items-center justify-end gap-2 pt-1">
                       <button
                         onClick={() => setEditingSlide(null)}
@@ -1186,6 +1303,7 @@ Pilar da marca: ${config.pilar}`
               loading={loading}
               config={config}
               workspace={workspace}
+              brandDna={brandDna}
               savedPautaId={savedPautaId}
               setSavedPautaId={setSavedPautaId}
               onBack={handleBack}
