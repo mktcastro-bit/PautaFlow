@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { anthropic } from '@/lib/anthropic'
 import { mapAnthropicError } from '@/lib/anthropic/errors'
 import { withRetry } from '@/lib/anthropic/retry'
+import { cleanSlide } from '@/lib/text-sanitize'
 import { BrandDNA } from '@/types'
 
 /**
@@ -77,10 +78,19 @@ Refine o slide acima seguindo a instrução, MAS:
 1. Mantenha o papel narrativo dele dentro do carrossel
 2. Mantenha o tom de voz da marca
 3. Não invente fatos novos — só reescreva/ajuste o que já existe
-4. Use _palavra_ (entre underscores) pra marcar 1-2 palavras de destaque no título
-5. Subtítulo é opcional (string vazia se não fizer sentido)
-6. Callout é opcional (string vazia se não fizer sentido)
-7. Título: até 14 palavras. Subtítulo: até 18 palavras. Callout: até 8 palavras.
+4. Subtítulo é opcional (string vazia se não fizer sentido)
+5. Callout é opcional (string vazia se não fizer sentido)
+6. Título: até 14 palavras. Subtítulo: até 18 palavras. Callout: até 8 palavras.
+
+## REGRAS CRÍTICAS DE FORMATAÇÃO (não pode quebrar)
+⚠️ **Underscores APENAS no título**:
+- Use em PARES envolvendo UMA ÚNICA palavra-chave: \`_consistência_\` ✅
+- NUNCA use underscore como conector: \`Consistência_antes\` ❌
+- NUNCA underscore solto, ímpar ou em meio de palavra
+- NUNCA underscore no subtitle ou callout
+- Máximo 1 par de underscores no title (pode não usar nenhum)
+
+⚠️ **NÃO use markdown**: nem \`#\`, nem \`-\`, nem \`*\`, nem \`**bold**\` em nenhum campo.
 
 Retorne APENAS JSON válido, sem markdown:
 {"title": "...", "subtitle": "...", "callout": "..."}`
@@ -178,13 +188,20 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Garante shape consistente — preserva number do slide original
+    // Garante shape consistente — preserva number do slide original.
+    // Sanitiza pra remover underscores soltos / markdown leak antes de devolver.
+    const cleaned = cleanSlide({
+      title: parsed.title,
+      subtitle: parsed.subtitle ?? '',
+      callout: parsed.callout ?? '',
+    })
+
     return NextResponse.json({
       slide: {
         number: slide.number,
-        title: parsed.title,
-        subtitle: parsed.subtitle ?? '',
-        callout: parsed.callout ?? '',
+        title: cleaned.title,
+        subtitle: cleaned.subtitle,
+        callout: cleaned.callout,
       },
     })
   } catch (err: any) {

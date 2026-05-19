@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { anthropic } from '@/lib/anthropic'
 import { mapAnthropicError } from '@/lib/anthropic/errors'
 import { withRetry } from '@/lib/anthropic/retry'
+import { cleanSlide, cleanCaption } from '@/lib/text-sanitize'
 import { BrandDNA } from '@/types'
 import { getFormula } from '@/lib/viral-formulas'
 import { checkGenerationLimit } from '@/lib/usage-limits'
@@ -135,15 +136,30 @@ Cada slide tem 3 campos:
 1. Slide 1 (HERO): título potente + subtítulo + callout. Mostra a tese central da ideia.
 2. Slides 2 a ${slideCount - 1}: cada um aprofunda um ponto. Variação entre estrutura "tese-explicação" e "pergunta-resposta".
 3. Slide ${slideCount} (CTA): fechamento com callout que pede ação (salve, comente, compartilhe).
-4. Use _underscores_ APENAS em palavras-chave do title, nunca no subtitle/callout.
-5. Sem emojis nos slides.
-6. Tom coerente com ${tone}.
+4. Sem emojis nos slides.
+5. Tom coerente com ${tone}.
+
+### REGRAS CRÍTICAS DE FORMATAÇÃO (não pode quebrar)
+⚠️ **Underscores**:
+- Use APENAS em PARES envolvendo UMA ÚNICA palavra do title: \`_consistência_\` ✅
+- NUNCA use underscore como conector entre palavras: \`Consistência_antes\` ❌
+- NUNCA underscore solto, ímpar ou em meio de palavra
+- NUNCA underscore no subtitle ou callout
+- Máximo 1 par de underscores por title
+
+⚠️ **Markdown na legenda**:
+- NÃO use hífen (\`-\`) ou bullet (\`*\`, \`•\`) no início de linhas
+- NÃO use \`#\` para títulos
+- NÃO use \`**texto**\` para negrito
+- Legenda em PROSA fluida, parágrafos separados por linha em branco
+- Hashtags só no final, uma após a outra com espaço
 
 ### Legenda para ${plat === 'linkedin' ? 'LinkedIn' : plat === 'instagram' ? 'Instagram' : 'as plataformas'}:
+Texto corrido em prosa fluida (NÃO use markdown nem bullets):
 - Abertura que prende (1-2 linhas)
-- Desenvolvimento em blocos curtos
+- Desenvolvimento em parágrafos curtos separados por linha em branco
 - Pergunta ou CTA no final
-- 5-8 hashtags relevantes
+- 5-8 hashtags relevantes no fim, em linha única
 
 Retorne APENAS JSON válido:
 {
@@ -256,13 +272,17 @@ export async function POST(req: NextRequest) {
       }, { status: 502 })
     }
 
-    // Backward compat: se vier só "text" antigo, transforma em title
-    result.slides = (result.slides || []).map((s: any, i: number) => ({
+    // Backward compat: se vier só "text" antigo, transforma em title.
+    // Também sanitiza cada slide pra remover underscores soltos, markdown leak, etc.
+    result.slides = (result.slides || []).map((s: any, i: number) => cleanSlide({
       number: s.number || i + 1,
       title: s.title || s.text || '',
       subtitle: s.subtitle || '',
       callout: s.callout || '',
     }))
+
+    // Sanitiza a legenda também (bullets de markdown, asteriscos órfãos, etc)
+    if (result.caption) result.caption = cleanCaption(result.caption)
 
     // Salvar no histórico
     await supabase.from('generated_content').insert({
