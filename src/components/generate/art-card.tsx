@@ -150,6 +150,22 @@ export const ArtCard = React.forwardRef<HTMLDivElement, Props>(
     const emphasisColor = editor.emphasisColor
     const textColor = editor.textColor
 
+    // ─── Posição vertical do texto ────────────────────────────────────
+    // editor.textPosition ('top' | 'center' | 'bottom') controla onde o
+    // bloco de texto principal fica dentro do card. Cada layout tinha um
+    // valor `top` padrão (28%/32%/30%/24%); agora aplicamos um deslocamento.
+    const verticalPos = editor.textPosition || 'center'
+    function topForPosition(defaultPct: string): string {
+      if (verticalPos === 'top')    return '14%'
+      if (verticalPos === 'bottom') return '54%'
+      return defaultPct  // 'center' = mantém o padrão original do layout
+    }
+    function justifyForPosition(): 'flex-start' | 'center' | 'flex-end' {
+      if (verticalPos === 'top')    return 'flex-start'
+      if (verticalPos === 'bottom') return 'flex-end'
+      return 'center'
+    }
+
     // ── Header (logo + categoria) ──
     const HeaderBar = (
       <div style={{
@@ -307,7 +323,7 @@ export const ArtCard = React.forwardRef<HTMLDivElement, Props>(
         <div style={{
           position: 'absolute',
           left: pad, right: pad,
-          top: '28%',
+          top: topForPosition('28%'),
           zIndex: 4,
         }}>
           {!isHidden('topRule') && (
@@ -325,7 +341,7 @@ export const ArtCard = React.forwardRef<HTMLDivElement, Props>(
         <div style={{
           position: 'absolute',
           left: pad, right: pad,
-          top: '32%',
+          top: topForPosition('32%'),
           zIndex: 4,
         }}>
           {!isHidden('chapterTag') && (
@@ -390,7 +406,7 @@ export const ArtCard = React.forwardRef<HTMLDivElement, Props>(
         <div style={{
           position: 'absolute',
           left: pad, right: pad,
-          top: '28%',
+          top: topForPosition('28%'),
           zIndex: 4,
           display: 'flex',
           alignItems: 'flex-start',
@@ -410,7 +426,7 @@ export const ArtCard = React.forwardRef<HTMLDivElement, Props>(
         <div style={{
           position: 'absolute',
           left: pad * 1.4, right: pad * 1.4,
-          top: '30%',
+          top: topForPosition('30%'),
           zIndex: 4,
         }}>
           {!isHidden('quoteMarks') && (
@@ -474,7 +490,7 @@ export const ArtCard = React.forwardRef<HTMLDivElement, Props>(
           padding: `${pad * 2.5}px ${pad}px`,
           display: 'flex',
           flexDirection: 'column',
-          justifyContent: 'center',
+          justifyContent: justifyForPosition(),
           alignItems: align === 'center' ? 'center' : align === 'right' ? 'flex-end' : 'flex-start',
           zIndex: 4,
         }}>
@@ -510,7 +526,7 @@ export const ArtCard = React.forwardRef<HTMLDivElement, Props>(
         <div style={{
           position: 'absolute',
           left: pad, right: pad,
-          top: '24%',
+          top: topForPosition('24%'),
           zIndex: 4,
         }}>
           {!isHidden('ctaArrow') && (
