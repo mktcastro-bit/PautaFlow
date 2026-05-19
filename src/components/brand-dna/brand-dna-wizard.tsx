@@ -2,7 +2,7 @@
 
 import { useState, useRef, KeyboardEvent } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowRight, ArrowLeft, Sparkles, X, Info } from 'lucide-react'
+import { ArrowRight, ArrowLeft, Sparkles, X, Info, Upload, Loader2 } from 'lucide-react'
 import { BrandDNA, Workspace } from '@/types'
 import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
@@ -42,6 +42,7 @@ export function BrandDnaWizard({ workspace, initialDna, isWelcome = false }: Pro
     step1_brand_name: initialDna?.step1_brand_name || '',
     step1_tagline: initialDna?.step1_tagline || '',
     step1_offerings: (initialDna as any)?.step1_offerings || '',
+    step1_logo_url: (initialDna as any)?.step1_logo_url || '',
     step1_mission: initialDna?.step1_mission || '',
     step1_vision: initialDna?.step1_vision || '',
     step1_values: initialDna?.step1_values?.join(', ') || '',
@@ -87,6 +88,7 @@ export function BrandDnaWizard({ workspace, initialDna, isWelcome = false }: Pro
       step1_brand_name: data.step1_brand_name || null,
       step1_tagline: data.step1_tagline || null,
       step1_offerings: data.step1_offerings || null,
+      step1_logo_url: data.step1_logo_url || null,
       step1_mission: data.step1_mission || null,
       step1_vision: data.step1_vision || null,
       step1_values: parseArray(data.step1_values),
@@ -284,7 +286,7 @@ export function BrandDnaWizard({ workspace, initialDna, isWelcome = false }: Pro
         </div>
 
         <div className="space-y-5">
-          {currentStep === 1 && <Step1 data={data} setData={setData} />}
+          {currentStep === 1 && <Step1 data={data} setData={setData} workspace={workspace} />}
           {currentStep === 2 && <Step2 data={data} setData={setData} />}
           {currentStep === 3 && <Step3 data={data} setData={setData} toggleTone={toggleTone} />}
           {currentStep === 4 && <Step4 data={data} setData={setData} />}
@@ -457,14 +459,133 @@ function TagInput({ tags, onChange, placeholder, suggestions }: {
   )
 }
 
+// ─── LogoUploader ─────────────────────────────────────────────────────────────
+// Upload de logo da marca, salvo no Supabase Storage via /api/upload.
+// Retorna URL pública que é guardada em brand_dna.step1_logo_url e
+// aplicada automaticamente em todas as artes geradas.
+
+function LogoUploader({
+  value, onChange, workspaceId,
+}: {
+  value: string
+  onChange: (v: string) => void
+  workspaceId: string
+}) {
+  const fileRef = useRef<HTMLInputElement>(null)
+  const [uploading, setUploading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  async function handleSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setError(null)
+    setUploading(true)
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('workspace_id', workspaceId)
+      const res = await fetch('/api/upload', { method: 'POST', body: formData })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error || 'Falha no upload')
+      const url = json.media?.url || json.url
+      if (url) onChange(url)
+    } catch (err: any) {
+      setError(err.message || 'Erro ao fazer upload')
+    } finally {
+      setUploading(false)
+      // Reset input pra permitir re-upload do mesmo arquivo
+      if (fileRef.current) fileRef.current.value = ''
+    }
+  }
+
+  return (
+    <div className="space-y-2">
+      {value ? (
+        <div className="flex items-center gap-3 p-3 border border-border rounded-lg bg-muted/30">
+          {/* Preview com fundo xadrez pra ver transparência */}
+          <div
+            className="h-14 w-14 rounded border border-border flex items-center justify-center overflow-hidden flex-shrink-0"
+            style={{
+              backgroundImage: 'linear-gradient(45deg, #e5e5e5 25%, transparent 25%), linear-gradient(-45deg, #e5e5e5 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #e5e5e5 75%), linear-gradient(-45deg, transparent 75%, #e5e5e5 75%)',
+              backgroundSize: '8px 8px',
+              backgroundPosition: '0 0, 0 4px, 4px -4px, -4px 0px',
+            }}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={value} alt="Logo" className="max-h-14 max-w-14 object-contain" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-medium text-foreground">Logo carregada</p>
+            <p className="text-[10px] text-muted-foreground truncate">{value}</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => fileRef.current?.click()}
+            disabled={uploading}
+            className="text-[10px] tracking-luxe uppercase text-muted-foreground hover:text-gold transition-colors px-2 py-1"
+          >
+            Trocar
+          </button>
+          <button
+            type="button"
+            onClick={() => onChange('')}
+            className="text-[10px] tracking-luxe uppercase text-muted-foreground hover:text-red-400 transition-colors px-2 py-1"
+          >
+            Remover
+          </button>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => fileRef.current?.click()}
+          disabled={uploading}
+          className="w-full flex flex-col items-center gap-2 border-2 border-dashed border-border rounded-xl py-5 hover:border-gold transition-colors text-muted-foreground hover:text-gold disabled:opacity-50"
+        >
+          {uploading ? (
+            <>
+              <Loader2 className="h-5 w-5 animate-spin" />
+              <span className="text-xs">Fazendo upload...</span>
+            </>
+          ) : (
+            <>
+              <Upload className="h-5 w-5" />
+              <span className="text-xs">Clique para fazer upload da logo</span>
+              <span className="text-[10px]">PNG ou SVG · até 5MB</span>
+            </>
+          )}
+        </button>
+      )}
+      <input
+        ref={fileRef}
+        type="file"
+        accept="image/png,image/svg+xml,image/jpeg,image/webp"
+        className="hidden"
+        onChange={handleSelect}
+      />
+      {error && <p className="text-xs text-red-500">✗ {error}</p>}
+    </div>
+  )
+}
+
 // ─── Steps ────────────────────────────────────────────────────────────────────
 
-function Step1({ data, setData }: any) {
+function Step1({ data, setData, workspace }: any) {
   const set = (key: string) => (v: string) => setData((p: any) => ({ ...p, [key]: v }))
   return (
     <>
       <Field label="Nome da marca *" hint="Como sua marca é conhecida no mercado.">
         <Input value={data.step1_brand_name} onChange={set('step1_brand_name')} placeholder="Ex: Nexum360" />
+      </Field>
+
+      <Field
+        label="Logomarca"
+        hint="PNG ou SVG com fundo transparente. Aparece automaticamente nas artes geradas. (opcional)"
+      >
+        <LogoUploader
+          value={data.step1_logo_url}
+          onChange={set('step1_logo_url')}
+          workspaceId={workspace.id}
+        />
       </Field>
       <Field
         label="Produtos e/ou serviços *"

@@ -59,9 +59,17 @@ export function ArtCanvas({ slides, setSlides, caption, idea, config, brandDna, 
   const [pautaError, setPautaError] = useState<string | null>(null)
   const [pautaJustSaved, setPautaJustSaved] = useState(false)
   const [editor, setEditor] = useState<EditorState>(() => {
-    // Prioridade: estado salvo da pauta > paleta da marca > padrão
+    // Logo do DNA aplicada automaticamente se existir
+    const brandLogo = (brandDna as any)?.step1_logo_url || null
+
+    // Prioridade: estado salvo da pauta > paleta da marca > padrão.
+    // Se a pauta salva não tinha logo mas o DNA agora tem, herda do DNA.
     if (initialEditorState && Object.keys(initialEditorState).length > 0) {
-      return { ...DEFAULT_EDITOR, ...initialEditorState }
+      return {
+        ...DEFAULT_EDITOR,
+        ...initialEditorState,
+        logoUrl: initialEditorState.logoUrl ?? brandLogo,
+      }
     }
     const palette = getBrandPalette(brandDna)
     return {
@@ -71,6 +79,7 @@ export function ArtCanvas({ slides, setSlides, caption, idea, config, brandDna, 
       textColor: palette.text,
       accentBarColor: palette.accent,
       emphasisColor: palette.emphasis,
+      logoUrl: brandLogo,
     }
   })
 

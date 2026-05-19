@@ -45,6 +45,7 @@ export interface BrandDNA {
   step1_brand_name: string | null
   step1_tagline: string | null   // legado — não exibido no UI
   step1_offerings: string | null // produtos e/ou serviços oferecidos
+  step1_logo_url: string | null  // logomarca da marca (aplicada nas artes)
   step1_mission: string | null
   step1_vision: string | null
   step1_values: string[] | null
