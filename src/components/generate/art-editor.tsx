@@ -17,6 +17,11 @@ interface Props {
   currentSlideNumber?: number
   totalSlides?: number
   onUpdateSlide?: (overrides: NonNullable<Slide['overrides']>) => void
+  // Escopo de aplicação das mudanças (fundo/texto/elementos)
+  applyMode?: 'all' | 'current'
+  onApplyModeChange?: (mode: 'all' | 'current') => void
+  hasEditorOverrides?: boolean
+  onResetEditorOverrides?: () => void
 }
 
 type Tab = 'fundo' | 'texto' | 'elementos'
@@ -437,8 +442,12 @@ const TABS: { id: Tab; label: string; icon: React.ElementType }[] = [
 export function ArtEditor({
   editor, onChange,
   currentSlide, currentSlideNumber, totalSlides, onUpdateSlide,
+  applyMode, onApplyModeChange, hasEditorOverrides, onResetEditorOverrides,
 }: Props) {
   const [tab, setTab] = useState<Tab>('fundo')
+
+  // Escopo é controlado externamente (vem do ArtCanvas). Default 'all'.
+  const mode = applyMode ?? 'all'
 
   return (
     <div className="w-64 flex-shrink-0 border-r border-zinc-800 flex flex-col bg-zinc-950 h-screen">
@@ -460,6 +469,60 @@ export function ArtEditor({
           </button>
         ))}
       </div>
+
+      {/* ─── Escopo de aplicação (todos vs slide atual) ─── */}
+      {onApplyModeChange && currentSlideNumber && (
+        <div className="border-b border-zinc-800 p-3 bg-zinc-950 flex-shrink-0">
+          <p className="text-[9px] tracking-[0.2em] uppercase text-zinc-500 font-semibold mb-1.5">
+            Aplicar mudanças a
+          </p>
+          <div className="flex gap-1.5">
+            <button
+              onClick={() => onApplyModeChange('all')}
+              className={cn(
+                'flex-1 py-1.5 rounded text-[10px] tracking-wider uppercase font-semibold transition-all border',
+                mode === 'all'
+                  ? 'bg-gold border-gold text-ink'
+                  : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-zinc-500'
+              )}
+            >
+              Todos os slides
+            </button>
+            <button
+              onClick={() => onApplyModeChange('current')}
+              className={cn(
+                'flex-1 py-1.5 rounded text-[10px] tracking-wider uppercase font-semibold transition-all border relative',
+                mode === 'current'
+                  ? 'bg-gold border-gold text-ink'
+                  : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-zinc-500'
+              )}
+            >
+              Slide {currentSlideNumber}
+              {hasEditorOverrides && mode !== 'current' && (
+                <span className="absolute top-1 right-1 h-1.5 w-1.5 rounded-full bg-gold" />
+              )}
+            </button>
+          </div>
+
+          {/* Reset overrides do slide atual */}
+          {hasEditorOverrides && mode === 'current' && onResetEditorOverrides && (
+            <button
+              onClick={onResetEditorOverrides}
+              className="w-full mt-2 text-[9px] tracking-[0.2em] uppercase text-zinc-500 hover:text-gold transition-colors py-1 border border-zinc-800 rounded"
+              title="Remove a customização deste slide e volta a usar a aparência global"
+            >
+              ↺ Restaurar padrão global neste slide
+            </button>
+          )}
+
+          {/* Hint contextual */}
+          <p className="text-[10px] text-zinc-600 leading-relaxed mt-2">
+            {mode === 'all'
+              ? 'Mudanças neste painel afetam todos os slides do carrossel.'
+              : `Mudanças aqui afetam apenas o slide ${currentSlideNumber}. Slides com customização ficam marcados com ponto dourado.`}
+          </p>
+        </div>
+      )}
 
       {/* Conteúdo (tab + slide overrides) — scroll único, sem flex-1 que cria gap */}
       <div className="flex-1 overflow-y-auto">

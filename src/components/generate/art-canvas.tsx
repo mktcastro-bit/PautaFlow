@@ -77,10 +77,60 @@ export function ArtCanvas({ slides, setSlides, caption, idea, config, brandDna, 
   // Tipografia derivada do DNA — usada nos cards
   const typography = getBrandTypography(brandDna?.step4_typography_style)
 
+  // ─── Modo de aplicação do painel ───
+  // 'all'     → mudanças aplicam em todos os slides (estado global `editor`)
+  // 'current' → mudanças aplicam só no slide atual (`slide.editorOverrides`)
+  const [applyMode, setApplyMode] = useState<'all' | 'current'>('all')
+
   const exportRef = useRef<HTMLDivElement>(null)
 
   const total = slides.length
   const slide = slides[current]
+
+  /** Editor efetivo do slide atual: merge global + overrides do slide */
+  const effectiveEditor: EditorState = slide?.editorOverrides
+    ? { ...editor, ...slide.editorOverrides }
+    : editor
+
+  /** Handler que decide pra onde a mudança vai (global vs override) */
+  function handleEditorChange(next: EditorState) {
+    if (applyMode === 'all' || !setSlides) {
+      // Aplica global. Limpa overrides do slide atual SE ele tinha overrides
+      // pra esses campos (senão eles continuariam sobrescrevendo o novo global).
+      setEditor(next)
+      return
+    }
+
+    // Modo 'current': calcula diff entre o efetivo atual e o novo, e salva
+    // só os campos que mudaram como override neste slide.
+    const overridesNext: Partial<EditorState> = { ...(slide.editorOverrides || {}) }
+    ;(Object.keys(next) as Array<keyof EditorState>).forEach(k => {
+      const newVal = next[k]
+      const globalVal = editor[k]
+      if (newVal !== globalVal) {
+        overridesNext[k] = newVal as any
+      } else if (k in overridesNext) {
+        // Voltou pro valor global → remove override desse campo
+        delete overridesNext[k]
+      }
+    })
+
+    setSlides(slides.map((s, i) =>
+      i === current
+        ? { ...s, editorOverrides: Object.keys(overridesNext).length ? overridesNext : undefined }
+        : s
+    ))
+  }
+
+  /** Limpa todos os overrides de aparência do slide atual */
+  function resetCurrentSlideOverrides() {
+    if (!setSlides) return
+    setSlides(slides.map((s, i) =>
+      i === current ? { ...s, editorOverrides: undefined } : s
+    ))
+  }
+
+  const currentHasEditorOverrides = !!(slide?.editorOverrides && Object.keys(slide.editorOverrides).length)
   const isStory = config.publicationFormat === 'story' || config.publicationFormat === 'reels'
 
   // Feed/padrão: 1080×1350 (4:5) | Story/Reels: 1080×1920 (9:16)
@@ -211,8 +261,8 @@ export function ArtCanvas({ slides, setSlides, caption, idea, config, brandDna, 
 
       {/* ── Left: visual editor ───────────────────────────────────────── */}
       <ArtEditor
-        editor={editor}
-        onChange={setEditor}
+        editor={effectiveEditor}
+        onChange={handleEditorChange}
         currentSlide={slide}
         currentSlideNumber={current + 1}
         totalSlides={total}
@@ -220,6 +270,10 @@ export function ArtCanvas({ slides, setSlides, caption, idea, config, brandDna, 
           if (!setSlides) return
           setSlides(slides.map((s, i) => i === current ? { ...s, overrides } : s))
         }}
+        applyMode={applyMode}
+        onApplyModeChange={setApplyMode}
+        hasEditorOverrides={currentHasEditorOverrides}
+        onResetEditorOverrides={resetCurrentSlideOverrides}
       />
 
       {/* ── Center: card preview ──────────────────────────────────────── */}
@@ -255,7 +309,7 @@ export function ArtCanvas({ slides, setSlides, caption, idea, config, brandDna, 
             <ArtCard
               slide={slide}
               total={total}
-              editor={editor}
+              editor={effectiveEditor}
               brandDna={brandDna}
               scale={PREVIEW_SCALE}
               publicationFormat={config.publicationFormat}
@@ -287,7 +341,7 @@ export function ArtCanvas({ slides, setSlides, caption, idea, config, brandDna, 
             ref={exportRef}
             slide={slide}
             total={total}
-            editor={editor}
+            editor={effectiveEditor}
             brandDna={brandDna}
             scale={1}
             publicationFormat={config.publicationFormat}
@@ -350,6 +404,7 @@ export function ArtCanvas({ slides, setSlides, caption, idea, config, brandDna, 
           <div className="space-y-1.5">
             {slides.map((s: any, i) => {
               const parts = parseParts(s.title || s.text || '')
+              const hasOverrides = s.editorOverrides && Object.keys(s.editorOverrides).length > 0
               return (
                 <button
                   key={i}
@@ -361,9 +416,17 @@ export function ArtCanvas({ slides, setSlides, caption, idea, config, brandDna, 
                       : 'hover:bg-zinc-800/50 border border-transparent'
                   )}
                 >
-                  <p className="text-[9px] text-gold font-bold uppercase tracking-widest mb-0.5">
-                    Slide {s.number}
-                  </p>
+                  <div className="flex items-center gap-1.5 mb-0.5">
+                    <p className="text-[9px] text-gold font-bold uppercase tracking-widest">
+                      Slide {s.number}
+                    </p>
+                    {hasOverrides && (
+                      <span
+                        className="h-1.5 w-1.5 rounded-full bg-gold"
+                        title="Este slide tem aparência customizada"
+                      />
+                    )}
+                  </div>
                   <p className="text-xs text-zinc-300 leading-snug line-clamp-2">
                     {parts.map((p, j) =>
                       p.emphasis

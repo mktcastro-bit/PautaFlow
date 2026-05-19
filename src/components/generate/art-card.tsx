@@ -38,6 +38,12 @@ export interface Slide {
   callout?: string
   /** Overrides por slide (layout custom, elementos escondidos) */
   overrides?: SlideOverrides
+  /**
+   * Overrides do EditorState (fundo, overlay, cores, posição de texto…)
+   * APENAS deste slide. Quando presente, é mesclado em cima do editor global.
+   * Quando vazio/ausente, o slide usa o editor global como está.
+   */
+  editorOverrides?: Partial<EditorState>
 }
 
 interface Props {
