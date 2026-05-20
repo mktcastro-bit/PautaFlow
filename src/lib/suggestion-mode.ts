@@ -76,7 +76,8 @@ ${suggestion.trim()}
 6. **NUNCA invente fontes/URLs.** Use APENAS domínios e links que apareceram
    nos resultados da busca, exatamente como apareceram.
 
-7. **Escolha UMA notícia específica e recente** (últimos 30-60 dias quando possível) com:
+7. **Escolha UMA notícia ALTAMENTE RECENTE** (OBRIGATÓRIO: últimos 60 dias.
+   IDEAL: últimos 30 dias. Se só encontrar coisa de 3+ meses, retorne vazio) com:
    - Sujeito claro e NOMEÁVEL (pessoa, empresa, instituição)
    - Fatos concretos (datas, números, declarações)
    - URL real e ACESSÍVEL publicamente
@@ -98,8 +99,22 @@ Retorne JSON com 2 campos:
   ]
 }
 
-As 5 ideias devem ser 5 ÂNGULOS DIFERENTES sobre essa MESMA notícia.
-Cada título precisa citar/referenciar o sujeito específico da notícia.`
+## TAREFA DAS 5 IDEIAS — APRESENTAR, NÃO OPINAR
+
+O usuário NÃO quer um carrossel de opinião sobre a notícia. Ele quer APRESENTAR
+a notícia (formato news card / repost informativo).
+
+As 5 ideias devem ser **5 versões diferentes de MANCHETE PRA APRESENTAR a mesma notícia**:
+
+  ✅ "Apple lança Vision Pro 2 com bateria 4x maior"     (foco no fato)
+  ✅ "Vision Pro 2: bateria de 12h e novo chip M5"        (foco em números)
+  ✅ "O que muda no Vision Pro 2 que a Apple anunciou hoje"  (foco em pergunta)
+  ❌ "5 razões pra você comprar o Vision Pro 2"          (opinião)
+  ❌ "Por que a Apple está perdendo terreno"             (interpretação)
+
+Cada título cita o sujeito/fato SEM julgar. O subtítulo SEMPRE inclui
+"Fonte: [veículo] · [data]". A formula serve só como estilo de manchete,
+não como ângulo opinativo.`
     }
 
     return `## Conteúdo base — NOTÍCIA / atualidade
@@ -146,59 +161,87 @@ export function buildSlidesInstructions(
 
   if (mode === 'news') {
     if (isTrends) {
-      return `## Modo NOTÍCIA · BUSCA REAL-TIME (notícia já validada pelo usuário)
+      return `## Modo NOTÍCIA · APRESENTAR (não opinar)
 
-Briefing do usuário (inclui dados da notícia escolhida):
+Briefing do usuário (inclui dados da notícia validada):
 ${suggestion.trim()}
+
+⚠️ FILOSOFIA DESTE MODO
+
+O usuário NÃO quer um carrossel de opinião OU análise extensa. Quer um
+**news card**: apresenta a notícia de forma clara, atrativa e concisa,
+deixando a descrição completa pra legenda. A IA está aqui pra REPORTAR,
+não pra interpretar.
 
 ⚠️ INSTRUÇÕES CRÍTICAS:
 
-1. **A notícia JÁ FOI ENCONTRADA e validada pelo usuário** — você não precisa buscar de novo.
-   Use os dados (headline, fonte, URL, snippet) que estão no briefing acima.
+1. **A notícia já foi validada pelo usuário** — não busque de novo, use os
+   dados do briefing (headline, fonte, URL, snippet).
 
-2. **NOMEIE explicitamente os sujeitos da notícia.**
-   Se a notícia menciona "Pedro Silva, fundador da TechX", você DEVE escrever
-   "Pedro Silva" ou "fundador da TechX" — NUNCA "esse fundador", "uma pessoa",
-   "alguém", "uma empresa". O leitor precisa entender DE QUEM/DO QUÊ se trata.
+2. **NOMEIE os sujeitos.** Se a notícia diz "Apple lançou X", escreva "Apple"
+   — NUNCA "uma empresa", "essa marca", "alguém". Se a notícia não nomeia,
+   você não pode generalizar.
 
-3. **USE FATOS CONCRETOS:** datas, números, declarações textuais, decisões específicas.
-   Se a notícia diz "TechX cresceu 300% em 2025", escreva "TechX cresceu 300%" —
-   não "uma empresa cresceu muito".
+3. **USE SÓ FATOS DA NOTÍCIA.** Datas, números, declarações textuais.
+   NUNCA invente dados, projeções ou consequências que não estão no briefing.
 
-4. **ESTRUTURA dos slides (OBRIGATÓRIO):**
-   - **Slide 1:** Manchete impactante mencionando o SUJEITO + subtítulo
-     "Segundo [veículo], [data]"
-   - **Slides 2 a ${slideCount - 1}:** Dados concretos da notícia + ângulo da marca
-     (use nomes, números, citações; NUNCA generalize)
-   - **Slide ${slideCount}:** CTA + cite a fonte completa
+4. **ESTRUTURA dos ${slideCount} slides (news card):**
 
-5. **NA LEGENDA:** Comece com o sujeito específico ("Pedro Silva mostrou que..."),
-   inclua os fatos centrais, e termine com:
-   "📰 Fonte: [Nome do veículo] · [Data]"
-   Se houver URL na notícia, inclua: [veiculo.com.br/...]
+   - **Slide 1 (MANCHETE):**
+     · title: reescrita curta e impactante da manchete original (até 12 palavras),
+       sem opinião. Use _palavra_ pra destacar 1 palavra-chave.
+     · subtitle: "Segundo [veículo] · [data]"
+     · callout: vazio
 
-6. **NUNCA invente fatos, dados, declarações ou números além do que está no briefing.**
+   ${slideCount > 2 ? `- **Slides 2 a ${slideCount - 1} (FATOS-CHAVE):**
+     · 1 fato concreto por slide (número, citação, decisão específica)
+     · title: o fato em 1 frase curta (até 12 palavras)
+     · subtitle: contexto curto se houver; senão vazio
+     · NÃO opine, NÃO infira, NÃO especule sobre impactos
+` : ''}
+   - **Slide ${slideCount} (CTA):**
+     · title: chamada simples ("Salve pra acompanhar", "Comente o que acha")
+     · subtitle: "Fonte completa na legenda"
+     · callout: vazio
 
-7. **NUNCA use frases vagas como:** "esse fundador", "uma empresa", "alguém fez",
-   "uma marca", "esse executivo". Se a notícia não nomeia, você não pode generalizar.
+5. **NA LEGENDA — AQUI VAI A DESCRIÇÃO COMPLETA:**
+   - Parágrafo 1: 2-3 frases descrevendo a notícia com os fatos centrais
+     (quem, o quê, quando, onde) na voz da marca.
+   - Parágrafo 2 (opcional): 1-2 frases de contexto se a notícia tiver
+     dados secundários relevantes.
+   - Última linha: "📰 Fonte: [Nome do veículo] · [Data] · [URL]"
+   - SEM hashtags promocionais excessivas. 3-5 hashtags do tema, no fim.
+   - SEM opinião extensa nem listas de "o que isso significa pra você".
 
-8. **NUNCA invente URLs.** Use SOMENTE a URL que veio no briefing.`
+6. **NUNCA invente fatos.** Se um dado não está no briefing, não escreva.
+
+7. **NUNCA invente URLs.** Use SOMENTE a URL que veio no briefing.`
     }
 
-    return `## Modo NOTÍCIA — comente esta atualidade com a voz da marca
+    return `## Modo NOTÍCIA · APRESENTAR (não opinar)
 
-O usuário colou esta notícia:
+O usuário colou esta notícia pra você APRESENTAR (não comentar/opinar):
 
 """
 ${suggestion.trim()}
 """
 
-ESTRUTURA recomendada para os slides:
-- Slide 1: apresenta a notícia (gancho/manchete) com a marca dando o tom
-- Slides intermediários: ângulo da marca sobre o fato — o que isso significa, contexto, dados,
-  implicações para o público da marca
-- Slide final: orientação prática + CTA + cite a fonte quando possível
-Use FACTOS da notícia. Não invente dados.`
+⚠️ FILOSOFIA: news card. Apresentar a notícia com clareza nos slides,
+descrição completa na legenda. SEM ângulos de opinião, SEM listas de
+"o que isso significa", SEM interpretação editorial.
+
+ESTRUTURA dos ${slideCount} slides:
+- **Slide 1 (MANCHETE):** reescrita curta da manchete (até 12 palavras) +
+  subtítulo com fonte e data se houver no texto colado
+${slideCount > 2 ? `- **Slides 2 a ${slideCount - 1}:** 1 FATO concreto por slide
+  (número, citação, decisão). Sem opinar, sem inferir.
+` : ''}- **Slide ${slideCount} (CTA):** chamada simples + "Fonte completa na legenda"
+
+NA LEGENDA: descrição da notícia em 1-2 parágrafos (quem, o quê, quando,
+onde — verbos no presente/passado, sem juízo de valor). Última linha cita
+a fonte. 3-5 hashtags do tema, sem floreio.
+
+USE SÓ FATOS do texto. NUNCA invente dados, fontes ou URLs.`
   }
 
   if (mode === 'adapt') {
