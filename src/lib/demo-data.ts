@@ -207,6 +207,8 @@ export const demoBrandDna: BrandDNA = {
   step1_tagline: 'Estratégia que transforma',
   step1_offerings: 'Consultoria estratégica de marca, gestão de conteúdo com IA e operação de growth para PMEs e marcas pessoais.',
   step1_logo_url: null,
+  step1_logo_alts: [],
+  step1_website: null,
   step1_mission: 'Ajudar empresas a crescerem com estratégia digital inteligente e conteúdo de impacto.',
   step1_vision: 'Ser a principal referência em marketing estratégico para pequenas e médias empresas no Brasil.',
   step1_values: ['Estratégia', 'Transparência', 'Resultado', 'Inovação'],

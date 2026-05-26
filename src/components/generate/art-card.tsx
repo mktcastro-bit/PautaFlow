@@ -119,13 +119,16 @@ export const ArtCard = React.forwardRef<HTMLDivElement, Props>(
 
     const pad = 70 * scale
     const accentW = 6 * scale
-    const logoH = 60 * scale
+    // Tamanho da logo controlado pelo editor (default 60). Multiplicado por scale.
+    const logoH = (editor.logoSize ?? 60) * scale
     const metaFont = 22 * scale
     const dashW = 32 * scale
 
     // Brand info
     const brandName = brandDna?.step1_brand_name || 'marca'
-    const brandUrl = brandName.toLowerCase().replace(/\s+/g, '') + '.com.br'
+    // Site/handle vem do DNA da marca (campo opcional). Quando vazio, o rodapé
+    // não exibe nada — não inventamos mais URLs do tipo "<brandname>.com.br".
+    const brandWebsite = (brandDna as any)?.step1_website?.trim() || ''
     const categoryTag = (pilar || brandDna?.step5_content_pillars?.[0] || 'estratégia').toUpperCase()
 
     // Layout: override do slide tem prioridade; 'auto' ou ausência cai no pickLayout
@@ -166,15 +169,38 @@ export const ArtCard = React.forwardRef<HTMLDivElement, Props>(
       return 'center'
     }
 
-    // ── Header (logo + categoria) ──
+    // ── Posição da logo (top-left | top-right | bottom-left | bottom-right) ──
+    const logoPos = editor.logoPosition || 'top-left'
+    const logoIsTop = logoPos.startsWith('top')
+    const logoIsLeft = logoPos.endsWith('left')
+
+    // Logo standalone — posicionada no corner escolhido
+    const LogoEl = editor.logoUrl ? (
+      <img
+        src={editor.logoUrl}
+        alt="logo"
+        style={{
+          position: 'absolute',
+          [logoIsTop ? 'top' : 'bottom']: pad,
+          [logoIsLeft ? 'left' : 'right']: pad,
+          height: logoH,
+          objectFit: 'contain',
+          zIndex: 6,
+        }}
+      />
+    ) : null
+
+    // ── Header (brand fallback + categoria) ──
+    // Slot esquerdo do header só renderiza o nome da marca quando NÃO há logo,
+    // ou quando a logo está em outro canto. Evita duplicar identidade visual.
+    const showHeaderBrand = !editor.logoUrl || logoPos !== 'top-left'
     const HeaderBar = (
       <div style={{
         position: 'absolute', top: pad, left: pad, right: pad, zIndex: 5,
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        display: 'flex', alignItems: 'center',
+        justifyContent: showHeaderBrand ? 'space-between' : 'flex-end',
       }}>
-        {editor.logoUrl ? (
-          <img src={editor.logoUrl} alt="logo" style={{ height: logoH, objectFit: 'contain' }} />
-        ) : (
+        {showHeaderBrand && !editor.logoUrl && (
           <span style={{
             fontFamily: TITLE_FONT,
             fontSize: 32 * scale,
@@ -223,18 +249,20 @@ export const ArtCard = React.forwardRef<HTMLDivElement, Props>(
             {String(slide.number).padStart(2, '0')} / {String(total).padStart(2, '0')}
           </span>
         )}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 * scale }}>
-          <div style={{ width: dashW, height: 1, backgroundColor: textColor, opacity: 0.4 }} />
-          <span style={{
-            fontSize: metaFont * 0.85,
-            color: textColor,
-            opacity: 0.7,
-            letterSpacing: '0.18em',
-            fontWeight: 500,
-          }}>
-            {brandUrl}
-          </span>
-        </div>
+        {brandWebsite && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 * scale }}>
+            <div style={{ width: dashW, height: 1, backgroundColor: textColor, opacity: 0.4 }} />
+            <span style={{
+              fontSize: metaFont * 0.85,
+              color: textColor,
+              opacity: 0.7,
+              letterSpacing: '0.18em',
+              fontWeight: 500,
+            }}>
+              {brandWebsite}
+            </span>
+          </div>
+        )}
       </div>
     )
 
@@ -615,26 +643,8 @@ export const ArtCard = React.forwardRef<HTMLDivElement, Props>(
           }} />
         )}
 
-        {/* Watermark inicial gigante */}
-        <div style={{
-          position: 'absolute',
-          right: pad * 0.6,
-          bottom: pad * 1.8,
-          zIndex: 2,
-          fontFamily: TITLE_FONT,
-          fontSize: 240 * scale,
-          color: textColor,
-          opacity: 0.025,
-          fontStyle: 'italic',
-          fontWeight: 700,
-          lineHeight: 0.8,
-          pointerEvents: 'none',
-          letterSpacing: '-0.04em',
-        }}>
-          {brandName.charAt(0).toLowerCase()}
-        </div>
-
         {HeaderBar}
+        {LogoEl}
         {renderBody()}
         {FooterBar}
       </div>

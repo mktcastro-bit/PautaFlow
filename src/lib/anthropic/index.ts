@@ -58,7 +58,7 @@ ${preferred ? `- **Usar**: ${preferred}` : ''}
 
 export function buildUserPrompt(params: GenerateContentParams): string {
   const platformGuides: Record<string, string> = {
-    instagram: 'Crie para Instagram. Use emojis estrategicamente, hashtags relevantes (5-10), call-to-action claro. Máx 2200 caracteres.',
+    instagram: 'Crie para Instagram. Use emojis estrategicamente, hashtags relevantes (máximo 5 — limite atual do Instagram), call-to-action claro. Máx 2200 caracteres.',
     linkedin: 'Crie para LinkedIn. Tom mais profissional, storytelling, insights de valor. Sem excesso de hashtags (3-5). Pode ser mais longo.',
     twitter: 'Crie para Twitter/X. Máx 280 caracteres por tweet. Se thread, crie 5-8 tweets numerados.',
     facebook: 'Crie para Facebook. Conteúdo conversacional, pode ser mais longo, incentive comentários.',

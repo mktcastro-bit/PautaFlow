@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useMemo } from 'react'
 import { Download, Copy, Check, ChevronLeft, ChevronRight, Loader2, BookmarkPlus, Archive } from 'lucide-react'
 import { toPng } from 'html-to-image'
 import JSZip from 'jszip'
@@ -58,9 +58,25 @@ export function ArtCanvas({ slides, setSlides, caption, idea, config, brandDna, 
   const [savingPauta, setSavingPauta] = useState(false)
   const [pautaError, setPautaError] = useState<string | null>(null)
   const [pautaJustSaved, setPautaJustSaved] = useState(false)
+  // Lista de logos disponíveis no DNA (principal + variações). Memo é
+  // estável durante o ciclo de vida do canvas — usada tanto para o
+  // initialState quanto para o painel de seleção rápida no editor.
+  const brandLogos = useMemo<Array<{ url: string; label: string }>>(() => {
+    const primary = (brandDna as any)?.step1_logo_url as string | null
+    const alts = ((brandDna as any)?.step1_logo_alts || []) as Array<{ url: string; label: string }>
+    const list: Array<{ url: string; label: string }> = []
+    if (primary) list.push({ url: primary, label: 'Principal' })
+    for (const a of alts) {
+      if (a?.url && !list.some(l => l.url === a.url)) {
+        list.push({ url: a.url, label: a.label || 'Variação' })
+      }
+    }
+    return list
+  }, [brandDna])
+
   const [editor, setEditor] = useState<EditorState>(() => {
     // Logo do DNA aplicada automaticamente se existir
-    const brandLogo = (brandDna as any)?.step1_logo_url || null
+    const brandLogo = brandLogos[0]?.url || null
 
     // Prioridade: estado salvo da pauta > paleta da marca > padrão.
     // Se a pauta salva não tinha logo mas o DNA agora tem, herda do DNA.
@@ -283,6 +299,7 @@ export function ArtCanvas({ slides, setSlides, caption, idea, config, brandDna, 
         onApplyModeChange={setApplyMode}
         hasEditorOverrides={currentHasEditorOverrides}
         onResetEditorOverrides={resetCurrentSlideOverrides}
+        brandLogos={brandLogos}
       />
 
       {/* ── Center: card preview ──────────────────────────────────────── */}

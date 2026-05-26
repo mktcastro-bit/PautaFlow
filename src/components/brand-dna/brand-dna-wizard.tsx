@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, KeyboardEvent } from 'react'
+import { useState, useRef, useEffect, useMemo, KeyboardEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import { ArrowRight, ArrowLeft, Sparkles, X, Info, Upload, Loader2 } from 'lucide-react'
 import { BrandDNA, Workspace } from '@/types'
@@ -43,6 +43,8 @@ export function BrandDnaWizard({ workspace, initialDna, isWelcome = false }: Pro
     step1_tagline: initialDna?.step1_tagline || '',
     step1_offerings: (initialDna as any)?.step1_offerings || '',
     step1_logo_url: (initialDna as any)?.step1_logo_url || '',
+    step1_logo_alts: ((initialDna as any)?.step1_logo_alts as Array<{ url: string; label: string }> | null) || [],
+    step1_website: (initialDna as any)?.step1_website || '',
     step1_mission: initialDna?.step1_mission || '',
     step1_vision: initialDna?.step1_vision || '',
     step1_values: initialDna?.step1_values?.join(', ') || '',
@@ -89,6 +91,8 @@ export function BrandDnaWizard({ workspace, initialDna, isWelcome = false }: Pro
       step1_tagline: data.step1_tagline || null,
       step1_offerings: data.step1_offerings || null,
       step1_logo_url: data.step1_logo_url || null,
+      step1_logo_alts: data.step1_logo_alts || [],
+      step1_website: data.step1_website || null,
       step1_mission: data.step1_mission || null,
       step1_vision: data.step1_vision || null,
       step1_values: parseArray(data.step1_values),
@@ -567,6 +571,244 @@ function LogoUploader({
   )
 }
 
+// ─── LogoVariations ───────────────────────────────────────────────────────────
+// Lista de variações alternativas de logo (escura, clara, símbolo etc).
+// A logo principal continua em step1_logo_url; este componente gerencia o
+// array de alternativas e permite "tornar principal" qualquer uma delas —
+// nesse caso a alternativa troca de lugar com a logo principal atual.
+
+interface LogoAlt { url: string; label: string }
+
+function LogoVariations({
+  primaryUrl,
+  onPrimaryChange,
+  alts,
+  onAltsChange,
+  workspaceId,
+}: {
+  primaryUrl: string
+  onPrimaryChange: (v: string) => void
+  alts: LogoAlt[]
+  onAltsChange: (next: LogoAlt[]) => void
+  workspaceId: string
+}) {
+  const fileRef = useRef<HTMLInputElement>(null)
+  const [uploading, setUploading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  async function handleAddVariation(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setError(null)
+    setUploading(true)
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('workspace_id', workspaceId)
+      const res = await fetch('/api/upload', { method: 'POST', body: formData })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error || 'Falha no upload')
+      const url = json.media?.url || json.url
+      if (url) {
+        const nextLabel = `Variação ${alts.length + 1}`
+        onAltsChange([...alts, { url, label: nextLabel }])
+      }
+    } catch (err: any) {
+      setError(err.message || 'Erro ao fazer upload')
+    } finally {
+      setUploading(false)
+      if (fileRef.current) fileRef.current.value = ''
+    }
+  }
+
+  function setLabel(idx: number, label: string) {
+    onAltsChange(alts.map((a, i) => i === idx ? { ...a, label } : a))
+  }
+
+  function removeAt(idx: number) {
+    onAltsChange(alts.filter((_, i) => i !== idx))
+  }
+
+  function makePrimary(idx: number) {
+    const next = [...alts]
+    const swap = next[idx]
+    if (!swap) return
+    // A alternativa selecionada vira principal; a principal atual (se existir)
+    // entra na posição da alternativa promovida.
+    if (primaryUrl) {
+      next[idx] = { url: primaryUrl, label: swap.label }
+    } else {
+      next.splice(idx, 1)
+    }
+    onPrimaryChange(swap.url)
+    onAltsChange(next)
+  }
+
+  const canAdd = !uploading && (primaryUrl || alts.length === 0 ? true : true)
+
+  return (
+    <div className="space-y-2">
+      {alts.length > 0 && (
+        <ul className="space-y-2">
+          {alts.map((alt, idx) => (
+            <li key={idx} className="flex items-center gap-2 p-2 border border-border rounded-lg bg-muted/20">
+              <div
+                className="h-10 w-10 rounded border border-border flex items-center justify-center overflow-hidden flex-shrink-0"
+                style={{
+                  backgroundImage: 'linear-gradient(45deg, #e5e5e5 25%, transparent 25%), linear-gradient(-45deg, #e5e5e5 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #e5e5e5 75%), linear-gradient(-45deg, transparent 75%, #e5e5e5 75%)',
+                  backgroundSize: '6px 6px',
+                  backgroundPosition: '0 0, 0 3px, 3px -3px, -3px 0px',
+                }}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={alt.url} alt={alt.label} className="max-h-10 max-w-10 object-contain" />
+              </div>
+              <input
+                type="text"
+                value={alt.label}
+                onChange={e => setLabel(idx, e.target.value)}
+                placeholder="Ex: Versão clara"
+                className="flex-1 px-2 py-1 text-xs border border-input rounded bg-background focus:outline-none focus:ring-1 focus:ring-ring"
+              />
+              <button
+                type="button"
+                onClick={() => makePrimary(idx)}
+                disabled={!primaryUrl && alts.length === 0}
+                className="text-[10px] tracking-luxe uppercase text-muted-foreground hover:text-gold transition-colors px-2 py-1 disabled:opacity-50"
+                title="Trocar com a logo principal"
+              >
+                Tornar principal
+              </button>
+              <button
+                type="button"
+                onClick={() => removeAt(idx)}
+                className="text-[10px] tracking-luxe uppercase text-muted-foreground hover:text-red-400 transition-colors px-2 py-1"
+              >
+                Remover
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+      <button
+        type="button"
+        onClick={() => fileRef.current?.click()}
+        disabled={!canAdd}
+        className="w-full flex items-center justify-center gap-2 border-2 border-dashed border-border rounded-lg py-3 hover:border-gold transition-colors text-muted-foreground hover:text-gold text-xs disabled:opacity-50"
+      >
+        {uploading ? (
+          <>
+            <Loader2 className="h-4 w-4 animate-spin" />
+            <span>Fazendo upload...</span>
+          </>
+        ) : (
+          <>
+            <Upload className="h-4 w-4" />
+            <span>Adicionar variação</span>
+          </>
+        )}
+      </button>
+      <input
+        ref={fileRef}
+        type="file"
+        accept="image/png,image/svg+xml,image/jpeg,image/webp"
+        className="hidden"
+        onChange={handleAddVariation}
+      />
+      {error && <p className="text-xs text-red-500">✗ {error}</p>}
+    </div>
+  )
+}
+
+// ─── FontPicker ───────────────────────────────────────────────────────────────
+// Input por vírgula que valida cada fonte digitada contra a API CSS do Google
+// Fonts. Fontes encontradas viram chip com preview na própria fonte; não
+// encontradas viram chip vermelho com ✗. O cache (font_status_cache) evita
+// rechecagem da mesma fonte enquanto a tela está aberta.
+
+const FONT_STATUS_CACHE: Record<string, 'found' | 'not_found'> = {}
+
+function FontPicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const tokens = useMemo(
+    () => value.split(',').map(s => s.trim()).filter(Boolean),
+    [value]
+  )
+  const [statusMap, setStatusMap] = useState<Record<string, 'checking' | 'found' | 'not_found'>>(
+    () => ({ ...FONT_STATUS_CACHE })
+  )
+
+  useEffect(() => {
+    let cancelled = false
+    tokens.forEach(token => {
+      if (statusMap[token] !== undefined || FONT_STATUS_CACHE[token] !== undefined) {
+        // Já checado: garantir que statusMap reflete o cache
+        if (FONT_STATUS_CACHE[token] && statusMap[token] === undefined) {
+          setStatusMap(prev => ({ ...prev, [token]: FONT_STATUS_CACHE[token] }))
+        }
+        return
+      }
+      setStatusMap(prev => ({ ...prev, [token]: 'checking' }))
+
+      const url = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(token)}:wght@400;700&display=swap`
+      fetch(url)
+        .then(async res => {
+          if (!res.ok) return false
+          const text = await res.text()
+          if (!text.includes('@font-face')) return false
+          // Injeta o CSS para que o preview no chip renderize na fonte real
+          const styleId = `gfont-style-${token.replace(/\s+/g, '-').toLowerCase()}`
+          if (!document.getElementById(styleId)) {
+            const style = document.createElement('style')
+            style.id = styleId
+            style.textContent = text
+            document.head.appendChild(style)
+          }
+          return true
+        })
+        .catch(() => false)
+        .then(found => {
+          if (cancelled) return
+          FONT_STATUS_CACHE[token] = found ? 'found' : 'not_found'
+          setStatusMap(prev => ({ ...prev, [token]: found ? 'found' : 'not_found' }))
+        })
+    })
+    return () => { cancelled = true }
+  }, [tokens]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  return (
+    <div className="space-y-2">
+      <Input value={value} onChange={onChange} placeholder="Inter, Playfair Display, Roboto" />
+      {tokens.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {tokens.map(token => {
+            const status = statusMap[token] || 'checking'
+            return (
+              <span
+                key={token}
+                className={cn(
+                  'inline-flex items-center gap-1.5 px-2 py-1 rounded-md border text-xs transition-colors',
+                  status === 'found' && 'border-green-500/40 bg-green-50 text-green-700 dark:bg-green-950/30',
+                  status === 'not_found' && 'border-red-500/40 bg-red-50 text-red-700 dark:bg-red-950/30',
+                  status === 'checking' && 'border-zinc-300 bg-zinc-50 text-zinc-500 dark:bg-zinc-800/50',
+                )}
+                style={status === 'found' ? { fontFamily: `"${token}", sans-serif` } : undefined}
+              >
+                {status === 'checking' && <Loader2 className="h-3 w-3 animate-spin" />}
+                {status === 'found' && <span aria-hidden>✓</span>}
+                {status === 'not_found' && <span aria-hidden>✗</span>}
+                <span>{token}</span>
+              </span>
+            )
+          })}
+        </div>
+      )}
+      <p className="text-xs text-muted-foreground">
+        Digite os nomes das fontes separados por vírgula. O sistema verifica em Google Fonts e mostra um preview de cada fonte encontrada.
+      </p>
+    </div>
+  )
+}
+
 // ─── Steps ────────────────────────────────────────────────────────────────────
 
 function Step1({ data, setData, workspace }: any) {
@@ -578,12 +820,31 @@ function Step1({ data, setData, workspace }: any) {
       </Field>
 
       <Field
-        label="Logomarca"
+        label="Site"
+        hint="Aparece no rodapé das artes geradas. Pode ser uma URL ou @ do Instagram. Se vazio, nada é exibido. (opcional)"
+      >
+        <Input value={data.step1_website} onChange={set('step1_website')} placeholder="nexum360.com.br ou @nexum360" />
+      </Field>
+
+      <Field
+        label="Logomarca principal"
         hint="PNG ou SVG com fundo transparente. Aparece automaticamente nas artes geradas. (opcional)"
       >
         <LogoUploader
           value={data.step1_logo_url}
           onChange={set('step1_logo_url')}
+          workspaceId={workspace.id}
+        />
+      </Field>
+      <Field
+        label="Variações da logo"
+        hint="Adicione versões alternativas (escura, clara, símbolo etc). Após a geração, dá pra trocar entre elas em cada arte. (opcional)"
+      >
+        <LogoVariations
+          primaryUrl={data.step1_logo_url}
+          onPrimaryChange={set('step1_logo_url')}
+          alts={data.step1_logo_alts}
+          onAltsChange={(next) => setData((p: any) => ({ ...p, step1_logo_alts: next }))}
           workspaceId={workspace.id}
         />
       </Field>
@@ -868,8 +1129,8 @@ function Step4({ data, setData }: any) {
           ]}
         />
       </Field>
-      <Field label="Referências visuais / marcas admiradas" hint="Separe por vírgula.">
-        <Input value={data.step4_visual_references} onChange={set('step4_visual_references')} placeholder="Apple, Nike, HubSpot" />
+      <Field label="Selecione suas fontes">
+        <FontPicker value={data.step4_visual_references} onChange={set('step4_visual_references')} />
       </Field>
       <Field label="Palavras que descrevem a estética" hint="Separe por vírgula.">
         <Input value={data.step4_aesthetic_keywords} onChange={set('step4_aesthetic_keywords')} placeholder="limpo, premium, ousado, acolhedor" />

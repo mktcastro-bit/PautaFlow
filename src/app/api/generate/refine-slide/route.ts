@@ -92,6 +92,8 @@ Refine o slide acima seguindo a instrução, MAS:
 
 ⚠️ **NÃO use markdown**: nem \`#\`, nem \`-\`, nem \`*\`, nem \`**bold**\` em nenhum campo.
 
+⚠️ **Travessões PROIBIDOS**: nunca use \`—\` (travessão) nem \`–\` (meia-risca) em title, subtitle ou callout. Use vírgula, ponto ou parênteses. Hífen comum (\`-\`) em palavras compostas como "auto-estima" continua permitido.
+
 Retorne APENAS JSON válido, sem markdown:
 {"title": "...", "subtitle": "...", "callout": "..."}`
 }

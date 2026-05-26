@@ -26,6 +26,7 @@ export interface EditorState {
   showSlideNumber: boolean
   logoUrl: string | null
   logoPosition: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right'
+  logoSize: number  // altura da logo em px na resolução base (1080) — multiplicada por scale no render
 }
 
 export const DEFAULT_EDITOR: EditorState = {
@@ -52,6 +53,7 @@ export const DEFAULT_EDITOR: EditorState = {
   showSlideNumber: true,
   logoUrl: null,
   logoPosition: 'bottom-right',
+  logoSize: 60,
 }
 
 // Valores em resolução real (1080px) — multiplicados por scale em ArtCard

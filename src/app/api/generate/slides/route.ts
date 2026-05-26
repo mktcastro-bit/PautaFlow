@@ -82,7 +82,7 @@ function buildSlidesPrompt(
       'LinkedIn — mais texto, mais profundidade, storytelling corporativo. Parágrafos curtos. Sem emojis excessivos. Hashtags 3-5. Tom: profissional mas humano. Pode ser mais longo (1300-3000 chars na legenda).'
 
     : plat === 'instagram' ?
-      'Instagram — direto, visual, impacto em poucos segundos. Hook forte no slide 1. Tom: visual, emocional, autoral. Hashtags 5-10. Legenda 500-2200 chars. Use emojis com moderação.'
+      'Instagram — direto, visual, impacto em poucos segundos. Hook forte no slide 1. Tom: visual, emocional, autoral. Hashtags: máximo 5 (limite atual do Instagram). Legenda 500-2200 chars. Use emojis com moderação.'
 
     : plat === 'tiktok' ?
       'TikTok — pense em ROTEIRO DE VÍDEO vertical 15-60s. Os "slides" são CENAS sequenciais que serão filmadas. Slide 1 = gancho dos 3 primeiros segundos (frase que SEGURA o scroll). Tom coloquial, jovem, direto. Sem hashtag-spam (3-5 hashtags relevantes na legenda, foco em descobrabilidade). Cada slide deve representar uma cena/transição. Inclua microcopy do texto que aparece NA TELA do vídeo. CTA forte no último slide (siga, comente, compartilhe).'
@@ -91,7 +91,7 @@ function buildSlidesPrompt(
       'WhatsApp Status / Canal — pessoal, íntimo, direto. NÃO use hashtags. Tom: como se estivesse mandando uma mensagem pra um amigo. Textos curtos (cada slide é um Status que dura 24h). Sem CTA agressivo de venda — foque em valor. Legenda mínima ou ausente. Slide final pode pedir reação/resposta privada.'
 
     :
-      'Geral (Instagram e LinkedIn) — equilibre profundidade e impacto visual. Hashtags 5-7. Tom: profissional acessível.'
+      'Geral (Instagram e LinkedIn) — equilibre profundidade e impacto visual. Hashtags: máximo 5. Tom: profissional acessível.'
 
   // Bloco da fórmula viral (se selecionada)
   const formulaSpec = formula ? getFormula(formula) : null
@@ -160,12 +160,18 @@ Cada slide tem 3 campos:
 - Legenda em PROSA fluida, parágrafos separados por linha em branco
 - Hashtags só no final, uma após a outra com espaço
 
+⚠️ **Travessões (PROIBIDOS)**:
+- NUNCA use travessão (\`—\`) nem meia-risca (\`–\`) em nenhum texto: título, subtítulo, callout ou legenda
+- Para pausas e apostos, use vírgula, ponto ou parênteses
+- Vale também para travessão como aspas de fala: NÃO usar
+- Hífen comum (\`-\`) em palavras compostas como "auto-estima" continua permitido
+
 ### Legenda para ${plat === 'linkedin' ? 'LinkedIn' : plat === 'instagram' ? 'Instagram' : 'as plataformas'}:
 Texto corrido em prosa fluida (NÃO use markdown nem bullets):
 - Abertura que prende (1-2 linhas)
 - Desenvolvimento em parágrafos curtos separados por linha em branco
 - Pergunta ou CTA no final
-- 5-8 hashtags relevantes no fim, em linha única
+- Máximo 5 hashtags relevantes no fim, em linha única
 
 Retorne APENAS JSON válido:
 {

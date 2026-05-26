@@ -93,6 +93,7 @@ REGRAS CRÍTICAS:
 2. NÃO seja genérico — o título precisa entregar a fórmula claramente
 3. Use o tom e vocabulário da marca${extractedBlock ? ' (priorize termos e cases REAIS extraídos do site acima)' : ''}
 4. Pense no formato ${format} para ${platform}${extractedBlock ? '\n5. Quando fizer sentido, ancore o conteúdo em cases/ofertas reais da marca em vez de exemplos genéricos' : ''}
+6. NUNCA use travessão (\`—\`) nem meia-risca (\`–\`) em title ou subtitle. Use vírgula, ponto ou parênteses.
 
 Retorne APENAS JSON válido, sem markdown:
 [

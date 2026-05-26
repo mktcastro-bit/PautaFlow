@@ -9,6 +9,8 @@ import {
 import { SlideOverridesPanel } from './slide-overrides-panel'
 import type { Slide } from './art-card'
 
+interface BrandLogoOption { url: string; label: string }
+
 interface Props {
   editor: EditorState
   onChange: (next: EditorState) => void
@@ -22,6 +24,8 @@ interface Props {
   onApplyModeChange?: (mode: 'all' | 'current') => void
   hasEditorOverrides?: boolean
   onResetEditorOverrides?: () => void
+  // Variações de logo cadastradas no DNA da marca (principal + alternativas)
+  brandLogos?: BrandLogoOption[]
 }
 
 type Tab = 'fundo' | 'texto' | 'elementos'
@@ -81,8 +85,8 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
 }
 
 function Slider({
-  value, onChange, min = 0, max = 100,
-}: { value: number; onChange: (v: number) => void; min?: number; max?: number }) {
+  value, onChange, min = 0, max = 100, unit = '%',
+}: { value: number; onChange: (v: number) => void; min?: number; max?: number; unit?: string }) {
   return (
     <div className="flex items-center gap-2">
       <input
@@ -93,7 +97,7 @@ function Slider({
         onChange={e => onChange(Number(e.target.value))}
         className="flex-1 accent-[#c9a86a] h-1"
       />
-      <span className="text-xs text-zinc-400 w-8 text-right">{value}%</span>
+      <span className="text-xs text-zinc-400 w-10 text-right">{value}{unit}</span>
     </div>
   )
 }
@@ -321,7 +325,7 @@ function TextoTab({ editor, onChange }: Props) {
 
 // ─── Elementos Tab ────────────────────────────────────────────────────────────
 
-function ElementosTab({ editor, onChange }: Props) {
+function ElementosTab({ editor, onChange, brandLogos }: Props) {
   const logoRef = useRef<HTMLInputElement>(null)
 
   function set<K extends keyof EditorState>(key: K, val: EditorState[K]) {
@@ -381,6 +385,36 @@ function ElementosTab({ editor, onChange }: Props) {
                 <X className="h-3 w-3 text-zinc-400" />
               </button>
             </div>
+            {brandLogos && brandLogos.length > 1 && (
+              <div>
+                <Label>Variações do DNA</Label>
+                <div className="flex flex-wrap gap-1.5">
+                  {brandLogos.map((opt) => {
+                    const active = opt.url === editor.logoUrl
+                    return (
+                      <button
+                        key={opt.url}
+                        onClick={() => set('logoUrl', opt.url)}
+                        title={opt.label}
+                        className={cn(
+                          'h-10 w-10 rounded border flex items-center justify-center overflow-hidden transition-colors flex-shrink-0',
+                          active
+                            ? 'border-gold ring-1 ring-gold bg-zinc-800'
+                            : 'border-zinc-700 bg-zinc-800 hover:border-zinc-500'
+                        )}
+                        style={{
+                          backgroundImage: 'linear-gradient(45deg, #1f1f1f 25%, transparent 25%), linear-gradient(-45deg, #1f1f1f 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #1f1f1f 75%), linear-gradient(-45deg, transparent 75%, #1f1f1f 75%)',
+                          backgroundSize: '6px 6px',
+                          backgroundPosition: '0 0, 0 3px, 3px -3px, -3px 0px',
+                        }}
+                      >
+                        <img src={opt.url} alt={opt.label} className="max-h-9 max-w-9 object-contain" />
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
             <div>
               <Label>Posição</Label>
               <div className="grid grid-cols-2 gap-1.5">
@@ -404,6 +438,16 @@ function ElementosTab({ editor, onChange }: Props) {
                   </button>
                 ))}
               </div>
+            </div>
+            <div>
+              <Label>Tamanho</Label>
+              <Slider
+                value={editor.logoSize ?? 60}
+                onChange={v => set('logoSize', v)}
+                min={30}
+                max={180}
+                unit="px"
+              />
             </div>
           </div>
         ) : (
@@ -443,6 +487,7 @@ export function ArtEditor({
   editor, onChange,
   currentSlide, currentSlideNumber, totalSlides, onUpdateSlide,
   applyMode, onApplyModeChange, hasEditorOverrides, onResetEditorOverrides,
+  brandLogos,
 }: Props) {
   const [tab, setTab] = useState<Tab>('fundo')
 
@@ -530,7 +575,7 @@ export function ArtEditor({
         <div className="p-4">
           {tab === 'fundo' && <FundoTab editor={editor} onChange={onChange} />}
           {tab === 'texto' && <TextoTab editor={editor} onChange={onChange} />}
-          {tab === 'elementos' && <ElementosTab editor={editor} onChange={onChange} />}
+          {tab === 'elementos' && <ElementosTab editor={editor} onChange={onChange} brandLogos={brandLogos} />}
         </div>
 
         {/* Painel do slide atual — vem direto após o conteúdo da aba, sem gap */}

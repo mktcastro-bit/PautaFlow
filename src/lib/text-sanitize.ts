@@ -16,12 +16,38 @@
  */
 
 /**
+ * Substitui travessão (—, U+2014) e meia-risca (–, U+2013) por vírgula.
+ * O hífen comum (-, U+002D) é preservado para palavras compostas.
+ *
+ * A IA tem tendência a inserir travessões em qualquer texto gerado
+ * (hábito de copywriting em inglês), o que destoa da estética pedida
+ * pelo cliente. Aplicamos a troca como rede de segurança caso o
+ * prompt não seja respeitado.
+ */
+export function removeEmDashes(text: string): string {
+  if (!text) return ''
+  return text
+    // Travessão/meia-risca com espaços ao redor → vírgula + espaço
+    .replace(/\s*[—–]\s*/g, ', ')
+    // Casos limítrofes: travessão sem espaço (raro mas possível)
+    .replace(/[—–]/g, ',')
+    // Colapsa vírgulas duplicadas que possam ter sido criadas
+    .replace(/,\s*,/g, ',')
+    // Remove vírgula órfã antes de pontuação final
+    .replace(/,\s*([.!?;:])/g, '$1')
+    .replace(/[ \t]{2,}/g, ' ')
+}
+
+/**
  * Limpa underscores não-pareados de um texto curto (título/subtítulo/callout).
  * Mantém pares válidos `_palavra_` que viram destaque visual.
  */
 export function cleanSlideText(text: string | undefined | null): string {
   if (!text) return ''
   let s = String(text)
+
+  // 0) Remove travessões antes de qualquer outra limpeza
+  s = removeEmDashes(s)
 
   // 1) Conta underscores. Se for número ímpar, há órfão → remover todos
   //    os que não estão em pares válidos.
@@ -56,11 +82,31 @@ export function cleanSlideText(text: string | undefined | null): string {
 }
 
 /**
+ * Mantém no máximo `max` hashtags na legenda — o excedente é removido.
+ * O Instagram passou a limitar a 5 hashtags por post, então qualquer
+ * legenda gerada com mais é cortada automaticamente como rede de
+ * segurança (caso o modelo ignore a instrução do prompt).
+ */
+export function limitHashtags(text: string, max = 5): string {
+  let count = 0
+  const trimmed = text.replace(/#[\p{L}\p{N}_]+/gu, (match) => {
+    count++
+    return count <= max ? match : ''
+  })
+  // Limpa espaços/linhas em branco deixados pelas hashtags removidas
+  return trimmed
+    .replace(/[ \t]{2,}/g, ' ')
+    .replace(/[ \t]+$/gm, '')
+    .replace(/\n{3,}/g, '\n\n')
+}
+
+/**
  * Limpa uma legenda inteira (caption) — texto longo.
  *  - Remove hífens/bullets do início de linhas
  *  - Remove asteriscos órfãos
  *  - Normaliza quebras de linha excessivas
  *  - Remove underscores soltos (mesma lógica do slide)
+ *  - Garante no máximo 5 hashtags (limite do Instagram)
  */
 export function cleanCaption(text: string | undefined | null): string {
   if (!text) return ''
@@ -71,6 +117,7 @@ export function cleanCaption(text: string | undefined | null): string {
   s = s.replace(/^[\s]*[-*•][\s]+/gm, '')
 
   // 2) Remove headers markdown "# ", "## " no início de linhas
+  //    (NÃO confundir com hashtags — headers têm espaço depois do #)
   s = s.replace(/^#{1,6}\s+/gm, '')
 
   // 3) Aplica a mesma limpeza de underscores soltos do slide
@@ -78,6 +125,9 @@ export function cleanCaption(text: string | undefined | null): string {
 
   // 4) Normaliza 3+ quebras de linha consecutivas em 2
   s = s.replace(/\n{3,}/g, '\n\n')
+
+  // 5) Limita hashtags a 5 (limite atual do Instagram)
+  s = limitHashtags(s, 5)
 
   return s.trim()
 }
