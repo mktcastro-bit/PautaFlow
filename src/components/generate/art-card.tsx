@@ -195,6 +195,7 @@ export const ArtCard = React.forwardRef<HTMLDivElement, Props>(
           height: logoH,
           objectFit: 'contain',
           zIndex: 6,
+          pointerEvents: 'none',
         }}
       />
     ) : null
@@ -208,6 +209,7 @@ export const ArtCard = React.forwardRef<HTMLDivElement, Props>(
         position: 'absolute', top: pad, left: pad, right: pad, zIndex: 5,
         display: 'flex', alignItems: 'center',
         justifyContent: showHeaderBrand ? 'space-between' : 'flex-end',
+        pointerEvents: 'none',
       }}>
         {showHeaderBrand && !editor.logoUrl && (
           <span style={{
@@ -246,6 +248,7 @@ export const ArtCard = React.forwardRef<HTMLDivElement, Props>(
       <div style={{
         position: 'absolute', bottom: pad, left: pad, right: pad, zIndex: 5,
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        pointerEvents: 'none',
       }}>
         {editor.showSlideNumber && (
           <span style={{
@@ -362,6 +365,7 @@ export const ArtCard = React.forwardRef<HTMLDivElement, Props>(
           left: pad, right: pad,
           top: topForPosition('28%'),
           zIndex: 4,
+          pointerEvents: 'none',
         }}>
           {!isHidden('topRule') && (
             <div style={{ display: 'flex', justifyContent: justify }}>{TopRule}</div>
@@ -380,6 +384,7 @@ export const ArtCard = React.forwardRef<HTMLDivElement, Props>(
           left: pad, right: pad,
           top: topForPosition('32%'),
           zIndex: 4,
+          pointerEvents: 'none',
         }}>
           {!isHidden('chapterTag') && (
             <div style={{
@@ -445,6 +450,7 @@ export const ArtCard = React.forwardRef<HTMLDivElement, Props>(
           left: pad, right: pad,
           top: topForPosition('28%'),
           zIndex: 4,
+          pointerEvents: 'none',
           display: 'flex',
           alignItems: 'flex-start',
           gap: 40 * scale,
@@ -465,6 +471,7 @@ export const ArtCard = React.forwardRef<HTMLDivElement, Props>(
           left: pad * 1.4, right: pad * 1.4,
           top: topForPosition('30%'),
           zIndex: 4,
+          pointerEvents: 'none',
         }}>
           {!isHidden('quoteMarks') && (
             <div style={{
@@ -530,6 +537,7 @@ export const ArtCard = React.forwardRef<HTMLDivElement, Props>(
           justifyContent: justifyForPosition(),
           alignItems: align === 'center' ? 'center' : align === 'right' ? 'flex-end' : 'flex-start',
           zIndex: 4,
+          pointerEvents: 'none',
         }}>
           {!isHidden('insightTag') && (
             <div style={{
@@ -565,6 +573,7 @@ export const ArtCard = React.forwardRef<HTMLDivElement, Props>(
           left: pad, right: pad,
           top: topForPosition('24%'),
           zIndex: 4,
+          pointerEvents: 'none',
         }}>
           {!isHidden('ctaArrow') && (
             <div style={{
@@ -659,6 +668,7 @@ export const ArtCard = React.forwardRef<HTMLDivElement, Props>(
             height: '100%',
             backgroundColor: goldColor,
             opacity: 0.95,
+            pointerEvents: 'none',
           }} />
         )}
 
