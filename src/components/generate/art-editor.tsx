@@ -1,7 +1,7 @@
 'use client'
 
 import { useRef, useState } from 'react'
-import { Image, Type, Layers, Upload, X, Plus } from 'lucide-react'
+import { Image, Type, Layers, Upload, X, Plus, ChevronUp, ChevronDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import {
   EditorState, DEFAULT_EDITOR, GRADIENT_DIRECTIONS, CardElement,
@@ -27,6 +27,9 @@ interface Props {
   onResetEditorOverrides?: () => void
   // Variações de logo cadastradas no DNA da marca (principal + alternativas)
   brandLogos?: BrandLogoOption[]
+  // Seleção de elemento livre — controlada pelo canvas
+  selectedElementId?: string | null
+  onSelectElement?: (id: string | null) => void
 }
 
 type Tab = 'fundo' | 'texto' | 'elementos'
@@ -326,11 +329,13 @@ function TextoTab({ editor, onChange }: Props) {
 
 // ─── Elementos Tab ────────────────────────────────────────────────────────────
 
-function ElementosTab({ editor, onChange, brandLogos }: Props) {
+function ElementosTab({ editor, onChange, brandLogos, selectedElementId, onSelectElement }: Props) {
   const logoRef = useRef<HTMLInputElement>(null)
   const elementImageRef = useRef<HTMLInputElement>(null)
   const [pickerOpen, setPickerOpen] = useState(false)
   const [pickerTab, setPickerTab] = useState<'shape' | 'icon' | 'image'>('shape')
+
+  const selectedElement = (editor.elements || []).find(el => el.id === selectedElementId) || null
 
   function set<K extends keyof EditorState>(key: K, val: EditorState[K]) {
     onChange({ ...editor, [key]: val })
@@ -354,10 +359,31 @@ function ElementosTab({ editor, onChange, brandLogos }: Props) {
   function addElement(el: CardElement) {
     onChange({ ...editor, elements: [...(editor.elements || []), el] })
     setPickerOpen(false)
+    onSelectElement?.(el.id)
+  }
+
+  function updateElement(id: string, partial: Partial<CardElement>) {
+    onChange({
+      ...editor,
+      elements: (editor.elements || []).map(e =>
+        e.id === id ? ({ ...e, ...partial } as CardElement) : e
+      ),
+    })
   }
 
   function removeElement(id: string) {
     onChange({ ...editor, elements: (editor.elements || []).filter(e => e.id !== id) })
+    if (selectedElementId === id) onSelectElement?.(null)
+  }
+
+  function moveLayer(id: string, direction: 'up' | 'down') {
+    const list = [...(editor.elements || [])]
+    const idx = list.findIndex(e => e.id === id)
+    if (idx < 0) return
+    const target = direction === 'up' ? idx + 1 : idx - 1
+    if (target < 0 || target >= list.length) return
+    ;[list[idx], list[target]] = [list[target], list[idx]]
+    onChange({ ...editor, elements: list })
   }
 
   function addShape(shape: 'circle' | 'rect' | 'line' | 'triangle') {
@@ -546,44 +572,125 @@ function ElementosTab({ editor, onChange, brandLogos }: Props) {
       <div className="pt-3 border-t border-zinc-800">
         <Label>Elementos</Label>
 
-        {/* Lista de elementos do card atual */}
+        {/* Lista de elementos do card atual (mais recente no topo visual = frente) */}
         {editor.elements && editor.elements.length > 0 && (
           <ul className="space-y-1 mb-2">
-            {editor.elements.map(el => (
-              <li
-                key={el.id}
-                className="flex items-center gap-2 px-2 py-1.5 bg-zinc-800/50 rounded text-xs"
-              >
-                <span className="flex-shrink-0 w-6 h-6 rounded bg-zinc-900 flex items-center justify-center">
-                  {el.type === 'shape' && (
-                    <ShapeMiniIcon shape={el.shape} color={el.color} size={14} />
+            {[...editor.elements].reverse().map((el, revIdx) => {
+              const idx = editor.elements.length - 1 - revIdx
+              const isSelected = el.id === selectedElementId
+              const canMoveUp = idx < editor.elements.length - 1
+              const canMoveDown = idx > 0
+              return (
+                <li
+                  key={el.id}
+                  onClick={() => onSelectElement?.(el.id)}
+                  className={cn(
+                    'flex items-center gap-1.5 px-2 py-1.5 rounded text-xs cursor-pointer border transition-colors',
+                    isSelected
+                      ? 'bg-gold/10 border-gold'
+                      : 'bg-zinc-800/50 border-transparent hover:border-zinc-700'
                   )}
-                  {el.type === 'icon' && (() => {
-                    const I = ELEMENT_ICONS[el.icon]?.Icon
-                    return I ? <I className="w-3.5 h-3.5" style={{ color: el.color }} /> : null
-                  })()}
-                  {el.type === 'image' && (
-                    /* eslint-disable-next-line @next/next/no-img-element */
-                    <img src={el.url} alt="" className="w-5 h-5 object-contain" />
-                  )}
-                </span>
-                <span className="flex-1 truncate text-zinc-400">
-                  {el.type === 'shape'
-                    ? `Forma · ${shapeLabel(el.shape)}`
-                    : el.type === 'icon'
-                    ? `Ícone · ${ELEMENT_ICONS[el.icon]?.label || el.icon}`
-                    : 'Imagem'}
-                </span>
-                <button
-                  onClick={() => removeElement(el.id)}
-                  className="text-zinc-600 hover:text-red-400 transition-colors"
-                  title="Apagar"
                 >
-                  <X className="w-3 h-3" />
-                </button>
-              </li>
-            ))}
+                  <span className="flex-shrink-0 w-6 h-6 rounded bg-zinc-900 flex items-center justify-center">
+                    {el.type === 'shape' && (
+                      <ShapeMiniIcon shape={el.shape} color={el.color} size={14} />
+                    )}
+                    {el.type === 'icon' && (() => {
+                      const I = ELEMENT_ICONS[el.icon]?.Icon
+                      return I ? <I className="w-3.5 h-3.5" style={{ color: el.color }} /> : null
+                    })()}
+                    {el.type === 'image' && (
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img src={el.url} alt="" className="w-5 h-5 object-contain" />
+                    )}
+                  </span>
+                  <span className={cn('flex-1 truncate', isSelected ? 'text-gold' : 'text-zinc-400')}>
+                    {el.type === 'shape'
+                      ? `Forma · ${shapeLabel(el.shape)}`
+                      : el.type === 'icon'
+                      ? `Ícone · ${ELEMENT_ICONS[el.icon]?.label || el.icon}`
+                      : 'Imagem'}
+                  </span>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); moveLayer(el.id, 'up') }}
+                    disabled={!canMoveUp}
+                    className="text-zinc-600 hover:text-gold disabled:opacity-30 disabled:hover:text-zinc-600 transition-colors"
+                    title="Trazer para frente"
+                  >
+                    <ChevronUp className="w-3 h-3" />
+                  </button>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); moveLayer(el.id, 'down') }}
+                    disabled={!canMoveDown}
+                    className="text-zinc-600 hover:text-gold disabled:opacity-30 disabled:hover:text-zinc-600 transition-colors"
+                    title="Enviar para trás"
+                  >
+                    <ChevronDown className="w-3 h-3" />
+                  </button>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); removeElement(el.id) }}
+                    className="text-zinc-600 hover:text-red-400 transition-colors"
+                    title="Apagar"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </li>
+              )
+            })}
           </ul>
+        )}
+
+        {/* Painel de controles do elemento selecionado */}
+        {selectedElement && (
+          <div className="mb-2 p-2.5 border border-gold/40 bg-gold/5 rounded-lg space-y-2.5">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] uppercase tracking-wider text-gold font-semibold">
+                Elemento selecionado
+              </span>
+              <button
+                onClick={() => onSelectElement?.(null)}
+                className="text-zinc-500 hover:text-zinc-300 transition-colors"
+                title="Desselecionar"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </div>
+
+            {(selectedElement.type === 'shape' || selectedElement.type === 'icon') && (
+              <div>
+                <Label>Cor</Label>
+                <ColorInput
+                  value={selectedElement.color}
+                  onChange={(v) => updateElement(selectedElement.id, { color: v } as Partial<CardElement>)}
+                />
+              </div>
+            )}
+
+            <div>
+              <Label>Opacidade</Label>
+              <Slider
+                value={selectedElement.opacity}
+                onChange={(v) => updateElement(selectedElement.id, { opacity: v })}
+                min={0}
+                max={100}
+              />
+            </div>
+
+            <div>
+              <Label>Rotação</Label>
+              <Slider
+                value={Math.round(selectedElement.rotation)}
+                onChange={(v) => updateElement(selectedElement.id, { rotation: v })}
+                min={-180}
+                max={180}
+                unit="°"
+              />
+            </div>
+
+            <p className="text-[10px] text-zinc-500 leading-relaxed">
+              Dica: arraste o elemento para mover. Cantos redimensionam, alça superior rotaciona (Shift trava proporção / snap 15°). Delete apaga.
+            </p>
+          </div>
         )}
 
         {!pickerOpen ? (
@@ -729,6 +836,7 @@ export function ArtEditor({
   currentSlide, currentSlideNumber, totalSlides, onUpdateSlide,
   applyMode, onApplyModeChange, hasEditorOverrides, onResetEditorOverrides,
   brandLogos,
+  selectedElementId, onSelectElement,
 }: Props) {
   const [tab, setTab] = useState<Tab>('fundo')
 
@@ -816,7 +924,15 @@ export function ArtEditor({
         <div className="p-4">
           {tab === 'fundo' && <FundoTab editor={editor} onChange={onChange} />}
           {tab === 'texto' && <TextoTab editor={editor} onChange={onChange} />}
-          {tab === 'elementos' && <ElementosTab editor={editor} onChange={onChange} brandLogos={brandLogos} />}
+          {tab === 'elementos' && (
+            <ElementosTab
+              editor={editor}
+              onChange={onChange}
+              brandLogos={brandLogos}
+              selectedElementId={selectedElementId}
+              onSelectElement={onSelectElement}
+            />
+          )}
         </div>
 
         {/* Painel do slide atual — vem direto após o conteúdo da aba, sem gap */}

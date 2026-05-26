@@ -332,6 +332,8 @@ export function ArtCanvas({ slides, setSlides, caption, idea, config, brandDna, 
         hasEditorOverrides={currentHasEditorOverrides}
         onResetEditorOverrides={resetCurrentSlideOverrides}
         brandLogos={brandLogos}
+        selectedElementId={selectedElementId}
+        onSelectElement={setSelectedElementId}
       />
 
       {/* ── Center: card preview ──────────────────────────────────────── */}
