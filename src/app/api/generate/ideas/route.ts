@@ -250,6 +250,22 @@ export async function POST(req: NextRequest) {
       }, { status: 502 })
     }
 
+    // Registra geração no histórico para tracking de tokens no painel admin.
+    // Falha silenciosa: não bloqueia a resposta se o insert falhar.
+    const tokensUsed = (message.usage?.input_tokens ?? 0) + (message.usage?.output_tokens ?? 0)
+    supabase.from('generated_content').insert({
+      workspace_id,
+      content: `[ideas] ${ideas.length} ideias geradas para pilar "${pilar}"`,
+      prompt_used: `ideas · ${pilar} · ${platform}/${format}`,
+      model: 'claude-sonnet-4-6',
+      platform,
+      format,
+      tokens_used: tokensUsed,
+      created_by: user.id,
+    }).then(({ error }) => {
+      if (error) console.error('[ideas] generated_content insert error:', error.message)
+    })
+
     return NextResponse.json({ ideas, news })
   } catch (err: any) {
     console.error('[ideas] generation error:', err?.status, err?.message)

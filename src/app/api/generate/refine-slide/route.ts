@@ -198,6 +198,22 @@ export async function POST(req: NextRequest) {
       callout: parsed.callout ?? '',
     })
 
+    // Registra geração no histórico para tracking de tokens no painel admin.
+    // Falha silenciosa: não bloqueia a resposta se o insert falhar.
+    const tokensUsed = (message.usage?.input_tokens ?? 0) + (message.usage?.output_tokens ?? 0)
+    supabase.from('generated_content').insert({
+      workspace_id,
+      content: `[refine] slide ${slide.number}: ${cleaned.title}`,
+      prompt_used: `refine · "${instruction.slice(0, 80)}"`,
+      model: 'claude-sonnet-4-6',
+      platform: null,
+      format: null,
+      tokens_used: tokensUsed,
+      created_by: user.id,
+    }).then(({ error }) => {
+      if (error) console.error('[refine-slide] generated_content insert error:', error.message)
+    })
+
     return NextResponse.json({
       slide: {
         number: slide.number,

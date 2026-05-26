@@ -296,7 +296,8 @@ export async function POST(req: NextRequest) {
     // Sanitiza a legenda também (bullets de markdown, asteriscos órfãos, etc)
     if (result.caption) result.caption = cleanCaption(result.caption)
 
-    // Salvar no histórico
+    // Salvar no histórico — inclui tokens consumidos para tracking no admin
+    const tokensUsed = (message.usage?.input_tokens ?? 0) + (message.usage?.output_tokens ?? 0)
     await supabase.from('generated_content').insert({
       workspace_id,
       content: result.caption,
@@ -304,6 +305,7 @@ export async function POST(req: NextRequest) {
       model: 'claude-sonnet-4-6',
       platform,
       format,
+      tokens_used: tokensUsed,
       created_by: user.id,
     })
 
