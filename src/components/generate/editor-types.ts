@@ -1,3 +1,38 @@
+// ─── Elementos livres (formas, ícones, imagens) ──────────────────────────────
+// Cada elemento é posicionado em % da resolução do card (0-100) para que
+// sobreviva à conversão preview ↔ export sem perder posição/tamanho.
+// O bounding box (x, y, w, h) define onde o elemento é desenhado; rotation
+// é aplicada como transform na renderização.
+
+export interface BaseCardElement {
+  id: string
+  x: number          // 0-100, % da largura do card (canto superior esquerdo do bbox)
+  y: number          // 0-100, % da altura do card
+  w: number          // 0-100, % da largura do card
+  h: number          // 0-100, % da altura do card
+  rotation: number   // graus
+  opacity: number    // 0-100
+}
+
+export interface ShapeCardElement extends BaseCardElement {
+  type: 'shape'
+  shape: 'circle' | 'rect' | 'line' | 'triangle'
+  color: string
+}
+
+export interface IconCardElement extends BaseCardElement {
+  type: 'icon'
+  icon: string       // chave em ELEMENT_ICONS (ver element-icons.ts)
+  color: string
+}
+
+export interface ImageCardElement extends BaseCardElement {
+  type: 'image'
+  url: string
+}
+
+export type CardElement = ShapeCardElement | IconCardElement | ImageCardElement
+
 export interface EditorState {
   // ── Fundo ──────────────────────────────────────────────────
   bgType: 'color' | 'gradient' | 'image'
@@ -27,6 +62,9 @@ export interface EditorState {
   logoUrl: string | null
   logoPosition: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right'
   logoSize: number  // altura da logo em px na resolução base (1080) — multiplicada por scale no render
+
+  // ── Elementos livres ───────────────────────────────────────
+  elements: CardElement[]
 }
 
 export const DEFAULT_EDITOR: EditorState = {
@@ -54,6 +92,8 @@ export const DEFAULT_EDITOR: EditorState = {
   logoUrl: null,
   logoPosition: 'bottom-right',
   logoSize: 60,
+
+  elements: [],
 }
 
 // Valores em resolução real (1080px) — multiplicados por scale em ArtCard

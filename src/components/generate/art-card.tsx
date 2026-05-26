@@ -2,8 +2,9 @@
 
 import React from 'react'
 import { BrandDNA } from '@/types'
-import { EditorState, FONT_SIZES } from './editor-types'
+import { EditorState, FONT_SIZES, CardElement } from './editor-types'
 import { TypographyPreset, getBrandTypography } from '@/lib/brand-style'
+import { CardElementView } from './card-elements'
 
 export type LayoutKey = 'hero' | 'rule' | 'numbered' | 'quote' | 'statement' | 'cta' | 'auto'
 
@@ -55,6 +56,11 @@ interface Props {
   publicationFormat: 'feed' | 'story' | 'reels'
   pilar?: string
   typography?: TypographyPreset
+  // ── Edição de elementos (opcional — só ativada no preview do editor) ──
+  editable?: boolean
+  selectedElementId?: string | null
+  onSelectElement?: (id: string | null) => void
+  onElementsChange?: (next: CardElement[]) => void
 }
 
 // ─── Layouts editoriais ──────────────────────────────────────────────────────
@@ -100,7 +106,10 @@ function buildBackground(editor: EditorState): React.CSSProperties {
 
 // ─── ArtCard ─────────────────────────────────────────────────────────────────
 export const ArtCard = React.forwardRef<HTMLDivElement, Props>(
-  ({ slide, total, editor, brandDna, scale = 1, publicationFormat, pilar, typography }, ref) => {
+  ({
+    slide, total, editor, brandDna, scale = 1, publicationFormat, pilar, typography,
+    editable = false, selectedElementId, onSelectElement, onElementsChange,
+  }, ref) => {
     const typo = typography || getBrandTypography(brandDna?.step4_typography_style)
     const TITLE_FONT = typo.title
     const BODY_FONT = typo.body
@@ -606,9 +615,19 @@ export const ArtCard = React.forwardRef<HTMLDivElement, Props>(
       }
     }
 
+    // Click no fundo do card (não em um elemento) deseleciona.
+    // Os elementos usam stopPropagation no pointerDown, então só clicks
+    // fora deles chegam aqui.
+    const handleRootPointerDown = editable
+      ? (e: React.PointerEvent<HTMLDivElement>) => {
+          if (e.target === e.currentTarget) onSelectElement?.(null)
+        }
+      : undefined
+
     return (
       <div
         ref={ref}
+        onPointerDown={handleRootPointerDown}
         style={{
           width: W,
           height: H,
@@ -641,6 +660,36 @@ export const ArtCard = React.forwardRef<HTMLDivElement, Props>(
             backgroundColor: goldColor,
             opacity: 0.95,
           }} />
+        )}
+
+        {/* Elementos livres (formas, ícones, imagens) — entram entre overlay e header */}
+        {editor.elements && editor.elements.length > 0 && (
+          <div
+            style={{
+              position: 'absolute', inset: 0, zIndex: 3,
+              // Quando não editável, ignora pointer events para não roubar
+              // clicks dos overlays decorativos
+              pointerEvents: editable ? 'auto' : 'none',
+            }}
+          >
+            {editor.elements.map(el => (
+              <CardElementView
+                key={el.id}
+                element={el}
+                cardWidth={W}
+                cardHeight={H}
+                editable={editable}
+                selected={editable && selectedElementId === el.id}
+                onSelect={() => onSelectElement?.(el.id)}
+                onChange={(partial) => {
+                  if (!onElementsChange) return
+                  onElementsChange(
+                    editor.elements.map(e => e.id === el.id ? { ...e, ...partial } as CardElement : e)
+                  )
+                }}
+              />
+            ))}
+          </div>
         )}
 
         {HeaderBar}

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useMemo } from 'react'
+import { useState, useRef, useMemo, useEffect } from 'react'
 import { Download, Copy, Check, ChevronLeft, ChevronRight, Loader2, BookmarkPlus, Archive } from 'lucide-react'
 import { toPng } from 'html-to-image'
 import JSZip from 'jszip'
@@ -107,6 +107,9 @@ export function ArtCanvas({ slides, setSlides, caption, idea, config, brandDna, 
   // 'current' → mudanças aplicam só no slide atual (`slide.editorOverrides`)
   const [applyMode, setApplyMode] = useState<'all' | 'current'>('all')
 
+  // ─── Elemento livre atualmente selecionado no preview ───
+  const [selectedElementId, setSelectedElementId] = useState<string | null>(null)
+
   const exportRef = useRef<HTMLDivElement>(null)
 
   const total = slides.length
@@ -146,6 +149,35 @@ export function ArtCanvas({ slides, setSlides, caption, idea, config, brandDna, 
         : s
     ))
   }
+
+  /** Atualiza a lista de elementos livres do slide atual */
+  function handleElementsChange(next: import('./editor-types').CardElement[]) {
+    handleEditorChange({ ...effectiveEditor, elements: next })
+  }
+
+  // ── Tecla Delete/Backspace remove o elemento selecionado ──
+  useEffect(() => {
+    if (!selectedElementId) return
+    function onKeyDown(e: KeyboardEvent) {
+      // Não interfere quando o usuário está digitando em campo de texto
+      const target = e.target as HTMLElement | null
+      if (target) {
+        const tag = target.tagName.toLowerCase()
+        if (tag === 'input' || tag === 'textarea' || target.isContentEditable) return
+      }
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        e.preventDefault()
+        handleElementsChange(effectiveEditor.elements.filter(el => el.id !== selectedElementId))
+        setSelectedElementId(null)
+      }
+      if (e.key === 'Escape') {
+        setSelectedElementId(null)
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedElementId, effectiveEditor.elements])
 
   /** Limpa todos os overrides de aparência do slide atual */
   function resetCurrentSlideOverrides() {
@@ -341,6 +373,10 @@ export function ArtCanvas({ slides, setSlides, caption, idea, config, brandDna, 
               publicationFormat={config.publicationFormat}
               pilar={config.pilar}
               typography={typography}
+              editable
+              selectedElementId={selectedElementId}
+              onSelectElement={setSelectedElementId}
+              onElementsChange={handleElementsChange}
             />
           </div>
 

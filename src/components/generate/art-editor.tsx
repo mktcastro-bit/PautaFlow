@@ -1,11 +1,12 @@
 'use client'
 
 import { useRef, useState } from 'react'
-import { Image, Type, Layers, Upload, X } from 'lucide-react'
+import { Image, Type, Layers, Upload, X, Plus } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import {
-  EditorState, DEFAULT_EDITOR, GRADIENT_DIRECTIONS,
+  EditorState, DEFAULT_EDITOR, GRADIENT_DIRECTIONS, CardElement,
 } from './editor-types'
+import { ELEMENT_ICONS } from './element-icons'
 import { SlideOverridesPanel } from './slide-overrides-panel'
 import type { Slide } from './art-card'
 
@@ -327,6 +328,9 @@ function TextoTab({ editor, onChange }: Props) {
 
 function ElementosTab({ editor, onChange, brandLogos }: Props) {
   const logoRef = useRef<HTMLInputElement>(null)
+  const elementImageRef = useRef<HTMLInputElement>(null)
+  const [pickerOpen, setPickerOpen] = useState(false)
+  const [pickerTab, setPickerTab] = useState<'shape' | 'icon' | 'image'>('shape')
 
   function set<K extends keyof EditorState>(key: K, val: EditorState[K]) {
     onChange({ ...editor, [key]: val })
@@ -338,6 +342,82 @@ function ElementosTab({ editor, onChange, brandLogos }: Props) {
     const reader = new FileReader()
     reader.onload = ev => set('logoUrl', ev.target?.result as string)
     reader.readAsDataURL(file)
+  }
+
+  // ── Elementos livres (formas / ícones / imagens) ──
+  function genId() {
+    return (typeof crypto !== 'undefined' && (crypto as any).randomUUID)
+      ? (crypto as any).randomUUID() as string
+      : `el-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+  }
+
+  function addElement(el: CardElement) {
+    onChange({ ...editor, elements: [...(editor.elements || []), el] })
+    setPickerOpen(false)
+  }
+
+  function removeElement(id: string) {
+    onChange({ ...editor, elements: (editor.elements || []).filter(e => e.id !== id) })
+  }
+
+  function addShape(shape: 'circle' | 'rect' | 'line' | 'triangle') {
+    const presets: Record<typeof shape, { w: number; h: number }> = {
+      circle:   { w: 20, h: 20 },
+      rect:     { w: 30, h: 20 },
+      line:     { w: 40, h: 1 },
+      triangle: { w: 20, h: 20 },
+    }
+    const { w, h } = presets[shape]
+    addElement({
+      id: genId(),
+      type: 'shape',
+      shape,
+      x: 50 - w / 2,
+      y: 50 - h / 2,
+      w, h,
+      rotation: 0,
+      opacity: 100,
+      color: editor.accentBarColor,
+    })
+  }
+
+  function addIcon(key: string) {
+    const w = 15
+    addElement({
+      id: genId(),
+      type: 'icon',
+      icon: key,
+      x: 50 - w / 2,
+      y: 50 - w / 2,
+      w, h: w,
+      rotation: 0,
+      opacity: 100,
+      color: editor.accentBarColor,
+    })
+  }
+
+  function addImageFromFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = ev => {
+      const url = ev.target?.result as string
+      // Tamanho default 30x30% — img usa objectFit:contain, então o aspect
+      // ratio natural é preservado dentro do bbox sem distorção.
+      const w = 30, h = 30
+      addElement({
+        id: genId(),
+        type: 'image',
+        url,
+        x: 50 - w / 2,
+        y: 50 - h / 2,
+        w, h,
+        rotation: 0,
+        opacity: 100,
+      })
+    }
+    reader.readAsDataURL(file)
+    if (elementImageRef.current) elementImageRef.current.value = ''
   }
 
   return (
@@ -462,6 +542,135 @@ function ElementosTab({ editor, onChange, brandLogos }: Props) {
         <input ref={logoRef} type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} />
       </div>
 
+      {/* Elementos livres (formas, ícones, imagens) */}
+      <div className="pt-3 border-t border-zinc-800">
+        <Label>Elementos</Label>
+
+        {/* Lista de elementos do card atual */}
+        {editor.elements && editor.elements.length > 0 && (
+          <ul className="space-y-1 mb-2">
+            {editor.elements.map(el => (
+              <li
+                key={el.id}
+                className="flex items-center gap-2 px-2 py-1.5 bg-zinc-800/50 rounded text-xs"
+              >
+                <span className="flex-shrink-0 w-6 h-6 rounded bg-zinc-900 flex items-center justify-center">
+                  {el.type === 'shape' && (
+                    <ShapeMiniIcon shape={el.shape} color={el.color} size={14} />
+                  )}
+                  {el.type === 'icon' && (() => {
+                    const I = ELEMENT_ICONS[el.icon]?.Icon
+                    return I ? <I className="w-3.5 h-3.5" style={{ color: el.color }} /> : null
+                  })()}
+                  {el.type === 'image' && (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img src={el.url} alt="" className="w-5 h-5 object-contain" />
+                  )}
+                </span>
+                <span className="flex-1 truncate text-zinc-400">
+                  {el.type === 'shape'
+                    ? `Forma · ${shapeLabel(el.shape)}`
+                    : el.type === 'icon'
+                    ? `Ícone · ${ELEMENT_ICONS[el.icon]?.label || el.icon}`
+                    : 'Imagem'}
+                </span>
+                <button
+                  onClick={() => removeElement(el.id)}
+                  className="text-zinc-600 hover:text-red-400 transition-colors"
+                  title="Apagar"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        {!pickerOpen ? (
+          <button
+            onClick={() => setPickerOpen(true)}
+            className="w-full flex items-center justify-center gap-1.5 py-2 rounded-lg border border-dashed border-zinc-700 text-xs text-zinc-500 hover:border-gold hover:text-gold transition-colors"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            Adicionar elemento
+          </button>
+        ) : (
+          <div className="border border-zinc-700 rounded-lg p-2 space-y-2">
+            <div className="flex gap-1">
+              {(['shape', 'icon', 'image'] as const).map(t => (
+                <button
+                  key={t}
+                  onClick={() => setPickerTab(t)}
+                  className={cn(
+                    'flex-1 py-1 rounded text-[10px] uppercase tracking-wider transition-colors',
+                    pickerTab === t
+                      ? 'bg-gold text-ink font-semibold'
+                      : 'bg-zinc-800 text-zinc-400 hover:text-zinc-200'
+                  )}
+                >
+                  {t === 'shape' ? 'Formas' : t === 'icon' ? 'Ícones' : 'Imagem'}
+                </button>
+              ))}
+            </div>
+
+            {pickerTab === 'shape' && (
+              <div className="grid grid-cols-4 gap-1.5">
+                {(['circle', 'rect', 'line', 'triangle'] as const).map(s => (
+                  <button
+                    key={s}
+                    onClick={() => addShape(s)}
+                    className="aspect-square bg-zinc-800 border border-zinc-700 rounded hover:border-gold flex items-center justify-center transition-colors"
+                    title={shapeLabel(s)}
+                  >
+                    <ShapeMiniIcon shape={s} color={editor.accentBarColor} size={18} />
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {pickerTab === 'icon' && (
+              <div className="grid grid-cols-6 gap-1 max-h-48 overflow-y-auto pr-1">
+                {Object.entries(ELEMENT_ICONS).map(([key, { Icon, label }]) => (
+                  <button
+                    key={key}
+                    onClick={() => addIcon(key)}
+                    title={label}
+                    className="aspect-square bg-zinc-800 border border-zinc-700 rounded hover:border-gold flex items-center justify-center transition-colors"
+                  >
+                    <Icon className="w-3.5 h-3.5 text-zinc-300" />
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {pickerTab === 'image' && (
+              <button
+                onClick={() => elementImageRef.current?.click()}
+                className="w-full flex items-center justify-center gap-2 border-2 border-dashed border-zinc-700 rounded-lg py-4 hover:border-gold transition-colors text-zinc-500 hover:text-gold text-xs"
+              >
+                <Upload className="h-3.5 w-3.5" />
+                Fazer upload de imagem
+              </button>
+            )}
+
+            <input
+              ref={elementImageRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={addImageFromFile}
+            />
+
+            <button
+              onClick={() => setPickerOpen(false)}
+              className="w-full text-[10px] uppercase tracking-wider text-zinc-500 hover:text-zinc-300 py-1 transition-colors"
+            >
+              Fechar
+            </button>
+          </div>
+        )}
+      </div>
+
       {/* Reset */}
       <div className="pt-3 border-t border-zinc-800">
         <button
@@ -473,6 +682,38 @@ function ElementosTab({ editor, onChange, brandLogos }: Props) {
       </div>
     </div>
   )
+}
+
+function shapeLabel(s: 'circle' | 'rect' | 'line' | 'triangle'): string {
+  return s === 'circle' ? 'círculo' : s === 'rect' ? 'retângulo' : s === 'line' ? 'linha' : 'triângulo'
+}
+
+function ShapeMiniIcon({
+  shape,
+  color,
+  size = 14,
+}: {
+  shape: 'circle' | 'rect' | 'line' | 'triangle'
+  color: string
+  size?: number
+}) {
+  if (shape === 'circle') {
+    return <div style={{ width: size, height: size, borderRadius: '50%', background: color }} />
+  }
+  if (shape === 'rect') {
+    return <div style={{ width: size * 1.4, height: size * 0.8, background: color }} />
+  }
+  if (shape === 'line') {
+    return <div style={{ width: size * 1.6, height: 2, background: color }} />
+  }
+  if (shape === 'triangle') {
+    return (
+      <svg width={size} height={size} viewBox="0 0 100 100">
+        <polygon points="50,5 95,95 5,95" fill={color} />
+      </svg>
+    )
+  }
+  return null
 }
 
 // ─── ArtEditor ────────────────────────────────────────────────────────────────
