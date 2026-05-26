@@ -6,6 +6,10 @@ import { ArrowRight, ArrowLeft, Sparkles, X, Info, Upload, Loader2 } from 'lucid
 import { BrandDNA, Workspace } from '@/types'
 import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
+import {
+  FontEntry, findFontInCatalog, searchFonts,
+  normalizeFontQuery, isSystemFontInstalled,
+} from './font-catalog'
 
 const STEPS = [
   { num: 1, title: 'Marca', description: 'Nome, missão, visão e valores' },
@@ -721,89 +725,264 @@ function LogoVariations({
 }
 
 // ─── FontPicker ───────────────────────────────────────────────────────────────
-// Input por vírgula que valida cada fonte digitada contra a API CSS do Google
-// Fonts. Fontes encontradas viram chip com preview na própria fonte; não
-// encontradas viram chip vermelho com ✗. O cache (font_status_cache) evita
-// rechecagem da mesma fonte enquanto a tela está aberta.
+// Input por vírgula que valida cada fonte digitada. Aceita fontes do Google
+// Fonts E fontes instaladas no sistema (Times New Roman, Arial etc).
+//
+// Recursos:
+// - Autocomplete enquanto digita (catálogo curado de ~150 fontes populares).
+// - Match fuzzy: "playf" → "Playfair Display"; "times" → "Times New Roman".
+// - Preview na própria fonte tanto na sugestão quanto no chip.
+// - Detecção automática de fonte do sistema via canvas trick.
+// - Cache global de checagem para não refazer requisições.
 
-const FONT_STATUS_CACHE: Record<string, 'found' | 'not_found'> = {}
+type FontStatus =
+  | { status: 'checking' }
+  | { status: 'found'; source: 'google' | 'system'; installed: boolean }
+  | { status: 'not_found' }
+
+const FONT_STATUS_CACHE: Record<string, FontStatus> = {}
+const GOOGLE_FONT_LOADED: Set<string> = new Set()
+
+/** Injeta o CSS do Google Fonts no head para que o preview renderize. */
+function loadGoogleFontCss(name: string): Promise<boolean> {
+  const cacheKey = normalizeFontQuery(name)
+  if (GOOGLE_FONT_LOADED.has(cacheKey)) return Promise.resolve(true)
+  const url = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(name)}:wght@400;700&display=swap`
+  return fetch(url)
+    .then(async res => {
+      if (!res.ok) return false
+      const text = await res.text()
+      if (!text.includes('@font-face')) return false
+      const styleId = `gfont-style-${cacheKey.replace(/\s+/g, '-')}`
+      if (!document.getElementById(styleId)) {
+        const style = document.createElement('style')
+        style.id = styleId
+        style.textContent = text
+        document.head.appendChild(style)
+      }
+      GOOGLE_FONT_LOADED.add(cacheKey)
+      return true
+    })
+    .catch(() => false)
+}
 
 function FontPicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   const tokens = useMemo(
     () => value.split(',').map(s => s.trim()).filter(Boolean),
     [value]
   )
-  const [statusMap, setStatusMap] = useState<Record<string, 'checking' | 'found' | 'not_found'>>(
+  const [statusMap, setStatusMap] = useState<Record<string, FontStatus>>(
     () => ({ ...FONT_STATUS_CACHE })
   )
+  const [focused, setFocused] = useState(false)
+  const [highlightIdx, setHighlightIdx] = useState(0)
+  const inputRef = useRef<HTMLInputElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
 
+  // Token sendo digitado = texto após a última vírgula
+  const currentToken = useMemo(() => {
+    const lastComma = value.lastIndexOf(',')
+    return (lastComma >= 0 ? value.slice(lastComma + 1) : value).trim()
+  }, [value])
+
+  // Sugestões do autocomplete (filtra as já adicionadas)
+  const suggestions = useMemo<FontEntry[]>(() => {
+    if (!focused || !currentToken) return []
+    const existing = new Set(tokens.map(t => normalizeFontQuery(t)))
+    return searchFonts(currentToken, 8).filter(s => !existing.has(normalizeFontQuery(s.name)))
+  }, [focused, currentToken, tokens])
+
+  // Pré-carrega o CSS do Google para as sugestões visíveis — permite preview
+  useEffect(() => {
+    suggestions.forEach(s => {
+      if (s.source === 'google') loadGoogleFontCss(s.name)
+    })
+  }, [suggestions])
+
+  // Validação dos tokens já confirmados
   useEffect(() => {
     let cancelled = false
     tokens.forEach(token => {
-      if (statusMap[token] !== undefined || FONT_STATUS_CACHE[token] !== undefined) {
-        // Já checado: garantir que statusMap reflete o cache
-        if (FONT_STATUS_CACHE[token] && statusMap[token] === undefined) {
-          setStatusMap(prev => ({ ...prev, [token]: FONT_STATUS_CACHE[token] }))
+      const key = normalizeFontQuery(token)
+      if (statusMap[key] || FONT_STATUS_CACHE[key]) {
+        if (FONT_STATUS_CACHE[key] && !statusMap[key]) {
+          setStatusMap(prev => ({ ...prev, [key]: FONT_STATUS_CACHE[key] }))
         }
         return
       }
-      setStatusMap(prev => ({ ...prev, [token]: 'checking' }))
+      setStatusMap(prev => ({ ...prev, [key]: { status: 'checking' } }))
 
-      const url = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(token)}:wght@400;700&display=swap`
-      fetch(url)
-        .then(async res => {
-          if (!res.ok) return false
-          const text = await res.text()
-          if (!text.includes('@font-face')) return false
-          // Injeta o CSS para que o preview no chip renderize na fonte real
-          const styleId = `gfont-style-${token.replace(/\s+/g, '-').toLowerCase()}`
-          if (!document.getElementById(styleId)) {
-            const style = document.createElement('style')
-            style.id = styleId
-            style.textContent = text
-            document.head.appendChild(style)
-          }
-          return true
-        })
-        .catch(() => false)
-        .then(found => {
-          if (cancelled) return
-          FONT_STATUS_CACHE[token] = found ? 'found' : 'not_found'
-          setStatusMap(prev => ({ ...prev, [token]: found ? 'found' : 'not_found' }))
-        })
+      // 1) Tenta achar no catálogo (Google ou sistema)
+      const catalogEntry = findFontInCatalog(token)
+      if (catalogEntry) {
+        if (catalogEntry.source === 'system') {
+          const installed = isSystemFontInstalled(catalogEntry.name)
+          const result: FontStatus = { status: 'found', source: 'system', installed }
+          FONT_STATUS_CACHE[key] = result
+          if (!cancelled) setStatusMap(prev => ({ ...prev, [key]: result }))
+        } else {
+          loadGoogleFontCss(catalogEntry.name).then(ok => {
+            if (cancelled) return
+            const result: FontStatus = ok
+              ? { status: 'found', source: 'google', installed: true }
+              : { status: 'not_found' }
+            FONT_STATUS_CACHE[key] = result
+            setStatusMap(prev => ({ ...prev, [key]: result }))
+          })
+        }
+        return
+      }
+
+      // 2) Não está no catálogo — fallback: Google Fonts API + canvas (sistema)
+      loadGoogleFontCss(token).then(ok => {
+        if (cancelled) return
+        if (ok) {
+          const result: FontStatus = { status: 'found', source: 'google', installed: true }
+          FONT_STATUS_CACHE[key] = result
+          setStatusMap(prev => ({ ...prev, [key]: result }))
+          return
+        }
+        // Tenta como fonte do sistema (não catalogada)
+        if (isSystemFontInstalled(token)) {
+          const result: FontStatus = { status: 'found', source: 'system', installed: true }
+          FONT_STATUS_CACHE[key] = result
+          setStatusMap(prev => ({ ...prev, [key]: result }))
+          return
+        }
+        const result: FontStatus = { status: 'not_found' }
+        FONT_STATUS_CACHE[key] = result
+        setStatusMap(prev => ({ ...prev, [key]: result }))
+      })
     })
     return () => { cancelled = true }
   }, [tokens]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Reset highlight ao mudar sugestões
+  useEffect(() => { setHighlightIdx(0) }, [suggestions.length, currentToken])
+
+  // Click fora fecha o dropdown
+  useEffect(() => {
+    if (!focused) return
+    function onDocClick(e: MouseEvent) {
+      if (!containerRef.current?.contains(e.target as Node)) {
+        setFocused(false)
+      }
+    }
+    document.addEventListener('mousedown', onDocClick)
+    return () => document.removeEventListener('mousedown', onDocClick)
+  }, [focused])
+
+  function applySuggestion(name: string) {
+    const lastComma = value.lastIndexOf(',')
+    const prefix = lastComma >= 0 ? value.slice(0, lastComma + 1) + ' ' : ''
+    onChange(prefix + name + ', ')
+    setTimeout(() => inputRef.current?.focus(), 0)
+  }
+
+  function onKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (!suggestions.length) return
+    if (e.key === 'ArrowDown') {
+      e.preventDefault()
+      setHighlightIdx(i => Math.min(i + 1, suggestions.length - 1))
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault()
+      setHighlightIdx(i => Math.max(i - 1, 0))
+    } else if (e.key === 'Enter' || e.key === 'Tab') {
+      e.preventDefault()
+      applySuggestion(suggestions[highlightIdx].name)
+    } else if (e.key === 'Escape') {
+      setFocused(false)
+    }
+  }
+
+  function statusOf(token: string): FontStatus {
+    return statusMap[normalizeFontQuery(token)] || { status: 'checking' }
+  }
+
   return (
-    <div className="space-y-2">
-      <Input value={value} onChange={onChange} placeholder="Inter, Playfair Display, Roboto" />
+    <div className="space-y-2" ref={containerRef}>
+      <div className="relative">
+        <input
+          ref={inputRef}
+          type="text"
+          value={value}
+          onChange={e => onChange(e.target.value)}
+          onFocus={() => setFocused(true)}
+          onKeyDown={onKeyDown}
+          placeholder="Inter, Playfair Display, Times New Roman..."
+          className="w-full px-3 py-2 border border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring bg-background"
+          autoComplete="off"
+        />
+        {focused && suggestions.length > 0 && (
+          <ul className="absolute top-full left-0 right-0 mt-1 z-20 bg-background border border-border rounded-lg shadow-lg max-h-64 overflow-y-auto">
+            {suggestions.map((s, i) => (
+              <li
+                key={s.name}
+                onMouseDown={(e) => { e.preventDefault(); applySuggestion(s.name) }}
+                onMouseEnter={() => setHighlightIdx(i)}
+                className={cn(
+                  'px-3 py-2 cursor-pointer flex items-center gap-2 text-sm border-b border-border/50 last:border-b-0',
+                  i === highlightIdx ? 'bg-muted' : 'hover:bg-muted/60'
+                )}
+              >
+                <span
+                  className="flex-1 truncate"
+                  style={{ fontFamily: `"${s.name}", ${s.category === 'serif' ? 'serif' : s.category === 'monospace' ? 'monospace' : 'sans-serif'}` }}
+                >
+                  {s.name}
+                </span>
+                <span className="text-[10px] text-muted-foreground flex-shrink-0">
+                  {s.source === 'system' ? 'sistema' : 'Google'}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
       {tokens.length > 0 && (
         <div className="flex flex-wrap gap-1.5">
           {tokens.map(token => {
-            const status = statusMap[token] || 'checking'
+            const s = statusOf(token)
+            const isFound = s.status === 'found'
+            const isWarn = isFound && s.source === 'system' && !s.installed
             return (
               <span
                 key={token}
                 className={cn(
                   'inline-flex items-center gap-1.5 px-2 py-1 rounded-md border text-xs transition-colors',
-                  status === 'found' && 'border-green-500/40 bg-green-50 text-green-700 dark:bg-green-950/30',
-                  status === 'not_found' && 'border-red-500/40 bg-red-50 text-red-700 dark:bg-red-950/30',
-                  status === 'checking' && 'border-zinc-300 bg-zinc-50 text-zinc-500 dark:bg-zinc-800/50',
+                  isFound && !isWarn && 'border-green-500/40 bg-green-50 text-green-700 dark:bg-green-950/30',
+                  isWarn && 'border-amber-500/40 bg-amber-50 text-amber-700 dark:bg-amber-950/30',
+                  s.status === 'not_found' && 'border-red-500/40 bg-red-50 text-red-700 dark:bg-red-950/30',
+                  s.status === 'checking' && 'border-zinc-300 bg-zinc-50 text-zinc-500 dark:bg-zinc-800/50',
                 )}
-                style={status === 'found' ? { fontFamily: `"${token}", sans-serif` } : undefined}
+                style={isFound ? { fontFamily: `"${token}", sans-serif` } : undefined}
+                title={
+                  isWarn ? 'Fonte do sistema, mas não está instalada neste computador'
+                  : isFound && s.source === 'system' ? 'Fonte do sistema'
+                  : isFound ? 'Google Fonts'
+                  : s.status === 'not_found' ? 'Fonte não encontrada'
+                  : undefined
+                }
               >
-                {status === 'checking' && <Loader2 className="h-3 w-3 animate-spin" />}
-                {status === 'found' && <span aria-hidden>✓</span>}
-                {status === 'not_found' && <span aria-hidden>✗</span>}
+                {s.status === 'checking' && <Loader2 className="h-3 w-3 animate-spin" />}
+                {isFound && !isWarn && <span aria-hidden>✓</span>}
+                {isWarn && <span aria-hidden>⚠</span>}
+                {s.status === 'not_found' && <span aria-hidden>✗</span>}
                 <span>{token}</span>
+                {isFound && (
+                  <span className="text-[9px] opacity-70 ml-0.5">
+                    {s.source === 'system' ? 'sistema' : 'Google'}
+                  </span>
+                )}
               </span>
             )
           })}
         </div>
       )}
+
       <p className="text-xs text-muted-foreground">
-        Digite os nomes das fontes separados por vírgula. O sistema verifica em Google Fonts e mostra um preview de cada fonte encontrada.
+        Digite o nome — sugerimos enquanto você escreve. Aceitamos Google Fonts e fontes do sistema (Times New Roman, Arial, etc.). Use ↑↓ + Enter para selecionar.
       </p>
     </div>
   )
