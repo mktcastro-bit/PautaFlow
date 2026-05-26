@@ -88,6 +88,18 @@ export function BrandDnaWizard({ workspace, initialDna, isWelcome = false }: Pro
     setSaving(true)
     setSaveError(null)
 
+    // Campos adicionados por migrations recentes são incluídos no payload
+    // SÓ se tiverem conteúdo. Isso evita o erro PGRST204 (coluna não encontrada
+    // no cache do schema) caso a migration ainda não tenha sido aplicada no
+    // banco — o app continua salvando o resto normalmente.
+    const optionalNewFields: Record<string, any> = {}
+    if (data.step1_logo_alts && data.step1_logo_alts.length > 0) {
+      optionalNewFields.step1_logo_alts = data.step1_logo_alts
+    }
+    if (data.step1_website && data.step1_website.trim()) {
+      optionalNewFields.step1_website = data.step1_website
+    }
+
     const payload: any = {
       workspace_id: workspace.id,
       current_step: nextStep,
@@ -95,8 +107,7 @@ export function BrandDnaWizard({ workspace, initialDna, isWelcome = false }: Pro
       step1_tagline: data.step1_tagline || null,
       step1_offerings: data.step1_offerings || null,
       step1_logo_url: data.step1_logo_url || null,
-      step1_logo_alts: data.step1_logo_alts || [],
-      step1_website: data.step1_website || null,
+      ...optionalNewFields,
       step1_mission: data.step1_mission || null,
       step1_vision: data.step1_vision || null,
       step1_values: parseArray(data.step1_values),
