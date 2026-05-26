@@ -333,7 +333,12 @@ function ElementosTab({ editor, onChange, brandLogos, selectedElementId, onSelec
   const logoRef = useRef<HTMLInputElement>(null)
   const elementImageRef = useRef<HTMLInputElement>(null)
   const [pickerOpen, setPickerOpen] = useState(false)
-  const [pickerTab, setPickerTab] = useState<'shape' | 'icon' | 'image'>('shape')
+  // Abas habilitadas no seletor. Formas e ícones estão **escondidos**
+  // intencionalmente — o código permanece intacto e elementos já criados
+  // continuam visíveis e editáveis. Para reativar, basta adicionar 'shape'
+  // e 'icon' à lista PICKER_TABS abaixo.
+  const PICKER_TABS: Array<'shape' | 'icon' | 'image'> = ['image']
+  const [pickerTab, setPickerTab] = useState<'shape' | 'icon' | 'image'>(PICKER_TABS[0])
 
   const selectedElement = (editor.elements || []).find(el => el.id === selectedElementId) || null
 
@@ -703,22 +708,24 @@ function ElementosTab({ editor, onChange, brandLogos, selectedElementId, onSelec
           </button>
         ) : (
           <div className="border border-zinc-700 rounded-lg p-2 space-y-2">
-            <div className="flex gap-1">
-              {(['shape', 'icon', 'image'] as const).map(t => (
-                <button
-                  key={t}
-                  onClick={() => setPickerTab(t)}
-                  className={cn(
-                    'flex-1 py-1 rounded text-[10px] uppercase tracking-wider transition-colors',
-                    pickerTab === t
-                      ? 'bg-gold text-ink font-semibold'
-                      : 'bg-zinc-800 text-zinc-400 hover:text-zinc-200'
-                  )}
-                >
-                  {t === 'shape' ? 'Formas' : t === 'icon' ? 'Ícones' : 'Imagem'}
-                </button>
-              ))}
-            </div>
+            {PICKER_TABS.length > 1 && (
+              <div className="flex gap-1">
+                {PICKER_TABS.map(t => (
+                  <button
+                    key={t}
+                    onClick={() => setPickerTab(t)}
+                    className={cn(
+                      'flex-1 py-1 rounded text-[10px] uppercase tracking-wider transition-colors',
+                      pickerTab === t
+                        ? 'bg-gold text-ink font-semibold'
+                        : 'bg-zinc-800 text-zinc-400 hover:text-zinc-200'
+                    )}
+                  >
+                    {t === 'shape' ? 'Formas' : t === 'icon' ? 'Ícones' : 'Imagem'}
+                  </button>
+                ))}
+              </div>
+            )}
 
             {pickerTab === 'shape' && (
               <div className="grid grid-cols-4 gap-1.5">
