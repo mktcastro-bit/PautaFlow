@@ -204,11 +204,12 @@ export const ArtCard = React.forwardRef<HTMLDivElement, Props>(
     // Slot esquerdo do header só renderiza o nome da marca quando NÃO há logo,
     // ou quando a logo está em outro canto. Evita duplicar identidade visual.
     const showHeaderBrand = !editor.logoUrl || logoPos !== 'top-left'
-    const HeaderBar = (
+    const showCategoryTag = editor.showCategoryTag !== false
+    const HeaderBar = (showHeaderBrand || showCategoryTag) ? (
       <div style={{
         position: 'absolute', top: pad, left: pad, right: pad, zIndex: 5,
         display: 'flex', alignItems: 'center',
-        justifyContent: showHeaderBrand ? 'space-between' : 'flex-end',
+        justifyContent: showHeaderBrand && showCategoryTag ? 'space-between' : (showCategoryTag ? 'flex-end' : 'flex-start'),
         pointerEvents: 'none',
       }}>
         {showHeaderBrand && !editor.logoUrl && (
@@ -227,21 +228,23 @@ export const ArtCard = React.forwardRef<HTMLDivElement, Props>(
             )}
           </span>
         )}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 * scale }}>
-          <div style={{ width: dashW, height: 1, backgroundColor: textColor, opacity: 0.6 }} />
-          <span style={{
-            fontSize: metaFont * 0.85,
-            color: textColor,
-            opacity: 0.85,
-            letterSpacing: '0.22em',
-            fontWeight: 600,
-            textTransform: 'uppercase',
-          }}>
-            {categoryTag}
-          </span>
-        </div>
+        {showCategoryTag && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 * scale }}>
+            <div style={{ width: dashW, height: 1, backgroundColor: textColor, opacity: 0.6 }} />
+            <span style={{
+              fontSize: metaFont * 0.85,
+              color: textColor,
+              opacity: 0.85,
+              letterSpacing: '0.22em',
+              fontWeight: 600,
+              textTransform: 'uppercase',
+            }}>
+              {categoryTag}
+            </span>
+          </div>
+        )}
       </div>
-    )
+    ) : null
 
     // ── Footer (slide counter + url) ──
     const FooterBar = editor.showHandle && (

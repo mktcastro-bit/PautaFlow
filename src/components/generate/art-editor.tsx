@@ -482,6 +482,15 @@ function ElementosTab({ editor, onChange, brandLogos, selectedElementId, onSelec
         <Toggle checked={editor.showSlideNumber} onChange={v => set('showSlideNumber', v)} />
       </div>
 
+      {/* Category tag */}
+      <div className="flex items-center justify-between pt-3 border-t border-zinc-800">
+        <div>
+          <Label>Categoria no topo</Label>
+          <p className="text-[10px] text-zinc-600">Ex: — ESPÉCIES E APLICAÇÕES</p>
+        </div>
+        <Toggle checked={editor.showCategoryTag} onChange={v => set('showCategoryTag', v)} />
+      </div>
+
       {/* Logo */}
       <div className="pt-3 border-t border-zinc-800">
         <Label>Logotipo</Label>

@@ -59,6 +59,7 @@ export interface EditorState {
   accentBarColor: string
   showHandle: boolean
   showSlideNumber: boolean
+  showCategoryTag: boolean
   logoUrl: string | null
   logoPosition: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right'
   logoSize: number  // altura da logo em px na resolução base (1080) — multiplicada por scale no render
@@ -89,6 +90,7 @@ export const DEFAULT_EDITOR: EditorState = {
   accentBarColor: '#c9a86a',
   showHandle: true,
   showSlideNumber: true,
+  showCategoryTag: true,
   logoUrl: null,
   logoPosition: 'bottom-right',
   logoSize: 60,
