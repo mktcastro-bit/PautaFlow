@@ -14,6 +14,29 @@ export interface FriendlyError {
   type: 'auth' | 'rate_limit' | 'credit' | 'overloaded' | 'invalid' | 'network' | 'unknown'
 }
 
+/**
+ * Extrai o texto de erro real que a API do Anthropic devolve.
+ * O SDK envolve o erro em `err.error.error.message` (JSON aninhado) — testamos
+ * várias localizações para pegar a primeira que tem string útil.
+ */
+function extractAnthropicDetail(err: any): string {
+  if (!err) return ''
+  const candidates = [
+    err?.error?.error?.message,
+    err?.error?.message,
+    err?.response?.error?.message,
+    err?.response?.data?.error?.message,
+    err?.message,
+  ]
+  for (const c of candidates) {
+    if (typeof c === 'string' && c.trim() && !c.startsWith('{')) {
+      // Corta para caber na UI e não vazar info sensível
+      return c.slice(0, 240)
+    }
+  }
+  return ''
+}
+
 export function mapAnthropicError(err: any): FriendlyError {
   // Anthropic APIError tem .status numérico
   const status: number | undefined = err?.status
@@ -59,9 +82,13 @@ export function mapAnthropicError(err: any): FriendlyError {
 
   // 400 — request inválida (problema nosso)
   if (status === 400) {
+    // Extrai a mensagem específica do Anthropic para debug em produção
+    const details = extractAnthropicDetail(err)
     return {
       message: 'Não foi possível processar essa geração.',
-      hint: 'Tente reformular sua sugestão ou simplificar a configuração.',
+      hint: details
+        ? `Detalhe do modelo: ${details}`
+        : 'Tente reformular sua sugestão ou simplificar a configuração.',
       status: 400,
       type: 'invalid',
     }
