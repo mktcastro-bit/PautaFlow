@@ -201,7 +201,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const message = await withRetry(() => anthropic.messages.create({
-      model: 'claude-sonnet-4-6',
+      model: 'claude-sonnet-5',
       max_tokens: use_web_search ? 6000 : 1200,
       messages: [{ role: 'user', content: prompt }],
       ...(use_web_search && {
@@ -257,7 +257,7 @@ export async function POST(req: NextRequest) {
       workspace_id,
       content: `[ideas] ${ideas.length} ideias geradas para pilar "${pilar}"`,
       prompt_used: `ideas · ${pilar} · ${platform}/${format}`,
-      model: 'claude-sonnet-4-6',
+      model: 'claude-sonnet-5',
       platform,
       format,
       tokens_used: tokensUsed,

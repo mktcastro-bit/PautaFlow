@@ -169,7 +169,7 @@ Retorne APENAS JSON válido (sem markdown, sem comentários):
 
   try {
     const message = await withRetry(() => anthropic.messages.create({
-      model: 'claude-sonnet-4-6',
+      model: 'claude-sonnet-5',
       max_tokens: 1500,
       messages: [{ role: 'user', content: prompt }],
     }))

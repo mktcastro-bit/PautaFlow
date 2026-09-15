@@ -171,7 +171,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const message = await withRetry(() => anthropic.messages.create({
-      model: 'claude-sonnet-4-6',
+      model: 'claude-sonnet-5',
       max_tokens: 600,
       messages: [{ role: 'user', content: prompt }],
     }))
@@ -205,7 +205,7 @@ export async function POST(req: NextRequest) {
       workspace_id,
       content: `[refine] slide ${slide.number}: ${cleaned.title}`,
       prompt_used: `refine · "${instruction.slice(0, 80)}"`,
-      model: 'claude-sonnet-4-6',
+      model: 'claude-sonnet-5',
       platform: null,
       format: null,
       tokens_used: tokensUsed,

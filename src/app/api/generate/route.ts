@@ -99,7 +99,7 @@ export async function POST(req: NextRequest) {
       pauta_id: pauta_id || null,
       content: result.content,
       prompt_used: result.promptUsed,
-      model: 'claude-sonnet-4-6',
+      model: 'claude-sonnet-5',
       platform,
       format,
       tokens_used: result.tokensUsed,
